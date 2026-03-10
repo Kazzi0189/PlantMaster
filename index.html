@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PlantMaster AI</title>
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlBsYW50TWFzdGVyIEFJIiwKICAic2hvcnRfbmFtZSI6ICJQbGFudE1hc3RlciIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjhmY2Y4IiwKICAidGhlbWVfY29sb3ciOiAiIzJlN2QzMiIKfQ==">
+    <style>
+        :root { --primary: #2e7d32; --secondary: #4caf50; --bg: #f8fcf8; --card-bg: #ffffff; --text: #333; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding-bottom: 80px; }
+        header { background: var(--primary); color: white; padding: 20px; text-align: center; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .container { padding: 15px; }
+        h2 { font-size: 1.2rem; color: var(--primary); border-left: 4px solid var(--primary); padding-left: 10px; margin-top: 25px; }
+        
+        /* Karty rostlin */
+        .card { background: var(--card-bg); border-radius: 15px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #eee; position: relative; overflow: hidden; }
+        .card img { width: 100%; height: 200px; object-fit: cover; border-radius: 10px; margin-bottom: 10px; }
+        .card-name { font-size: 1.25rem; font-weight: bold; margin: 0; color: #1b5e20; }
+        .card-species { font-style: italic; color: #666; margin: 5px 0; }
+        .badge { display: inline-block; background: #e8f5e9; color: var(--primary); padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.9rem; margin-top: 10px; width: 100%; text-align: center; box-sizing: border-box; }
+        .badge.urgent { background: #fff3e0; color: #ef6c00; }
+
+        /* Plovoucí tlačítko + */
+        .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 35px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 100; }
+        
+        /* API Key Modal */
+        #api-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-content { background: white; padding: 25px; border-radius: 20px; width: 100%; max-width: 400px; text-align: center; }
+        input[type="text"] { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        button.primary-btn { background: var(--primary); color: white; border: none; padding: 12px 25px; border-radius: 10px; font-weight: bold; width: 100%; }
+        
+        /* Loading Overlay */
+        #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.8); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; font-weight: bold; color: var(--primary); }
+        .spinner { width: 50px; height: 50px; border: 5px solid #eee; border-top-color: var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 10px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Detail View */
+        #detail-view { display: none; position: fixed; inset: 0; background: white; z-index: 500; overflow-y: auto; padding: 20px; }
+        .close-detail { font-size: 1.5rem; color: var(--primary); margin-bottom: 20px; display: block; text-decoration: none; font-weight: bold; }
+        .task-item { border-left: 3px solid var(--secondary); padding-left: 15px; margin-bottom: 20px; }
+        .task-month { font-weight: bold; color: var(--primary); text-transform: uppercase; font-size: 0.8rem; }
+    </style>
+</head>
+<body>
+
+<header><h1>🌿 PlantMaster AI</h1></header>
+
+<div class="container">
+    <div id="today-section">
+        <h2>Dnes na zahradě</h2>
+        <div id="today-tasks">Užijte si volný den!</div>
+    </div>
+
+    <h2>Vaše rostliny</h2>
+    <div id="plant-list">Pryč s nudou, vyfoťte první strom!</div>
+</div>
+
+<button class="fab" onclick="document.getElementById('camera-input').click()">+</button>
+<input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none">
+
+<div id="api-modal" style="display:none">
+    <div class="modal-content">
+        <h3>Vložte Gemini API Klíč</h3>
+        <p>Pro funkci rozpoznávání rostlin vložte svůj klíč z <a href="https://aistudio.google.com/" target="_blank">Google AI Studio</a>.</p>
+        <input type="text" id="api-key-input" placeholder="AIzaSy...">
+        <button class="primary-btn" onclick="saveApiKey()">Uložit a začít</button>
+    </div>
+</div>
+
+<div id="loader">
+    <div class="spinner"></div>
+    <div id="loader-text">AI analyzuje rostlinu...</div>
+</div>
+
+<div id="detail-view">
+    <a href="#" class="close-detail" onclick="closeDetail()">← Zpět na seznam</a>
+    <div id="detail-content"></div>
+</div>
+
+<script type="importmap">
+  { "imports": { "@google/generative-ai": "https://esm.run/@google/generative-ai" } }
+</script>
+
+<script type="module">
+import { GoogleGenerativeAI } from "@google/generative-ai";
+
+let db;
+const dbName = "PlantMasterDB";
+
+// 1. INICIALIZACE DATABÁZE (IndexedDB)
+const request = indexedDB.open(dbName, 1);
+request.onupgradeneeded = (e) => {
+    db = e.target.result;
+    db.createObjectStore("plants", { keyPath: "id", autoIncrement: true });
+};
+request.onsuccess = (e) => {
+    db = e.target.result;
+    checkApiKey();
+    loadPlants();
+};
+
+// 2. BEZPEČNOST: Kontrola API klíče
+function checkApiKey() {
+    const key = localStorage.getItem('GEMINI_API_KEY');
+    if (!key) document.getElementById('api-modal').style.display = 'flex';
+}
+
+window.saveApiKey = () => {
+    const key = document.getElementById('api-key-input').value;
+    if (key.length > 10) {
+        localStorage.setItem('GEMINI_API_KEY', key);
+        document.getElementById('api-modal').style.display = 'none';
+    }
+};
+
+// 3. AI MODUL: Identifikace přes Gemini
+document.getElementById('camera-input').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    document.getElementById('loader').style.display = 'flex';
+    
+    try {
+        const base64 = await fileToBase64(file);
+        const apiKey = localStorage.getItem('GEMINI_API_KEY');
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const prompt = "Identify this plant and create a month-by-month care plan (pruning, spraying, watering). " +
+                       "Respond strictly in JSON format: {'druh': 'Name', 'pece': [{'mesic': 1, 'akce': 'Pruning', 'popis': 'Details'}]}. Use Czech language.";
+
+        const result = await model.generateContent([prompt, { inlineData: { data: base64.split(',')[1], mimeType: file.type } }]);
+        const response = await result.response;
+        const jsonText = response.text().match(/\{.*\}/s)[0];
+        const data = JSON.parse(jsonText);
+
+        const newPlant = {
+            name: data.druh,
+            species: data.druh,
+            photo: base64,
+            care_plan: data.pece,
+            date_added: new Date().toISOString()
+        };
+
+        const tx = db.transaction("plants", "readwrite");
+        tx.objectStore("plants").add(newPlant);
+        tx.oncomplete = () => {
+            document.getElementById('loader').style.display = 'none';
+            loadPlants();
+        };
+    } catch (err) {
+        alert("Chyba AI: " + err.message);
+        document.getElementById('loader').style.display = 'none';
+    }
+};
+
+// 4. UI: Načítání a zobrazení
+async function loadPlants() {
+    const tx = db.transaction("plants", "readonly");
+    const plants = await new Promise(res => tx.objectStore("plants").getAll().onsuccess = (e) => res(e.target.result));
+    
+    const list = document.getElementById('plant-list');
+    const todayTasks = document.getElementById('today-tasks');
+    list.innerHTML = '';
+    todayTasks.innerHTML = '';
+    
+    const currentMonth = new Date().getMonth() + 1;
+    let anyTask = false;
+
+    plants.reverse().forEach(p => {
+        // Karta do seznamu
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.onclick = () => showDetail(p);
+        card.innerHTML = `
+            <img src="${p.photo}">
+            <p class="card-name">${p.name}</p>
+            <p class="card-species">${p.species}</p>
+            <div class="badge">Zobrazit plán péče</div>
+        `;
+        list.appendChild(card);
+
+        // Kontrola dnešních úkolů
+        const task = p.care_plan.find(task => task.mesic === currentMonth);
+        if (task) {
+            anyTask = true;
+            todayTasks.innerHTML += `
+                <div class="card" style="border-left: 5px solid var(--primary)">
+                    <strong>${p.name}</strong>: ${task.akce}
+                </div>
+            `;
+        }
+    });
+    if (!anyTask) todayTasks.innerText = "Tento měsíc není vyžadována žádná speciální péče.";
+}
+
+window.showDetail = (p) => {
+    const detail = document.getElementById('detail-view');
+    const content = document.getElementById('detail-content');
+    detail.style.display = 'block';
+    
+    content.innerHTML = `
+        <img src="${p.photo}" style="width:100%; border-radius:15px; margin-bottom:20px;">
+        <h2 style="border:none; padding:0; margin:0; font-size:2rem;">${p.name}</h2>
+        <p style="font-style:italic; font-size:1.1rem; color:#666; margin-bottom:30px;">${p.species}</p>
+        <h3>Roční kalendář péče:</h3>
+        ${p.care_plan.sort((a,b) => a.mesic - b.mesic).map(t => `
+            <div class="task-item">
+                <div class="task-month">${new Intl.DateTimeFormat('cs-CZ', {month: 'long'}).format(new Date(2024, t.mesic-1))}</div>
+                <div style="font-weight:bold; margin:3px 0;">${t.akce}</div>
+                <div style="font-size:0.9rem; color:#555;">${t.popis}</div>
+            </div>
+        `).join('')}
+    `;
+};
+
+window.closeDetail = () => document.getElementById('detail-view').style.display = 'none';
+
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+    });
+}
+</script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  const swCode = "self.addEventListener('fetch', function(event) {});";
+  const blob = new Blob([swCode], {type: 'text/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob));
+}
+</script>
+</body>
+</html>
