@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v3.0</title>
+    <title>PlantMaster AI v4.0</title>
     <style>
         :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; }
@@ -12,17 +12,20 @@
         .version-tag { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; display: block; }
         .container { padding: 0 15px; }
         
-        /* Vyhledávání */
         #search-box { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; margin-bottom: 20px; box-sizing: border-box; outline: none; }
         #search-box:focus { border-color: var(--p); }
 
-        /* Chytrý kalendář */
+        /* Chytrý kalendář - Nové rozbalovací úkoly */
         .calendar-section { background: #e8f5e9; border-radius: 16px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--p); }
         .calendar-section h3 { margin: 0 0 10px 0; color: var(--p); font-size: 1.1rem; }
-        .task-item { background: white; padding: 10px; border-radius: 8px; margin-bottom: 8px; font-size: 0.9rem; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-        .task-item strong { color: var(--p); }
+        .task-item { background: white; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
+        .task-header { padding: 12px; font-size: 0.95rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .task-header:hover { background: #f9f9f9; }
+        .task-header strong { color: var(--p); margin-right: 5px; }
+        .task-arrow { font-size: 0.8rem; color: #888; transition: transform 0.2s; }
+        .task-details { padding: 12px; background: #fafafa; border-top: 1px dashed #eee; font-size: 0.9rem; line-height: 1.5; color: #555; display: none; }
+        .task-details ul { margin: 5px 0 0 20px; padding: 0; }
 
-        /* Karty */
         .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
         .card img { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; margin-right: 15px; border: 1px solid #eee; }
         .card-info h3 { margin: 0 0 5px 0; font-size: 1.1rem; color: var(--p); }
@@ -32,7 +35,6 @@
         #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 999; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; }
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         
-        /* Detail */
         #detail-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 500; overflow-y: auto; padding-bottom: 30px; }
         .detail-img { width: 100%; height: 250px; object-fit: cover; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
         .detail-content { padding: 20px; }
@@ -40,7 +42,6 @@
         .detail-header h2 { margin: 0; color: var(--p); font-size: 1.6rem; }
         .date-badge { font-size: 0.8rem; color: #888; background: #eee; padding: 4px 8px; border-radius: 10px; }
         
-        /* Toxicity Badge */
         .tox-badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; margin-bottom: 15px; }
         .tox-danger { background: #ffebee; color: var(--warn); border: 1px solid #ffcdd2; }
         .tox-safe { background: #e8f5e9; color: var(--safe); border: 1px solid #c8e6c9; }
@@ -49,7 +50,6 @@
         .info-box h4 { margin: 0 0 5px 0; color: var(--text); font-size: 0.9rem; text-transform: uppercase; opacity: 0.7; }
         .info-box p { margin: 0; font-size: 0.95rem; line-height: 1.4; }
         
-        /* Poznámky */
         textarea.notes-input { width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
         .btn-save-notes { background: var(--p); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
         
@@ -63,7 +63,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 3.0 (Chytrá zahrada)</span>
+    <span class="version-tag">Verze 4.0 (Detailní Návody)</span>
 </header>
 
 <div class="container">
@@ -91,7 +91,7 @@
             <span class="date-badge" id="det-date">Přidáno: ?</span>
         </div>
         
-        <div id="det-toxicity" class="tox-badge tox-safe">Zjišťuji jedovatost...</div>
+        <div id="det-toxicity" class="tox-badge">Zjišťuji...</div>
 
         <div class="info-box"><h4>💧 Zálivka</h4><p id="det-water"></p></div>
         <div class="info-box"><h4>☀️ Světlo</h4><p id="det-light"></p></div>
@@ -108,7 +108,7 @@
 
 <div id="loader">
     <div class="spinner"></div>
-    <p>AI vytváří plán, kalendář a zjišťuje toxicitu...</p>
+    <p>AI analyzuje a píše podrobné návody...</p>
 </div>
 
 <script>
@@ -116,7 +116,7 @@ let db;
 let currentPlants = [];
 let openPlantId = null;
 
-const req = indexedDB.open("PlantDB", 3); // Zvýšeno pro nové funkce
+const req = indexedDB.open("PlantDB", 3); 
 req.onupgradeneeded = (e) => {
     db = e.target.result;
     if (!db.objectStoreNames.contains("plants")) db.createObjectStore("plants", { keyPath: "id", autoIncrement: true });
@@ -132,9 +132,8 @@ async function render() {
     const tx = db.transaction("plants", "readonly");
     const plants = await new Promise(res => tx.objectStore("plants").getAll().onsuccess = (e) => res(e.target.result));
     currentPlants = plants.reverse();
-    
     updateCalendar();
-    filterPlants(); // Slouží i k prvnímu vykreslení seznamu
+    filterPlants(); 
 }
 
 function filterPlants() {
@@ -163,9 +162,22 @@ function filterPlants() {
     }
 }
 
+// Funkce pro rozbalování detailů v kalendáři
+function toggleTask(element) {
+    const details = element.nextElementSibling;
+    const arrow = element.querySelector('.task-arrow');
+    if (details.style.display === 'block') {
+        details.style.display = 'none';
+        arrow.style.transform = 'rotate(0deg)';
+    } else {
+        details.style.display = 'block';
+        arrow.style.transform = 'rotate(180deg)';
+    }
+}
+
 function updateCalendar() {
     const months = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
-    const currentMonthNum = new Date().getMonth() + 1; // 1-12
+    const currentMonthNum = new Date().getMonth() + 1; 
     document.getElementById('calendar-title').innerText = `📅 Úkoly na tento měsíc (${months[currentMonthNum-1]})`;
 
     const calBox = document.getElementById('calendar-tasks');
@@ -177,7 +189,17 @@ function updateCalendar() {
             p.tasks.forEach(task => {
                 if(task.month === currentMonthNum) {
                     tasksFound = true;
-                    calBox.innerHTML += `<div class="task-item"><strong>${p.name}:</strong> ${task.action}</div>`;
+                    // Přidáno rozbalování a zobrazení detailů
+                    const detailsHTML = task.details ? task.details : 'K tomuto úkolu nejsou k dispozici žádné další podrobnosti.';
+                    calBox.innerHTML += `
+                        <div class="task-item">
+                            <div class="task-header" onclick="toggleTask(this)">
+                                <div><strong>${p.name}:</strong> ${task.action}</div>
+                                <div class="task-arrow">▼</div>
+                            </div>
+                            <div class="task-details">${detailsHTML}</div>
+                        </div>
+                    `;
                 }
             });
         }
@@ -225,7 +247,7 @@ function saveNotes() {
         plant.notes = newNote;
         store.put(plant).onsuccess = () => {
             alert("Poznámka uložena!");
-            render(); // Aktualizuje data na pozadí
+            render(); 
         };
     };
 }
@@ -268,13 +290,13 @@ document.getElementById('camera').onchange = async (e) => {
         const resizedBase64 = await resizeImage(file);
         const b64Data = resizedBase64.split(',')[1];
         
-        // Komplexní prompt pro verzi 3.0
+        // ZMĚNA: Přidán požadavek na podrobný návod a konkrétní produkty do klíče "details"
         const aiPrompt = `Jsi expert botanik. Odpověz POUZE ve formátu JSON. Klíče musí být přesně tyto:
         "name": "Český název",
         "light": "Vhodné světlo",
         "water": "Jak zalévat",
         "toxicity": "Je jedovatá pro lidi nebo zvířata? (odpověz jasně Ano/Ne a stručný důvod)",
-        "tasks": [{"month": 3, "action": "Stručný úkol na březen (např. přesadit)"}, {"month": 9, "action": "Úkol na září"}] (vygeneruj 2-4 úkoly s odpovídajícím číslem měsíce 1-12)`;
+        "tasks": [{"month": 3, "action": "Stručný úkol na březen (např. přesadit)", "details": "Velmi podrobný návod krok za krokem. Pokud jde o řez, napiš jak přesně řezat. Pokud jde o škůdce, nemoci či hnojení, vypiš konkrétní účinné látky nebo běžně dostupné komerční produkty/postřiky v ČR."}] (vygeneruj 2-4 úkoly s odpovídajícím číslem měsíce 1-12)`;
 
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
