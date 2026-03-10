@@ -3,7 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v5.2</title>
+    <title>PlantMaster AI v6.0</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2e7d32">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
+    
     <style>
         :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; }
@@ -13,8 +17,7 @@
         .container { padding: 0 15px; }
         
         #search-box { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; margin-bottom: 20px; box-sizing: border-box; outline: none; }
-        #search-box:focus { border-color: var(--p); }
-
+        
         .calendar-section { background: #e8f5e9; border-radius: 16px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--p); }
         .calendar-section h3 { margin: 0 0 10px 0; color: var(--p); font-size: 1.1rem; }
         .task-item { background: white; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
@@ -33,7 +36,6 @@
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         
         #detail-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 500; overflow-y: auto; padding-bottom: 30px; }
-        
         .gallery-wrapper { padding: 15px 15px 0 15px; }
         .gallery-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; }
         .gallery-item { flex: 0 0 85%; scroll-snap-align: center; position: relative; }
@@ -43,8 +45,7 @@
         .btn-add-photo { background: white; color: var(--p); border: 2px dashed var(--p); padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-doctor { background: var(--doc); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(25,118,210,0.3); display: none; }
         .doctor-result { background: #e3f2fd; border-left: 5px solid var(--doc); padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.95rem; line-height: 1.5; display: none; }
-        .doctor-result strong { color: var(--doc); display: block; margin-bottom: 5px; font-size: 1.05rem; }
-
+        
         .detail-content { padding: 0 20px 20px 20px; }
         .detail-header { display: flex; justify-content: space-between; align-items: baseline; margin: 15px 0; }
         .detail-header h2 { margin: 0; color: var(--p); font-size: 1.6rem; }
@@ -59,10 +60,10 @@
         
         textarea.notes-input { width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
         .btn-save-notes { background: var(--p); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
-        
         .btn-close { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); z-index: 10; }
         .btn-delete { background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; }
         .btn-settings { display: block; margin: 20px auto; background: transparent; color: #666; border: 1px solid #ccc; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; }
+        
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -70,10 +71,12 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 5.2 (Návrat kamery)</span>
+    <span class="version-tag">Verze 6.0 (PWA & Notifikace)</span>
 </header>
 
 <div class="container">
+    <button id="btn-notify-allow" onclick="requestNotifications()" style="display:none; background:#ff9800; color:white; border:none; padding:10px; border-radius:8px; width:100%; margin-bottom:15px; font-weight:bold; cursor:pointer;">🔔 Povolit chytrá upozornění</button>
+
     <input type="text" id="search-box" placeholder="🔍 Hledat rostlinu..." onkeyup="filterPlants()">
 
     <div class="calendar-section" id="calendar-view">
@@ -88,35 +91,26 @@
 
 <button class="fab" onclick="document.getElementById('camera-new').click()">+</button>
 <input type="file" id="camera-new" accept="image/*" capture="environment" style="display:none">
-
 <input type="file" id="camera-add" accept="image/*" capture="environment" style="display:none">
 
 <div id="detail-view">
     <button class="btn-close" onclick="closeDetail()">✕</button>
-    
     <div class="gallery-wrapper">
         <div class="gallery-scroll" id="det-gallery"></div>
         <button class="btn-add-photo" onclick="document.getElementById('camera-add').click()">📸 Přidat aktuální fotku</button>
         <button class="btn-doctor" id="btn-ai-doctor" onclick="runAIDoctor()">🩺 Zhodnotit zdraví (AI Doktor)</button>
         <div class="doctor-result" id="doctor-output"></div>
     </div>
-
     <div class="detail-content">
-        <div class="detail-header">
-            <h2 id="det-name">Název</h2>
-        </div>
-        
+        <div class="detail-header"><h2 id="det-name">Název</h2></div>
         <div id="det-toxicity" class="tox-badge">Zjišťuji...</div>
-
         <div class="info-box"><h4>💧 Zálivka</h4><p id="det-water"></p></div>
         <div class="info-box"><h4>☀️ Světlo</h4><p id="det-light"></p></div>
-        
         <div class="info-box">
             <h4>📝 Moje poznámky</h4>
             <textarea id="det-notes" class="notes-input" placeholder="Kdy byla přesazena, od koho ji mám..."></textarea>
             <button class="btn-save-notes" onclick="saveNotes()">💾 Uložit poznámku</button>
         </div>
-
         <button class="btn-delete" id="det-delete-btn">🗑️ Smazat rostlinu</button>
     </div>
 </div>
@@ -127,6 +121,13 @@
 </div>
 
 <script>
+// --- PWA REGISTRACE ---
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js')
+    .then(() => console.log('Service Worker běží'))
+    .catch(err => console.error('Chyba SW:', err));
+}
+
 let db;
 let currentPlants = [];
 let openPlantId = null;
@@ -136,11 +137,50 @@ req.onupgradeneeded = (e) => {
     db = e.target.result;
     if (!db.objectStoreNames.contains("plants")) db.createObjectStore("plants", { keyPath: "id", autoIncrement: true });
 };
-req.onsuccess = (e) => { db = e.target.result; render(); };
+req.onsuccess = (e) => { db = e.target.result; checkNotificationPermission(); render(); };
 
 function setKey() {
     const k = prompt("Vložte API klíč z Google AI Studio:");
     if (k) { localStorage.setItem('G_KEY', k.trim()); alert("Klíč uložen."); }
+}
+
+function checkNotificationPermission() {
+    if ("Notification" in window && Notification.permission === "default") {
+        document.getElementById('btn-notify-allow').style.display = 'block';
+    }
+}
+
+function requestNotifications() {
+    Notification.requestPermission().then(perm => {
+        if(perm === "granted") {
+            document.getElementById('btn-notify-allow').style.display = 'none';
+            alert("Upozornění zapnuta!");
+            checkAndSendNotification();
+        }
+    });
+}
+
+function checkAndSendNotification() {
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    
+    const today = new Date().toLocaleDateString('cs-CZ');
+    const lastNotified = localStorage.getItem('lastNotifyDate');
+    
+    // Zjistíme, jestli máme tento měsíc úkoly
+    const currentMonthNum = new Date().getMonth() + 1;
+    let tasksCount = 0;
+    currentPlants.forEach(p => {
+        if(p.tasks) p.tasks.forEach(t => { if(t.month === currentMonthNum) tasksCount++; });
+    });
+
+    // Upozorníme jen 1x denně a jen když jsou úkoly
+    if (tasksCount > 0 && lastNotified !== today) {
+        new Notification("🌿 PlantMaster", {
+            body: `Máte v zahradě ${tasksCount} aktuálních úkolů na tento měsíc! Otevřete aplikaci pro detaily.`,
+            icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png"
+        });
+        localStorage.setItem('lastNotifyDate', today);
+    }
 }
 
 async function render() {
@@ -156,27 +196,19 @@ async function render() {
 
     updateCalendar();
     filterPlants(); 
+    checkAndSendNotification(); // Zkontroluje notifikace při startu
 }
 
 function filterPlants() {
     const query = document.getElementById('search-box').value.toLowerCase();
     const list = document.getElementById('plant-list');
     list.innerHTML = '';
-    
     let hasResults = false;
     currentPlants.forEach((p, index) => {
         if(p.name.toLowerCase().includes(query)) {
             hasResults = true;
             const latestImg = (p.images && p.images.length > 0) ? p.images[p.images.length - 1].data : p.img;
-            list.innerHTML += `
-                <div class="card" onclick="openDetail(${index})">
-                    <img src="${latestImg}">
-                    <div class="card-info">
-                        <h3>${p.name}</h3>
-                        <p>💧 ${p.water ? p.water.substring(0, 30) + '...' : 'Otevři pro detaily'}</p>
-                    </div>
-                </div>
-            `;
+            list.innerHTML += `<div class="card" onclick="openDetail(${index})"><img src="${latestImg}"><div class="card-info"><h3>${p.name}</h3><p>💧 ${p.water ? p.water.substring(0, 30) + '...' : 'Otevři pro detaily'}</p></div></div>`;
         }
     });
     if(!hasResults) list.innerHTML = '<p style="text-align:center; color:#888;">Nebyly nalezeny žádné rostliny.</p>';
@@ -185,23 +217,16 @@ function filterPlants() {
 function toggleTask(element) {
     const details = element.nextElementSibling;
     const arrow = element.querySelector('.task-arrow');
-    if (details.style.display === 'block') {
-        details.style.display = 'none';
-        arrow.style.transform = 'rotate(0deg)';
-    } else {
-        details.style.display = 'block';
-        arrow.style.transform = 'rotate(180deg)';
-    }
+    if (details.style.display === 'block') { details.style.display = 'none'; arrow.style.transform = 'rotate(0deg)'; } 
+    else { details.style.display = 'block'; arrow.style.transform = 'rotate(180deg)'; }
 }
 
 function updateCalendar() {
     const months = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
     const currentMonthNum = new Date().getMonth() + 1; 
     document.getElementById('calendar-title').innerText = `📅 Úkoly na tento měsíc (${months[currentMonthNum-1]})`;
-
     const calBox = document.getElementById('calendar-tasks');
     calBox.innerHTML = '';
-    
     let tasksFound = false;
     currentPlants.forEach(p => {
         if(p.tasks && Array.isArray(p.tasks)) {
@@ -209,15 +234,7 @@ function updateCalendar() {
                 if(task.month === currentMonthNum) {
                     tasksFound = true;
                     const detailsHTML = task.details ? task.details : 'Bez dalších podrobností.';
-                    calBox.innerHTML += `
-                        <div class="task-item">
-                            <div class="task-header" onclick="toggleTask(this)">
-                                <div><strong>${p.name}:</strong> ${task.action}</div>
-                                <div class="task-arrow">▼</div>
-                            </div>
-                            <div class="task-details">${detailsHTML}</div>
-                        </div>
-                    `;
+                    calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><div><strong>${p.name}:</strong> ${task.action}</div><div class="task-arrow">▼</div></div><div class="task-details">${detailsHTML}</div></div>`;
                 }
             });
         }
@@ -228,14 +245,10 @@ function updateCalendar() {
 function openDetail(index) {
     const p = currentPlants[index];
     openPlantId = p.id;
-    
     const galBox = document.getElementById('det-gallery');
     galBox.innerHTML = '';
     const imagesToRender = p.images || [{data: p.img, date: p.dateAdded}];
-    
-    imagesToRender.forEach(imgObj => {
-        galBox.innerHTML += `<div class="gallery-item"><img src="${imgObj.data}"><div class="gallery-date">${imgObj.date}</div></div>`;
-    });
+    imagesToRender.forEach(imgObj => { galBox.innerHTML += `<div class="gallery-item"><img src="${imgObj.data}"><div class="gallery-date">${imgObj.date}</div></div>`; });
 
     const docBtn = document.getElementById('btn-ai-doctor');
     const docRes = document.getElementById('doctor-output');
@@ -248,11 +261,8 @@ function openDetail(index) {
     document.getElementById('det-notes').value = p.notes || "";
     
     const toxBox = document.getElementById('det-toxicity');
-    if(p.toxicity && p.toxicity.toLowerCase().includes("ne")) {
-        toxBox.className = "tox-badge tox-safe"; toxBox.innerText = "✅ " + p.toxicity;
-    } else {
-        toxBox.className = "tox-badge tox-danger"; toxBox.innerText = "⚠️ " + (p.toxicity || "Může být jedovatá");
-    }
+    if(p.toxicity && p.toxicity.toLowerCase().includes("ne")) { toxBox.className = "tox-badge tox-safe"; toxBox.innerText = "✅ " + p.toxicity; } 
+    else { toxBox.className = "tox-badge tox-danger"; toxBox.innerText = "⚠️ " + (p.toxicity || "Může být jedovatá"); }
 
     document.getElementById('det-delete-btn').onclick = () => deletePlant(p.id);
     document.getElementById('detail-view').style.display = 'block';
@@ -266,8 +276,7 @@ function saveNotes() {
     const tx = db.transaction("plants", "readwrite");
     const store = tx.objectStore("plants");
     store.get(openPlantId).onsuccess = (e) => {
-        let plant = e.target.result;
-        plant.notes = newNote;
+        let plant = e.target.result; plant.notes = newNote;
         store.put(plant).onsuccess = () => { alert("Poznámka uložena!"); render(); };
     };
 }
@@ -282,17 +291,13 @@ function deletePlant(id) {
 
 function resizeImage(file) {
     return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
+        const reader = new FileReader(); reader.readAsDataURL(file);
         reader.onload = (e) => {
-            const img = new Image();
-            img.src = e.target.result;
+            const img = new Image(); img.src = e.target.result;
             img.onload = () => {
-                const canvas = document.createElement('canvas');
-                let w = img.width, h = img.height;
+                const canvas = document.createElement('canvas'); let w = img.width, h = img.height;
                 if (w > 800) { h = Math.round((h * 800) / w); w = 800; }
-                canvas.width = w; canvas.height = h;
-                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                canvas.width = w; canvas.height = h; canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                 resolve(canvas.toDataURL('image/jpeg', 0.7)); 
             };
         };
@@ -300,8 +305,7 @@ function resizeImage(file) {
 }
 
 document.getElementById('camera-new').onchange = async (e) => {
-    const file = e.target.files[0];
-    const key = localStorage.getItem('G_KEY');
+    const file = e.target.files[0]; const key = localStorage.getItem('G_KEY');
     if (!file || !key) return alert("Chybí fotka nebo klíč!");
 
     document.getElementById('loader').style.display = 'flex';
@@ -310,46 +314,30 @@ document.getElementById('camera-new').onchange = async (e) => {
     try {
         const resizedBase64 = await resizeImage(file);
         const b64Data = resizedBase64.split(',')[1];
-        
         const aiPrompt = `Jsi expert botanik. Odpověz POUZE ve formátu JSON: {"name": "Český název", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol", "details": "Detaily a postřiky"}]}`;
 
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [ { text: aiPrompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } } ]}],
-                generationConfig: { response_mime_type: "application/json" }
-            })
+            body: JSON.stringify({ contents: [{ parts: [ { text: aiPrompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } } ]}], generationConfig: { response_mime_type: "application/json" } })
         });
 
-        const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
-
-        let aiText = data.candidates[0].content.parts[0].text;
-        let res = JSON.parse(aiText);
-
-        const dz = new Date();
-        const dateString = dz.toLocaleDateString('cs-CZ');
+        const data = await resp.json(); if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
+        let res = JSON.parse(data.candidates[0].content.parts[0].text);
+        const dateString = new Date().toLocaleDateString('cs-CZ');
 
         const tx = db.transaction("plants", "readwrite");
         tx.objectStore("plants").add({ 
             name: res.name || "Neznámá", water: res.water || "Neznámé", light: res.light || "Neznámé", toxicity: res.toxicity || "Neznámé",
-            tasks: res.tasks || [], dateAdded: dateString, notes: "",
-            images: [{ data: resizedBase64, date: dateString }] 
+            tasks: res.tasks || [], dateAdded: dateString, notes: "", images: [{ data: resizedBase64, date: dateString }] 
         });
-        
         tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
 
-    } catch (err) {
-        document.getElementById('loader').style.display = 'none'; alert("Chyba: " + err.message);
-    }
+    } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba: " + err.message); }
 };
 
 document.getElementById('camera-add').onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file || !openPlantId) return;
-
-    document.getElementById('loader').style.display = 'flex';
-    document.getElementById('loader-text').innerText = "Přidávám fotku do alba...";
+    const file = e.target.files[0]; if (!file || !openPlantId) return;
+    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Přidávám fotku do alba...";
 
     try {
         const resizedBase64 = await resizeImage(file);
@@ -361,63 +349,37 @@ document.getElementById('camera-add').onchange = async (e) => {
             let plant = ev.target.result;
             if(!plant.images) plant.images = [{data: plant.img, date: plant.dateAdded}];
             plant.images.push({ data: resizedBase64, date: dateString });
-            
             store.put(plant).onsuccess = () => {
                 document.getElementById('loader').style.display = 'none';
-                render().then(() => {
-                    const idx = currentPlants.findIndex(p => p.id === openPlantId);
-                    if(idx !== -1) openDetail(idx);
-                });
+                render().then(() => { const idx = currentPlants.findIndex(p => p.id === openPlantId); if(idx !== -1) openDetail(idx); });
             };
         };
-    } catch (err) {
-        document.getElementById('loader').style.display = 'none'; alert("Chyba: " + err.message);
-    }
+    } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba: " + err.message); }
 };
 
 async function runAIDoctor() {
-    const key = localStorage.getItem('G_KEY');
-    if (!key) return alert("Chybí API klíč!");
-    
-    const plant = currentPlants.find(p => p.id === openPlantId);
-    if(!plant || !plant.images || plant.images.length < 2) return;
+    const key = localStorage.getItem('G_KEY'); if (!key) return alert("Chybí API klíč!");
+    const plant = currentPlants.find(p => p.id === openPlantId); if(!plant || !plant.images || plant.images.length < 2) return;
 
-    document.getElementById('loader').style.display = 'flex';
-    document.getElementById('loader-text').innerText = "AI Doktor porovnává historii...";
+    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "AI Doktor porovnává historii...";
 
     try {
         const oldestImgBase64 = plant.images[0].data.split(',')[1];
         const newestImgBase64 = plant.images[plant.images.length - 1].data.split(',')[1];
-
         const aiPrompt = `Jsi expert botanik. Zde jsou dvě fotky stejné rostliny v čase. První je starší, druhá je nejnovější. Zhodnoť, zda se její zdravotní stav zlepšil nebo zhoršil. Vypadá zdravě? Co jí případně chybí a jak by měl majitel upravit péči? Odpověz stručně, jasně, přátelsky a v češtině.`;
 
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [ 
-                    { text: aiPrompt }, 
-                    { text: "STARŠÍ FOTKA:" },
-                    { inline_data: { mime_type: "image/jpeg", data: oldestImgBase64 } },
-                    { text: "NEJNOVĚJŠÍ FOTKA:" },
-                    { inline_data: { mime_type: "image/jpeg", data: newestImgBase64 } }
-                ]}]
-            })
+            body: JSON.stringify({ contents: [{ parts: [ { text: aiPrompt }, { text: "STARŠÍ FOTKA:" }, { inline_data: { mime_type: "image/jpeg", data: oldestImgBase64 } }, { text: "NEJNOVĚJŠÍ FOTKA:" }, { inline_data: { mime_type: "image/jpeg", data: newestImgBase64 } } ]}] })
         });
 
-        const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
-
-        const doctorText = data.candidates[0].content.parts[0].text;
+        const data = await resp.json(); if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
         document.getElementById('loader').style.display = 'none';
-        
         const docResBox = document.getElementById('doctor-output');
-        docResBox.innerHTML = `<strong>🩺 Zpráva od AI Doktora:</strong><br>${doctorText.replace(/\n/g, '<br>')}`;
+        docResBox.innerHTML = `<strong>🩺 Zpráva od AI Doktora:</strong><br>${data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>')}`;
         docResBox.style.display = 'block';
 
-    } catch (err) {
-        document.getElementById('loader').style.display = 'none';
-        alert("Chyba Doktora: " + err.message);
-    }
+    } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba Doktora: " + err.message); }
 }
 </script>
 </body>
