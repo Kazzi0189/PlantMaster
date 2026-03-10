@@ -3,27 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI</title>
+    <title>PlantMaster AI v1.0.4</title>
     <style>
         :root { --p: #2e7d32; --bg: #f8fcf8; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        button { background: var(--p); color: white; border: none; padding: 12px; border-radius: 10px; width: 100%; font-weight: bold; cursor: pointer; }
+        .version-tag { font-size: 0.7rem; color: #999; text-align: center; margin-bottom: 10px; }
+        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
+        img { width: 100%; border-radius: 10px; margin-bottom: 10px; border: 1px solid #eee; }
+        button { background: var(--p); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; }
         #loader { display: none; text-align: center; padding: 20px; font-weight: bold; color: var(--p); }
+        .btn-settings { background: #666; margin-top: 10px; padding: 10px; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
+<div class="version-tag">Aplikace: PlantMaster AI | Verze: 1.0.4 (Speed & Resize)</div>
+
 <div class="card">
-    <h2>🌿 PlantMaster AI</h2>
-    <div id="plant-list">Načítání...</div>
+    <h2>🌿 Moje zahrada</h2>
+    <div id="plant-list">Načítání zahrady...</div>
 </div>
 
 <button onclick="document.getElementById('camera').click()">📸 VYFOTIT ROSTLINU</button>
 <input type="file" id="camera" accept="image/*" capture="environment" style="display:none">
-<button style="background:#666; margin-top:10px;" onclick="setKey()">⚙️ NASTAVIT API KLÍČ</button>
 
-<div id="loader">Analyzuji rostlinu...</div>
+<button class="btn-settings" onclick="setKey()">⚙️ NASTAVIT API KLÍČ</button>
+
+<div id="loader">
+    <div style="width:30px; height:30px; border:4px solid #ddd; border-top-color:var(--p); border-radius:50%; animation:spin 1s linear infinite; margin:auto;"></div>
+    <p>Zmenšuji fotku a odesílám k AI...</p>
+</div>
 
 <script>
 let db;
@@ -32,59 +41,84 @@ req.onupgradeneeded = (e) => e.target.result.createObjectStore("plants", { keyPa
 req.onsuccess = (e) => { db = e.target.result; render(); };
 
 function setKey() {
-    const k = prompt("Vložte API klíč:");
-    if (k) { localStorage.setItem('G_KEY', k.trim()); alert("Klíč uložen."); }
+    const k = prompt("Vložte API klíč z Google AI Studio:");
+    if (k) { localStorage.setItem('G_KEY', k.trim()); alert("Klíč byl uložen a vyčištěn."); location.reload(); }
 }
 
 async function render() {
     const tx = db.transaction("plants", "readonly");
     const plants = await new Promise(res => tx.objectStore("plants").getAll().onsuccess = (e) => res(e.target.result));
-    document.getElementById('plant-list').innerHTML = plants.length ? '' : 'Vyfoťte kytku!';
+    const list = document.getElementById('plant-list');
+    list.innerHTML = plants.length ? '' : 'Zatím tu nemáte žádné kytky. Vyfoťte první!';
     plants.reverse().forEach(p => {
-        document.getElementById('plant-list').innerHTML += `<div class="card"><img src="${p.img}" style="width:100%"><p><b>${p.name}</b></p></div>`;
+        list.innerHTML += `<div class="card"><img src="${p.img}"><p><b>${p.name}</b></p></div>`;
+    });
+}
+
+// Komprese obrazu pro bleskový přenos
+function resizeImage(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const MAX_W = 800; 
+                let w = img.width, h = img.height;
+                if (w > MAX_W) { h = Math.round((h * MAX_W) / w); w = MAX_W; }
+                canvas.width = w; canvas.height = h;
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+            };
+        };
     });
 }
 
 document.getElementById('camera').onchange = async (e) => {
     const file = e.target.files[0];
     const key = localStorage.getItem('G_KEY');
-    if (!file || !key) return alert("Chybí soubor nebo klíč!");
+    if (!file) return;
+    if (!key) return alert("Chybí API klíč! Nastavte ho ozubeným kolečkem.");
 
     document.getElementById('loader').style.display = 'block';
 
     try {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async () => {
-            const b64 = reader.result.split(',')[1];
-            
-            // Změna na v1 a gemini-1.5-flash-latest
-            const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [
-                        { text: "Identify plant. JSON only: {\"name\":\"Czech Name\"}" },
-                        { inline_data: { mime_type: "image/jpeg", data: b64 } }
-                    ]}]
-                })
-            });
+        const resizedBase64 = await resizeImage(file);
+        const b64Data = resizedBase64.split(',')[1];
+        
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash-latest:generateContent?key=${key}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [
+                    { text: "Identify plant. Response JSON only: {\"name\":\"Czech Name\"}" },
+                    { inline_data: { mime_type: "image/jpeg", data: b64Data } }
+                ]}]
+            })
+        });
 
-            const data = await resp.json();
-            if (!resp.ok) throw new Error(data.error?.message || "Chyba serveru");
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
 
-            const txt = data.candidates[0].content.parts[0].text;
-            const res = JSON.parse(txt.substring(txt.indexOf('{'), txt.lastIndexOf('}') + 1));
+        const aiText = data.candidates[0].content.parts[0].text;
+        const res = JSON.parse(aiText.substring(aiText.indexOf('{'), aiText.lastIndexOf('}') + 1));
 
-            const tx = db.transaction("plants", "readwrite");
-            tx.objectStore("plants").add({ name: res.name, img: reader.result });
-            tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
+        const tx = db.transaction("plants", "readwrite");
+        tx.objectStore("plants").add({ name: res.name, img: resizedBase64 });
+        tx.oncomplete = () => { 
+            document.getElementById('loader').style.display = 'none'; 
+            render(); 
         };
+
     } catch (err) {
         document.getElementById('loader').style.display = 'none';
         alert("Chyba: " + err.message);
+        console.error(err);
     }
 };
 </script>
+<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 </body>
 </html>
