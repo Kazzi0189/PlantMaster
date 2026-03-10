@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v5.0</title>
+    <title>PlantMaster AI v5.1</title>
     <style>
         :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; }
@@ -34,7 +34,6 @@
         
         #detail-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 500; overflow-y: auto; padding-bottom: 30px; }
         
-        /* Galerie a UI Doktora */
         .gallery-wrapper { padding: 15px 15px 0 15px; }
         .gallery-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; }
         .gallery-item { flex: 0 0 85%; scroll-snap-align: center; position: relative; }
@@ -71,7 +70,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 5.0 (Historie & AI Doktor)</span>
+    <span class="version-tag">Verze 5.1 (Oprava kamery)</span>
 </header>
 
 <div class="container">
@@ -88,16 +87,15 @@
 <button class="btn-settings" onclick="setKey()">⚙️ Změnit API klíč</button>
 
 <button class="fab" onclick="document.getElementById('camera-new').click()">+</button>
-<input type="file" id="camera-new" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="camera-new" accept="image/*" style="display:none">
 
-<input type="file" id="camera-add" accept="image/*" capture="environment" style="display:none">
+<input type="file" id="camera-add" accept="image/*" style="display:none">
 
 <div id="detail-view">
     <button class="btn-close" onclick="closeDetail()">✕</button>
     
     <div class="gallery-wrapper">
-        <div class="gallery-scroll" id="det-gallery">
-            </div>
+        <div class="gallery-scroll" id="det-gallery"></div>
         <button class="btn-add-photo" onclick="document.getElementById('camera-add').click()">📸 Přidat aktuální fotku</button>
         <button class="btn-doctor" id="btn-ai-doctor" onclick="runAIDoctor()">🩺 Zhodnotit zdraví (AI Doktor)</button>
         <div class="doctor-result" id="doctor-output"></div>
@@ -133,7 +131,7 @@ let db;
 let currentPlants = [];
 let openPlantId = null;
 
-const req = indexedDB.open("PlantDB", 4); // Zvýšeno pro podporu polí obrázků
+const req = indexedDB.open("PlantDB", 4); 
 req.onupgradeneeded = (e) => {
     db = e.target.result;
     if (!db.objectStoreNames.contains("plants")) db.createObjectStore("plants", { keyPath: "id", autoIncrement: true });
@@ -149,7 +147,6 @@ async function render() {
     const tx = db.transaction("plants", "readonly");
     const plants = await new Promise(res => tx.objectStore("plants").getAll().onsuccess = (e) => res(e.target.result));
     
-    // Migrace starých dat (pokud má rostlina "img" ale ne "images")
     currentPlants = plants.map(p => {
         if(p.img && (!p.images || p.images.length === 0)) {
             p.images = [{ data: p.img, date: p.dateAdded || new Date().toLocaleDateString('cs-CZ') }];
@@ -170,9 +167,7 @@ function filterPlants() {
     currentPlants.forEach((p, index) => {
         if(p.name.toLowerCase().includes(query)) {
             hasResults = true;
-            // Zobrazíme vždy tu NEJNOVĚJŠÍ fotku (poslední v poli)
             const latestImg = (p.images && p.images.length > 0) ? p.images[p.images.length - 1].data : p.img;
-            
             list.innerHTML += `
                 <div class="card" onclick="openDetail(${index})">
                     <img src="${latestImg}">
@@ -184,10 +179,7 @@ function filterPlants() {
             `;
         }
     });
-
-    if(!hasResults) {
-        list.innerHTML = '<p style="text-align:center; color:#888;">Nebyly nalezeny žádné rostliny.</p>';
-    }
+    if(!hasResults) list.innerHTML = '<p style="text-align:center; color:#888;">Nebyly nalezeny žádné rostliny.</p>';
 }
 
 function toggleTask(element) {
@@ -237,30 +229,18 @@ function openDetail(index) {
     const p = currentPlants[index];
     openPlantId = p.id;
     
-    // Vykreslení galerie fotek
     const galBox = document.getElementById('det-gallery');
     galBox.innerHTML = '';
     const imagesToRender = p.images || [{data: p.img, date: p.dateAdded}];
     
     imagesToRender.forEach(imgObj => {
-        galBox.innerHTML += `
-            <div class="gallery-item">
-                <img src="${imgObj.data}">
-                <div class="gallery-date">${imgObj.date}</div>
-            </div>
-        `;
+        galBox.innerHTML += `<div class="gallery-item"><img src="${imgObj.data}"><div class="gallery-date">${imgObj.date}</div></div>`;
     });
 
-    // Zobrazení tlačítka AI Doktora, pokud jsou 2 a více fotek
     const docBtn = document.getElementById('btn-ai-doctor');
     const docRes = document.getElementById('doctor-output');
     docRes.style.display = 'none';
-    
-    if(imagesToRender.length >= 2) {
-        docBtn.style.display = 'block';
-    } else {
-        docBtn.style.display = 'none';
-    }
+    if(imagesToRender.length >= 2) docBtn.style.display = 'block'; else docBtn.style.display = 'none';
     
     document.getElementById('det-name').innerText = p.name;
     document.getElementById('det-water').innerText = p.water || "Neznámé";
@@ -319,9 +299,6 @@ function resizeImage(file) {
     });
 }
 
-// ----------------------------------------------------
-// 1. ZALOŽENÍ ÚPLNĚ NOVÉ ROSTLINY (Z HLAVNÍ OBRAZOVKY)
-// ----------------------------------------------------
 document.getElementById('camera-new').onchange = async (e) => {
     const file = e.target.files[0];
     const key = localStorage.getItem('G_KEY');
@@ -355,10 +332,9 @@ document.getElementById('camera-new').onchange = async (e) => {
 
         const tx = db.transaction("plants", "readwrite");
         tx.objectStore("plants").add({ 
-            name: res.name || "Neznámá", 
-            water: res.water || "Neznámé", light: res.light || "Neznámé", toxicity: res.toxicity || "Neznámé",
+            name: res.name || "Neznámá", water: res.water || "Neznámé", light: res.light || "Neznámé", toxicity: res.toxicity || "Neznámé",
             tasks: res.tasks || [], dateAdded: dateString, notes: "",
-            images: [{ data: resizedBase64, date: dateString }] // Nový formát pro historii fotek
+            images: [{ data: resizedBase64, date: dateString }] 
         });
         
         tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
@@ -368,9 +344,6 @@ document.getElementById('camera-new').onchange = async (e) => {
     }
 };
 
-// ----------------------------------------------------
-// 2. PŘIDÁNÍ NOVÉ FOTKY K EXISTUJÍCÍ ROSTLINĚ
-// ----------------------------------------------------
 document.getElementById('camera-add').onchange = async (e) => {
     const file = e.target.files[0];
     if (!file || !openPlantId) return;
@@ -387,13 +360,11 @@ document.getElementById('camera-add').onchange = async (e) => {
         store.get(openPlantId).onsuccess = (ev) => {
             let plant = ev.target.result;
             if(!plant.images) plant.images = [{data: plant.img, date: plant.dateAdded}];
-            
             plant.images.push({ data: resizedBase64, date: dateString });
             
             store.put(plant).onsuccess = () => {
                 document.getElementById('loader').style.display = 'none';
                 render().then(() => {
-                    // Najít index upravené rostliny a znovu otevřít detail
                     const idx = currentPlants.findIndex(p => p.id === openPlantId);
                     if(idx !== -1) openDetail(idx);
                 });
@@ -404,9 +375,6 @@ document.getElementById('camera-add').onchange = async (e) => {
     }
 };
 
-// ----------------------------------------------------
-// 3. AI DOKTOR - POROVNÁNÍ DVOU FOTEK
-// ----------------------------------------------------
 async function runAIDoctor() {
     const key = localStorage.getItem('G_KEY');
     if (!key) return alert("Chybí API klíč!");
@@ -421,9 +389,8 @@ async function runAIDoctor() {
         const oldestImgBase64 = plant.images[0].data.split(',')[1];
         const newestImgBase64 = plant.images[plant.images.length - 1].data.split(',')[1];
 
-        const aiPrompt = `Jsi expert botanik. Zde jsou dvě fotky stejné rostliny v čase. První je starší, druhá je nejnovější. Zhodnoť, zda se její zdravotní stav zlepšil nebo zhoršil. Vypadá zdravě? Co jí případně chybí a jak by měl majitel upravit péči? Odpověz stručně, jasně, přátelsky a v češtině. (Odpovídej jako normální text s odstavci, nepoužívej JSON formát).`;
+        const aiPrompt = `Jsi expert botanik. Zde jsou dvě fotky stejné rostliny v čase. První je starší, druhá je nejnovější. Zhodnoť, zda se její zdravotní stav zlepšil nebo zhoršil. Vypadá zdravě? Co jí případně chybí a jak by měl majitel upravit péči? Odpověz stručně, jasně, přátelsky a v češtině.`;
 
-        // Pro doktora NEchceme JSON výstup, chceme normální čtecí text
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -441,7 +408,6 @@ async function runAIDoctor() {
         if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
 
         const doctorText = data.candidates[0].content.parts[0].text;
-        
         document.getElementById('loader').style.display = 'none';
         
         const docResBox = document.getElementById('doctor-output');
