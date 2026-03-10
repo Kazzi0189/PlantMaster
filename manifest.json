@@ -1,0 +1,15 @@
+{
+  "name": "PlantMaster AI",
+  "short_name": "PlantMaster",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f8fcf8",
+  "theme_color": "#2e7d32",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/628/628283.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
