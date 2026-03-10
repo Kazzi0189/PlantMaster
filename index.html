@@ -3,37 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v1.0.7</title>
+    <title>PlantMaster AI v1.0.8</title>
     <style>
         :root { --p: #2e7d32; --bg: #f8fcf8; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .version-tag { font-size: 0.8rem; color: #fff; background: #1976d2; padding: 8px; text-align: center; border-radius: 5px; margin-bottom: 15px; font-weight: bold;}
+        .version-tag { font-size: 0.8rem; color: #fff; background: #ff9800; padding: 8px; text-align: center; border-radius: 5px; margin-bottom: 15px; font-weight: bold;}
         .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
         img { width: 100%; border-radius: 10px; margin-bottom: 10px; border: 1px solid #eee; }
         button { background: var(--p); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-bottom: 10px; }
         #loader { display: none; text-align: center; padding: 20px; font-weight: bold; color: var(--p); }
         .btn-settings { background: #666; font-size: 0.9rem; }
         .btn-reset { background: #d32f2f; font-size: 0.9rem; }
+        .btn-diag { background: #1976d2; font-size: 0.9rem; }
+        pre { text-align: left; background: #eee; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 0.8rem; }
     </style>
 </head>
 <body>
 
-<div class="version-tag">Verze: 1.0.7 (Oficiální v1 API)</div>
+<div class="version-tag">Verze: 1.0.8 (Diagnostika modelů)</div>
+
+<button class="btn-diag" onclick="checkModels()">🔍 ZJISTIT DOSTUPNÉ MODELY</button>
+<button class="btn-settings" onclick="setKey()">⚙️ NASTAVIT API KLÍČ</button>
+<button class="btn-reset" onclick="hardReset()">🚨 TVRDÝ RESET APLIKACE</button>
+
+<div class="card" id="diag-results" style="display:none;">
+    <h3>Dostupné modely pro tvůj klíč:</h3>
+    <div id="models-list"></div>
+</div>
+
+<hr style="border:1px solid #ddd; margin: 20px 0;">
 
 <div class="card">
     <h2>🌿 Moje zahrada</h2>
-    <div id="plant-list">Načítání zahrady...</div>
+    <div id="plant-list">Tady se pak objeví kytky...</div>
 </div>
 
 <button onclick="document.getElementById('camera').click()">📸 VYFOTIT ROSTLINU</button>
 <input type="file" id="camera" accept="image/*" capture="environment" style="display:none">
 
-<button class="btn-settings" onclick="setKey()">⚙️ NASTAVIT API KLÍČ</button>
-<button class="btn-reset" onclick="hardReset()">🚨 TVRDÝ RESET APLIKACE</button>
-
 <div id="loader">
     <div style="width:30px; height:30px; border:4px solid #ddd; border-top-color:var(--p); border-radius:50%; animation:spin 1s linear infinite; margin:auto;"></div>
-    <p>Zmenšuji fotku a odesílám k AI...</p>
+    <p id="loader-text">Pracuji...</p>
 </div>
 
 <script>
@@ -44,14 +54,43 @@ req.onsuccess = (e) => { db = e.target.result; render(); };
 
 function setKey() {
     const k = prompt("Vložte API klíč z Google AI Studio:");
-    if (k) { localStorage.setItem('G_KEY', k.trim()); alert("Klíč byl uložen."); }
+    if (k) { localStorage.setItem('G_KEY', k.trim()); alert("Klíč uložen."); }
 }
 
 function hardReset() {
-    if(confirm("Opravdu chcete resetovat paměť aplikace?")) {
+    if(confirm("Smazat paměť aplikace?")) {
         localStorage.clear();
         sessionStorage.clear();
         window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();
+    }
+}
+
+// NOVÁ DIAGNOSTICKÁ FUNKCE
+async function checkModels() {
+    const key = localStorage.getItem('G_KEY');
+    if (!key) return alert("Chybí API klíč! Nastav ho šedým tlačítkem.");
+    
+    document.getElementById('loader').style.display = 'block';
+    document.getElementById('loader-text').innerText = "Stahuji seznam modelů od Googlu...";
+    
+    try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`, { cache: 'no-store' });
+        const data = await resp.json();
+        
+        if (!resp.ok) throw new Error(data.error?.message || "Chyba při stahování modelů");
+
+        // Vyfiltrujeme jen ty modely, které umí analyzovat obsah (generateContent)
+        const validModels = data.models
+            .filter(m => m.supportedGenerationMethods && m.supportedGenerationMethods.includes("generateContent"))
+            .map(m => m.name);
+
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('diag-results').style.display = 'block';
+        document.getElementById('models-list').innerHTML = `<pre>${validModels.join('\n')}</pre><p><b>Vyfoť mi tento seznam (nebo ho zkopíruj) a pošli mi ho sem!</b></p>`;
+        
+    } catch (err) {
+        document.getElementById('loader').style.display = 'none';
+        alert("Chyba diagnostiky: " + err.message);
     }
 }
 
@@ -86,47 +125,36 @@ function resizeImage(file) {
 }
 
 document.getElementById('camera').onchange = async (e) => {
+    // Zatím zachováme pokus o focení, i když víme, že spadne. Hlavní je teď modré tlačítko.
     const file = e.target.files[0];
     const key = localStorage.getItem('G_KEY');
-    if (!file) return;
-    if (!key) return alert("Chybí API klíč! Nastavte ho šedým tlačítkem.");
+    if (!file || !key) return;
 
     document.getElementById('loader').style.display = 'block';
+    document.getElementById('loader-text').innerText = "Analyzuji (i když to asi spadne)...";
 
     try {
         const resizedBase64 = await resizeImage(file);
         const b64Data = resizedBase64.split(',')[1];
         
-        // OPRAVA: Zde je konečně čistá stabilní adresa s "v1" (bez beta)
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
-            method: 'POST',
-            cache: 'no-store',
-            headers: { 'Content-Type': 'application/json' },
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+            method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                contents: [{ parts: [
-                    { text: "Jsi expert. Identifikuj rostlinu. Odpověz POUZE čistým JSON formátem bez markdownu: {\"name\":\"Český název\"}" },
-                    { inline_data: { mime_type: "image/jpeg", data: b64Data } }
-                ]}]
+                contents: [{ parts: [ { text: "Identify plant. JSON only: {\"name\":\"Název\"}" }, { inline_data: { mime_type: "image/jpeg", data: b64Data } } ]}]
             })
         });
 
         const data = await resp.json();
-        if (!resp.ok) throw new Error(data.error?.message || "Neznámá chyba API");
-
-        const aiText = data.candidates[0].content.parts[0].text;
-        const cleanText = aiText.replace(/```json/g, "").replace(/```/g, "").trim();
-        const res = JSON.parse(cleanText.substring(cleanText.indexOf('{'), cleanText.lastIndexOf('}') + 1));
+        if (!resp.ok) throw new Error(data.error?.message || "Neznámá chyba");
 
         const tx = db.transaction("plants", "readwrite");
-        tx.objectStore("plants").add({ name: res.name, img: resizedBase64 });
-        tx.oncomplete = () => { 
-            document.getElementById('loader').style.display = 'none'; 
-            render(); 
-        };
+        const resName = JSON.parse(data.candidates[0].content.parts[0].text.replace(/```json/g, "").replace(/```/g, "").trim()).name;
+        tx.objectStore("plants").add({ name: resName, img: resizedBase64 });
+        tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
 
     } catch (err) {
         document.getElementById('loader').style.display = 'none';
-        alert("Chyba: " + err.message);
+        alert("Chyba při focení: " + err.message);
     }
 };
 </script>
