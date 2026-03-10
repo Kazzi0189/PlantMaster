@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v5.1</title>
+    <title>PlantMaster AI v5.2</title>
     <style>
         :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; }
@@ -70,7 +70,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 5.1 (Oprava kamery)</span>
+    <span class="version-tag">Verze 5.2 (Návrat kamery)</span>
 </header>
 
 <div class="container">
@@ -87,9 +87,9 @@
 <button class="btn-settings" onclick="setKey()">⚙️ Změnit API klíč</button>
 
 <button class="fab" onclick="document.getElementById('camera-new').click()">+</button>
-<input type="file" id="camera-new" accept="image/*" style="display:none">
+<input type="file" id="camera-new" accept="image/*" capture="environment" style="display:none">
 
-<input type="file" id="camera-add" accept="image/*" style="display:none">
+<input type="file" id="camera-add" accept="image/*" capture="environment" style="display:none">
 
 <div id="detail-view">
     <button class="btn-close" onclick="closeDetail()">✕</button>
