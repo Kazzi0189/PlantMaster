@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v4.0</title>
+    <title>PlantMaster AI v5.0</title>
     <style>
-        :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; }
+        :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; }
         header { background: var(--p); color: white; padding: 20px 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; }
         header h1 { margin: 0; font-size: 1.5rem; }
@@ -15,16 +15,13 @@
         #search-box { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; margin-bottom: 20px; box-sizing: border-box; outline: none; }
         #search-box:focus { border-color: var(--p); }
 
-        /* Chytrý kalendář - Nové rozbalovací úkoly */
         .calendar-section { background: #e8f5e9; border-radius: 16px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--p); }
         .calendar-section h3 { margin: 0 0 10px 0; color: var(--p); font-size: 1.1rem; }
         .task-item { background: white; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
         .task-header { padding: 12px; font-size: 0.95rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .task-header:hover { background: #f9f9f9; }
         .task-header strong { color: var(--p); margin-right: 5px; }
         .task-arrow { font-size: 0.8rem; color: #888; transition: transform 0.2s; }
         .task-details { padding: 12px; background: #fafafa; border-top: 1px dashed #eee; font-size: 0.9rem; line-height: 1.5; color: #555; display: none; }
-        .task-details ul { margin: 5px 0 0 20px; padding: 0; }
 
         .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
         .card img { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; margin-right: 15px; border: 1px solid #eee; }
@@ -32,15 +29,26 @@
         .card-info p { margin: 0; font-size: 0.85rem; color: #666; }
         
         .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--p); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 6px 16px rgba(46,125,50,0.4); border: none; cursor: pointer; z-index: 100; }
-        #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 999; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; }
+        #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 999; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; text-align: center; padding: 20px;}
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         
         #detail-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 500; overflow-y: auto; padding-bottom: 30px; }
-        .detail-img { width: 100%; height: 250px; object-fit: cover; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .detail-content { padding: 20px; }
-        .detail-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 15px; }
+        
+        /* Galerie a UI Doktora */
+        .gallery-wrapper { padding: 15px 15px 0 15px; }
+        .gallery-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; }
+        .gallery-item { flex: 0 0 85%; scroll-snap-align: center; position: relative; }
+        .gallery-item img { width: 100%; height: 220px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ddd; }
+        .gallery-date { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; }
+        
+        .btn-add-photo { background: white; color: var(--p); border: 2px dashed var(--p); padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .btn-doctor { background: var(--doc); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(25,118,210,0.3); display: none; }
+        .doctor-result { background: #e3f2fd; border-left: 5px solid var(--doc); padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.95rem; line-height: 1.5; display: none; }
+        .doctor-result strong { color: var(--doc); display: block; margin-bottom: 5px; font-size: 1.05rem; }
+
+        .detail-content { padding: 0 20px 20px 20px; }
+        .detail-header { display: flex; justify-content: space-between; align-items: baseline; margin: 15px 0; }
         .detail-header h2 { margin: 0; color: var(--p); font-size: 1.6rem; }
-        .date-badge { font-size: 0.8rem; color: #888; background: #eee; padding: 4px 8px; border-radius: 10px; }
         
         .tox-badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; margin-bottom: 15px; }
         .tox-danger { background: #ffebee; color: var(--warn); border: 1px solid #ffcdd2; }
@@ -53,7 +61,7 @@
         textarea.notes-input { width: 100%; height: 80px; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
         .btn-save-notes { background: var(--p); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
         
-        .btn-close { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); }
+        .btn-close { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); z-index: 10; }
         .btn-delete { background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; }
         .btn-settings { display: block; margin: 20px auto; background: transparent; color: #666; border: 1px solid #ccc; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -63,7 +71,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 4.0 (Detailní Návody)</span>
+    <span class="version-tag">Verze 5.0 (Historie & AI Doktor)</span>
 </header>
 
 <div class="container">
@@ -79,16 +87,25 @@
 
 <button class="btn-settings" onclick="setKey()">⚙️ Změnit API klíč</button>
 
-<button class="fab" onclick="document.getElementById('camera').click()">+</button>
-<input type="file" id="camera" accept="image/*" capture="environment" style="display:none">
+<button class="fab" onclick="document.getElementById('camera-new').click()">+</button>
+<input type="file" id="camera-new" accept="image/*" capture="environment" style="display:none">
+
+<input type="file" id="camera-add" accept="image/*" capture="environment" style="display:none">
 
 <div id="detail-view">
     <button class="btn-close" onclick="closeDetail()">✕</button>
-    <img id="det-img" src="" class="detail-img">
+    
+    <div class="gallery-wrapper">
+        <div class="gallery-scroll" id="det-gallery">
+            </div>
+        <button class="btn-add-photo" onclick="document.getElementById('camera-add').click()">📸 Přidat aktuální fotku</button>
+        <button class="btn-doctor" id="btn-ai-doctor" onclick="runAIDoctor()">🩺 Zhodnotit zdraví (AI Doktor)</button>
+        <div class="doctor-result" id="doctor-output"></div>
+    </div>
+
     <div class="detail-content">
         <div class="detail-header">
             <h2 id="det-name">Název</h2>
-            <span class="date-badge" id="det-date">Přidáno: ?</span>
         </div>
         
         <div id="det-toxicity" class="tox-badge">Zjišťuji...</div>
@@ -108,7 +125,7 @@
 
 <div id="loader">
     <div class="spinner"></div>
-    <p>AI analyzuje a píše podrobné návody...</p>
+    <p id="loader-text">AI pracuje...</p>
 </div>
 
 <script>
@@ -116,7 +133,7 @@ let db;
 let currentPlants = [];
 let openPlantId = null;
 
-const req = indexedDB.open("PlantDB", 3); 
+const req = indexedDB.open("PlantDB", 4); // Zvýšeno pro podporu polí obrázků
 req.onupgradeneeded = (e) => {
     db = e.target.result;
     if (!db.objectStoreNames.contains("plants")) db.createObjectStore("plants", { keyPath: "id", autoIncrement: true });
@@ -131,7 +148,15 @@ function setKey() {
 async function render() {
     const tx = db.transaction("plants", "readonly");
     const plants = await new Promise(res => tx.objectStore("plants").getAll().onsuccess = (e) => res(e.target.result));
-    currentPlants = plants.reverse();
+    
+    // Migrace starých dat (pokud má rostlina "img" ale ne "images")
+    currentPlants = plants.map(p => {
+        if(p.img && (!p.images || p.images.length === 0)) {
+            p.images = [{ data: p.img, date: p.dateAdded || new Date().toLocaleDateString('cs-CZ') }];
+        }
+        return p;
+    }).reverse();
+
     updateCalendar();
     filterPlants(); 
 }
@@ -145,9 +170,12 @@ function filterPlants() {
     currentPlants.forEach((p, index) => {
         if(p.name.toLowerCase().includes(query)) {
             hasResults = true;
+            // Zobrazíme vždy tu NEJNOVĚJŠÍ fotku (poslední v poli)
+            const latestImg = (p.images && p.images.length > 0) ? p.images[p.images.length - 1].data : p.img;
+            
             list.innerHTML += `
                 <div class="card" onclick="openDetail(${index})">
-                    <img src="${p.img}">
+                    <img src="${latestImg}">
                     <div class="card-info">
                         <h3>${p.name}</h3>
                         <p>💧 ${p.water ? p.water.substring(0, 30) + '...' : 'Otevři pro detaily'}</p>
@@ -162,7 +190,6 @@ function filterPlants() {
     }
 }
 
-// Funkce pro rozbalování detailů v kalendáři
 function toggleTask(element) {
     const details = element.nextElementSibling;
     const arrow = element.querySelector('.task-arrow');
@@ -189,8 +216,7 @@ function updateCalendar() {
             p.tasks.forEach(task => {
                 if(task.month === currentMonthNum) {
                     tasksFound = true;
-                    // Přidáno rozbalování a zobrazení detailů
-                    const detailsHTML = task.details ? task.details : 'K tomuto úkolu nejsou k dispozici žádné další podrobnosti.';
+                    const detailsHTML = task.details ? task.details : 'Bez dalších podrobností.';
                     calBox.innerHTML += `
                         <div class="task-item">
                             <div class="task-header" onclick="toggleTask(this)">
@@ -204,30 +230,48 @@ function updateCalendar() {
             });
         }
     });
-
-    if(!tasksFound) {
-        calBox.innerHTML = '<i>V tomto měsíci se zahradou nemusíte nic dělat. Odpočívejte! ☕</i>';
-    }
+    if(!tasksFound) calBox.innerHTML = '<i>V tomto měsíci se zahradou nemusíte nic dělat. Odpočívejte! ☕</i>';
 }
 
 function openDetail(index) {
     const p = currentPlants[index];
     openPlantId = p.id;
     
-    document.getElementById('det-img').src = p.img;
+    // Vykreslení galerie fotek
+    const galBox = document.getElementById('det-gallery');
+    galBox.innerHTML = '';
+    const imagesToRender = p.images || [{data: p.img, date: p.dateAdded}];
+    
+    imagesToRender.forEach(imgObj => {
+        galBox.innerHTML += `
+            <div class="gallery-item">
+                <img src="${imgObj.data}">
+                <div class="gallery-date">${imgObj.date}</div>
+            </div>
+        `;
+    });
+
+    // Zobrazení tlačítka AI Doktora, pokud jsou 2 a více fotek
+    const docBtn = document.getElementById('btn-ai-doctor');
+    const docRes = document.getElementById('doctor-output');
+    docRes.style.display = 'none';
+    
+    if(imagesToRender.length >= 2) {
+        docBtn.style.display = 'block';
+    } else {
+        docBtn.style.display = 'none';
+    }
+    
     document.getElementById('det-name').innerText = p.name;
-    document.getElementById('det-date').innerText = p.dateAdded || "Dříve přidáno";
     document.getElementById('det-water').innerText = p.water || "Neznámé";
     document.getElementById('det-light').innerText = p.light || "Neznámé";
     document.getElementById('det-notes').value = p.notes || "";
     
     const toxBox = document.getElementById('det-toxicity');
     if(p.toxicity && p.toxicity.toLowerCase().includes("ne")) {
-        toxBox.className = "tox-badge tox-safe";
-        toxBox.innerText = "✅ " + p.toxicity;
+        toxBox.className = "tox-badge tox-safe"; toxBox.innerText = "✅ " + p.toxicity;
     } else {
-        toxBox.className = "tox-badge tox-danger";
-        toxBox.innerText = "⚠️ " + (p.toxicity || "Může být jedovatá");
+        toxBox.className = "tox-badge tox-danger"; toxBox.innerText = "⚠️ " + (p.toxicity || "Může být jedovatá");
     }
 
     document.getElementById('det-delete-btn').onclick = () => deletePlant(p.id);
@@ -239,16 +283,12 @@ function closeDetail() { document.getElementById('detail-view').style.display = 
 function saveNotes() {
     if(!openPlantId) return;
     const newNote = document.getElementById('det-notes').value;
-    
     const tx = db.transaction("plants", "readwrite");
     const store = tx.objectStore("plants");
     store.get(openPlantId).onsuccess = (e) => {
         let plant = e.target.result;
         plant.notes = newNote;
-        store.put(plant).onsuccess = () => {
-            alert("Poznámka uložena!");
-            render(); 
-        };
+        store.put(plant).onsuccess = () => { alert("Poznámka uložena!"); render(); };
     };
 }
 
@@ -279,24 +319,22 @@ function resizeImage(file) {
     });
 }
 
-document.getElementById('camera').onchange = async (e) => {
+// ----------------------------------------------------
+// 1. ZALOŽENÍ ÚPLNĚ NOVÉ ROSTLINY (Z HLAVNÍ OBRAZOVKY)
+// ----------------------------------------------------
+document.getElementById('camera-new').onchange = async (e) => {
     const file = e.target.files[0];
     const key = localStorage.getItem('G_KEY');
     if (!file || !key) return alert("Chybí fotka nebo klíč!");
 
     document.getElementById('loader').style.display = 'flex';
+    document.getElementById('loader-text').innerText = "AI analyzuje novou rostlinu...";
 
     try {
         const resizedBase64 = await resizeImage(file);
         const b64Data = resizedBase64.split(',')[1];
         
-        // ZMĚNA: Přidán požadavek na podrobný návod a konkrétní produkty do klíče "details"
-        const aiPrompt = `Jsi expert botanik. Odpověz POUZE ve formátu JSON. Klíče musí být přesně tyto:
-        "name": "Český název",
-        "light": "Vhodné světlo",
-        "water": "Jak zalévat",
-        "toxicity": "Je jedovatá pro lidi nebo zvířata? (odpověz jasně Ano/Ne a stručný důvod)",
-        "tasks": [{"month": 3, "action": "Stručný úkol na březen (např. přesadit)", "details": "Velmi podrobný návod krok za krokem. Pokud jde o řez, napiš jak přesně řezat. Pokud jde o škůdce, nemoci či hnojení, vypiš konkrétní účinné látky nebo běžně dostupné komerční produkty/postřiky v ČR."}] (vygeneruj 2-4 úkoly s odpovídajícím číslem měsíce 1-12)`;
+        const aiPrompt = `Jsi expert botanik. Odpověz POUZE ve formátu JSON: {"name": "Český název", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol", "details": "Detaily a postřiky"}]}`;
 
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
@@ -317,23 +355,104 @@ document.getElementById('camera').onchange = async (e) => {
 
         const tx = db.transaction("plants", "readwrite");
         tx.objectStore("plants").add({ 
-            name: res.name || "Neznámá rostlina", 
-            water: res.water || "Neznámé",
-            light: res.light || "Neznámé",
-            toxicity: res.toxicity || "Neznámé",
-            tasks: res.tasks || [],
-            dateAdded: dateString,
-            notes: "",
-            img: resizedBase64 
+            name: res.name || "Neznámá", 
+            water: res.water || "Neznámé", light: res.light || "Neznámé", toxicity: res.toxicity || "Neznámé",
+            tasks: res.tasks || [], dateAdded: dateString, notes: "",
+            images: [{ data: resizedBase64, date: dateString }] // Nový formát pro historii fotek
         });
         
         tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
 
     } catch (err) {
-        document.getElementById('loader').style.display = 'none';
-        alert("Chyba: " + err.message);
+        document.getElementById('loader').style.display = 'none'; alert("Chyba: " + err.message);
     }
 };
+
+// ----------------------------------------------------
+// 2. PŘIDÁNÍ NOVÉ FOTKY K EXISTUJÍCÍ ROSTLINĚ
+// ----------------------------------------------------
+document.getElementById('camera-add').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file || !openPlantId) return;
+
+    document.getElementById('loader').style.display = 'flex';
+    document.getElementById('loader-text').innerText = "Přidávám fotku do alba...";
+
+    try {
+        const resizedBase64 = await resizeImage(file);
+        const dateString = new Date().toLocaleDateString('cs-CZ');
+
+        const tx = db.transaction("plants", "readwrite");
+        const store = tx.objectStore("plants");
+        store.get(openPlantId).onsuccess = (ev) => {
+            let plant = ev.target.result;
+            if(!plant.images) plant.images = [{data: plant.img, date: plant.dateAdded}];
+            
+            plant.images.push({ data: resizedBase64, date: dateString });
+            
+            store.put(plant).onsuccess = () => {
+                document.getElementById('loader').style.display = 'none';
+                render().then(() => {
+                    // Najít index upravené rostliny a znovu otevřít detail
+                    const idx = currentPlants.findIndex(p => p.id === openPlantId);
+                    if(idx !== -1) openDetail(idx);
+                });
+            };
+        };
+    } catch (err) {
+        document.getElementById('loader').style.display = 'none'; alert("Chyba: " + err.message);
+    }
+};
+
+// ----------------------------------------------------
+// 3. AI DOKTOR - POROVNÁNÍ DVOU FOTEK
+// ----------------------------------------------------
+async function runAIDoctor() {
+    const key = localStorage.getItem('G_KEY');
+    if (!key) return alert("Chybí API klíč!");
+    
+    const plant = currentPlants.find(p => p.id === openPlantId);
+    if(!plant || !plant.images || plant.images.length < 2) return;
+
+    document.getElementById('loader').style.display = 'flex';
+    document.getElementById('loader-text').innerText = "AI Doktor porovnává historii...";
+
+    try {
+        const oldestImgBase64 = plant.images[0].data.split(',')[1];
+        const newestImgBase64 = plant.images[plant.images.length - 1].data.split(',')[1];
+
+        const aiPrompt = `Jsi expert botanik. Zde jsou dvě fotky stejné rostliny v čase. První je starší, druhá je nejnovější. Zhodnoť, zda se její zdravotní stav zlepšil nebo zhoršil. Vypadá zdravě? Co jí případně chybí a jak by měl majitel upravit péči? Odpověz stručně, jasně, přátelsky a v češtině. (Odpovídej jako normální text s odstavci, nepoužívej JSON formát).`;
+
+        // Pro doktora NEchceme JSON výstup, chceme normální čtecí text
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+            method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [ 
+                    { text: aiPrompt }, 
+                    { text: "STARŠÍ FOTKA:" },
+                    { inline_data: { mime_type: "image/jpeg", data: oldestImgBase64 } },
+                    { text: "NEJNOVĚJŠÍ FOTKA:" },
+                    { inline_data: { mime_type: "image/jpeg", data: newestImgBase64 } }
+                ]}]
+            })
+        });
+
+        const data = await resp.json();
+        if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
+
+        const doctorText = data.candidates[0].content.parts[0].text;
+        
+        document.getElementById('loader').style.display = 'none';
+        
+        const docResBox = document.getElementById('doctor-output');
+        docResBox.innerHTML = `<strong>🩺 Zpráva od AI Doktora:</strong><br>${doctorText.replace(/\n/g, '<br>')}`;
+        docResBox.style.display = 'block';
+
+    } catch (err) {
+        document.getElementById('loader').style.display = 'none';
+        alert("Chyba Doktora: " + err.message);
+    }
+}
 </script>
 </body>
 </html>
