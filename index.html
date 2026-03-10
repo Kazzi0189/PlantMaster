@@ -3,41 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v1.0.9</title>
+    <title>PlantMaster AI v2.0</title>
     <style>
-        :root { --p: #2e7d32; --bg: #f8fcf8; }
-        body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .version-tag { font-size: 0.8rem; color: #fff; background: #4caf50; padding: 8px; text-align: center; border-radius: 5px; margin-bottom: 15px; font-weight: bold;}
-        .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
-        img { width: 100%; border-radius: 10px; margin-bottom: 10px; border: 1px solid #eee; object-fit: cover; }
-        button { background: var(--p); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-bottom: 10px; }
-        #loader { display: none; text-align: center; padding: 20px; font-weight: bold; color: var(--p); }
-        .btn-settings { background: #666; font-size: 0.9rem; }
+        :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; }
+        
+        /* Hlavička */
+        header { background: var(--p); color: white; padding: 20px 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; }
+        header h1 { margin: 0; font-size: 1.5rem; }
+        .version-tag { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; display: block; }
+        
+        .container { padding: 0 15px; }
+        
+        /* Karta rostliny na hlavní obrazovce */
+        .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
+        .card:active { transform: scale(0.98); }
+        .card img { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; margin-right: 15px; border: 1px solid #eee; }
+        .card-info { flex-grow: 1; }
+        .card-info h3 { margin: 0 0 5px 0; font-size: 1.1rem; color: var(--p); }
+        .card-info p { margin: 0; font-size: 0.85rem; color: #666; }
+        
+        /* Plovoucí tlačítko pro focení */
+        .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--p); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 6px 16px rgba(46,125,50,0.4); border: none; cursor: pointer; z-index: 100; }
+        
+        /* Loader */
+        #loader { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 999; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        
+        /* Detail rostliny (Plné okno) */
+        #detail-view { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: var(--bg); z-index: 500; overflow-y: auto; padding-bottom: 30px; }
+        .detail-img { width: 100%; height: 300px; object-fit: cover; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .detail-content { padding: 20px; }
+        .detail-content h2 { margin: 0 0 15px 0; color: var(--p); font-size: 1.8rem; }
+        .info-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+        .info-box h4 { margin: 0 0 5px 0; color: var(--text); font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.7; }
+        .info-box p { margin: 0; font-size: 1rem; line-height: 1.4; }
+        
+        /* Tlačítka */
+        .btn-close { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); }
+        .btn-delete { background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; }
+        .btn-settings { display: block; margin: 20px auto; background: transparent; color: #666; border: 1px solid #ccc; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-<div class="version-tag">Verze: 1.0.9 (Gemini 2.5 Flash - FINÁLE!)</div>
+<header>
+    <h1>🌿 PlantMaster</h1>
+    <span class="version-tag">Verze 2.0 (Profi Design & Rady)</span>
+</header>
 
-<div class="card">
-    <h2>🌿 Moje zahrada</h2>
-    <div id="plant-list">Načítání zahrady...</div>
+<div class="container" id="plant-list">
+    <p style="text-align:center; color:#888; margin-top:40px;">Zatím tu nemáte žádné kytky.<br>Přidejte první kliknutím na plus!</p>
 </div>
 
-<button onclick="document.getElementById('camera').click()">📸 VYFOTIT ROSTLINU</button>
+<button class="btn-settings" onclick="setKey()">⚙️ Změnit API klíč</button>
+
+<button class="fab" onclick="document.getElementById('camera').click()">+</button>
 <input type="file" id="camera" accept="image/*" capture="environment" style="display:none">
 
-<button class="btn-settings" onclick="setKey()">⚙️ ZMĚNIT API KLÍČ</button>
+<div id="detail-view">
+    <button class="btn-close" onclick="closeDetail()">✕</button>
+    <img id="det-img" src="" class="detail-img">
+    <div class="detail-content">
+        <h2 id="det-name">Název</h2>
+        
+        <div class="info-box">
+            <h4>💧 Zálivka</h4>
+            <p id="det-water">Načítání...</p>
+        </div>
+        
+        <div class="info-box">
+            <h4>☀️ Světlo a umístění</h4>
+            <p id="det-light">Načítání...</p>
+        </div>
+        
+        <div class="info-box">
+            <h4>🌱 Péče a hnojení</h4>
+            <p id="det-care">Načítání...</p>
+        </div>
+        
+        <button class="btn-delete" id="det-delete-btn">🗑️ Smazat rostlinu</button>
+    </div>
+</div>
 
 <div id="loader">
-    <div style="width:30px; height:30px; border:4px solid #ddd; border-top-color:var(--p); border-radius:50%; animation:spin 1s linear infinite; margin:auto;"></div>
-    <p>AI analyzuje rostlinu...</p>
+    <div class="spinner"></div>
+    <p>AI připravuje plán péče...</p>
 </div>
 
 <script>
 let db;
-const req = indexedDB.open("PlantDB", 1);
-req.onupgradeneeded = (e) => e.target.result.createObjectStore("plants", { keyPath: "id", autoIncrement: true });
+let currentPlants = []; // Pro snadný přístup k datům při rozkliknutí
+
+const req = indexedDB.open("PlantDB", 2); // Zvýšená verze DB pro jistotu čistého štítu
+req.onupgradeneeded = (e) => {
+    db = e.target.result;
+    if (!db.objectStoreNames.contains("plants")) {
+        db.createObjectStore("plants", { keyPath: "id", autoIncrement: true });
+    }
+};
 req.onsuccess = (e) => { db = e.target.result; render(); };
 
 function setKey() {
@@ -48,11 +114,58 @@ function setKey() {
 async function render() {
     const tx = db.transaction("plants", "readonly");
     const plants = await new Promise(res => tx.objectStore("plants").getAll().onsuccess = (e) => res(e.target.result));
+    currentPlants = plants.reverse(); // Uložíme si je obráceně (od nejnovějších)
+    
     const list = document.getElementById('plant-list');
-    list.innerHTML = plants.length ? '' : 'Zatím tu nemáte žádné kytky. Vyfoťte první!';
-    plants.reverse().forEach(p => {
-        list.innerHTML += `<div class="card"><img src="${p.img}"><p><b>${p.name}</b></p></div>`;
+    if(currentPlants.length === 0) {
+        list.innerHTML = '<p style="text-align:center; color:#888; margin-top:40px;">Zatím tu nemáte žádné kytky.<br>Přidejte první kliknutím na plus dole!</p>';
+        return;
+    }
+    
+    list.innerHTML = '';
+    currentPlants.forEach((p, index) => {
+        // Zkrácení popisku pro náhled, pokud existuje
+        const shortWater = p.water ? (p.water.substring(0, 35) + '...') : 'Plán péče k dispozici';
+        
+        list.innerHTML += `
+            <div class="card" onclick="openDetail(${index})">
+                <img src="${p.img}">
+                <div class="card-info">
+                    <h3>${p.name}</h3>
+                    <p>💧 ${shortWater}</p>
+                </div>
+            </div>
+        `;
     });
+}
+
+function openDetail(index) {
+    const p = currentPlants[index];
+    document.getElementById('det-img').src = p.img;
+    document.getElementById('det-name').innerText = p.name;
+    document.getElementById('det-water').innerText = p.water || "Neznámé";
+    document.getElementById('det-light').innerText = p.light || "Neznámé";
+    document.getElementById('det-care').innerText = p.care || "Neznámé";
+    
+    // Nastavení tlačítka pro smazání
+    document.getElementById('det-delete-btn').onclick = () => deletePlant(p.id);
+    
+    document.getElementById('detail-view').style.display = 'block';
+}
+
+function closeDetail() {
+    document.getElementById('detail-view').style.display = 'none';
+}
+
+function deletePlant(id) {
+    if(confirm("Opravdu chcete tuto rostlinu smazat?")) {
+        const tx = db.transaction("plants", "readwrite");
+        tx.objectStore("plants").delete(id);
+        tx.oncomplete = () => {
+            closeDetail();
+            render();
+        };
+    }
 }
 
 function resizeImage(file) {
@@ -79,22 +192,22 @@ document.getElementById('camera').onchange = async (e) => {
     const file = e.target.files[0];
     const key = localStorage.getItem('G_KEY');
     if (!file) return;
-    if (!key) return alert("Chybí API klíč! Nastavte ho šedým tlačítkem.");
+    if (!key) return alert("Chybí API klíč! Nastavte ho ozubeným kolečkem.");
 
-    document.getElementById('loader').style.display = 'block';
+    document.getElementById('loader').style.display = 'flex';
 
     try {
         const resizedBase64 = await resizeImage(file);
         const b64Data = resizedBase64.split(',')[1];
         
-        // ZÁZRAK: Používáme model gemini-2.5-flash z tvého seznamu!
+        // PŘIDÁNY CHYTRÉ RADY DO PROMPTU
+        const aiPrompt = `Jsi expert zahradník. Identifikuj rostlinu na fotce. Odpověz POUZE čistým JSON formátem přesně podle této struktury, bez jakéhokoliv dalšího textu: {"name":"Český název", "light":"Stručně ideální světelné podmínky", "water":"Stručně jak často a jak moc zalévat", "care":"Stručný tip pro hnojení nebo jinou péči"}`;
+
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-            method: 'POST',
-            cache: 'no-store',
-            headers: { 'Content-Type': 'application/json' },
+            method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [
-                    { text: "Jsi expert na rostliny. Identifikuj tuto rostlinu na fotce. Odpověz POUZE čistým JSON formátem bez jakéhokoliv dalšího textu nebo markdownu: {\"name\":\"Český název rostliny\"}" },
+                    { text: aiPrompt },
                     { inline_data: { mime_type: "image/jpeg", data: b64Data } }
                 ]}]
             })
@@ -105,14 +218,20 @@ document.getElementById('camera').onchange = async (e) => {
 
         const aiText = data.candidates[0].content.parts[0].text;
         
-        // Bezpečné parsování JSONu
         const cleanText = aiText.replace(/```json/g, "").replace(/```/g, "").trim();
         const jsonStart = cleanText.indexOf('{');
         const jsonEnd = cleanText.lastIndexOf('}') + 1;
         const res = JSON.parse(cleanText.substring(jsonStart, jsonEnd));
 
         const tx = db.transaction("plants", "readwrite");
-        tx.objectStore("plants").add({ name: res.name, img: resizedBase64 });
+        tx.objectStore("plants").add({ 
+            name: res.name, 
+            water: res.water,
+            light: res.light,
+            care: res.care,
+            img: resizedBase64 
+        });
+        
         tx.oncomplete = () => { 
             document.getElementById('loader').style.display = 'none'; 
             render(); 
@@ -124,6 +243,5 @@ document.getElementById('camera').onchange = async (e) => {
     }
 };
 </script>
-<style>@keyframes spin { to { transform: rotate(360deg); } }</style>
 </body>
 </html>
