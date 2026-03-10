@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v1.0.5</title>
+    <title>PlantMaster AI v1.0.6</title>
     <style>
         :root { --p: #2e7d32; --bg: #f8fcf8; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 20px; }
@@ -17,7 +17,7 @@
 </head>
 <body>
 
-<div class="version-tag">Aplikace: PlantMaster AI | Verze: 1.0.5 (Fix Model Name)</div>
+<div class="version-tag">Aplikace: PlantMaster AI | Verze: 1.0.6 (V1BETA API)</div>
 
 <div class="card">
     <h2>🌿 Moje zahrada</h2>
@@ -86,8 +86,8 @@ document.getElementById('camera').onchange = async (e) => {
         const resizedBase64 = await resizeImage(file);
         const b64Data = resizedBase64.split(',')[1];
         
-        // OPRAVENÁ ADRESA: Verze v1 a model gemini-1.5-flash
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        // SPRÁVNÁ KOMBINACE: v1beta a gemini-1.5-flash
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
