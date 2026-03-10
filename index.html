@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v1.0.6</title>
+    <title>PlantMaster AI v1.0.7</title>
     <style>
         :root { --p: #2e7d32; --bg: #f8fcf8; }
         body { font-family: sans-serif; background: var(--bg); margin: 0; padding: 20px; }
-        .version-tag { font-size: 0.75rem; color: #fff; background: #333; padding: 5px; text-align: center; border-radius: 5px; margin-bottom: 15px; font-weight: bold;}
+        .version-tag { font-size: 0.8rem; color: #fff; background: #1976d2; padding: 8px; text-align: center; border-radius: 5px; margin-bottom: 15px; font-weight: bold;}
         .card { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; text-align: center; }
         img { width: 100%; border-radius: 10px; margin-bottom: 10px; border: 1px solid #eee; }
         button { background: var(--p); color: white; border: none; padding: 15px; border-radius: 10px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-bottom: 10px; }
@@ -18,7 +18,7 @@
 </head>
 <body>
 
-<div class="version-tag">Verze: 1.0.6 (Cache Fix & Tvrdý Reset)</div>
+<div class="version-tag">Verze: 1.0.7 (Oficiální v1 API)</div>
 
 <div class="card">
     <h2>🌿 Moje zahrada</h2>
@@ -48,10 +48,9 @@ function setKey() {
 }
 
 function hardReset() {
-    if(confirm("Opravdu chcete resetovat paměť aplikace? (Vaše uložené kytky zůstanou, ale budete muset znovu zadat API klíč)")) {
+    if(confirm("Opravdu chcete resetovat paměť aplikace?")) {
         localStorage.clear();
         sessionStorage.clear();
-        // Tento příkaz donutí prohlížeč načíst čistou verzi ze serveru, ne z paměti
         window.location.href = window.location.href.split('?')[0] + '?v=' + new Date().getTime();
     }
 }
@@ -98,8 +97,8 @@ document.getElementById('camera').onchange = async (e) => {
         const resizedBase64 = await resizeImage(file);
         const b64Data = resizedBase64.split(',')[1];
         
-        // Zde je klíčová změna: cache: 'no-store' donutí mobil zapomenout na staré chyby
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+        // OPRAVA: Zde je konečně čistá stabilní adresa s "v1" (bez beta)
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${key}`, {
             method: 'POST',
             cache: 'no-store',
             headers: { 'Content-Type': 'application/json' },
