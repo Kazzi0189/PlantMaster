@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v6.0</title>
+    <title>PlantMaster AI v7.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <style>
         :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; }
@@ -62,7 +64,11 @@
         .btn-save-notes { background: var(--p); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
         .btn-close { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); z-index: 10; }
         .btn-delete { background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; }
-        .btn-settings { display: block; margin: 20px auto; background: transparent; color: #666; border: 1px solid #ccc; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; }
+        
+        /* Tlačítka menu */
+        .btn-menu { display: block; margin: 10px auto; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 0.95rem; cursor: pointer; width: 100%; box-sizing: border-box;}
+        .btn-backup { background: #1976d2; box-shadow: 0 4px 10px rgba(25,118,210,0.3); }
+        .btn-settings { background: #757575; }
         
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -71,7 +77,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 6.0 (PWA & Notifikace)</span>
+    <span class="version-tag">Verze 7.0 (Záloha & Export)</span>
 </header>
 
 <div class="container">
@@ -85,9 +91,12 @@
     </div>
 
     <div id="plant-list"></div>
-</div>
 
-<button class="btn-settings" onclick="setKey()">⚙️ Změnit API klíč</button>
+    <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+        <button class="btn-menu btn-backup" onclick="exportData()">💾 ZÁLOHOVAT DATA A FOTKY (ZIP)</button>
+        <button class="btn-menu btn-settings" onclick="setKey()">⚙️ Změnit API klíč</button>
+    </div>
+</div>
 
 <button class="fab" onclick="document.getElementById('camera-new').click()">+</button>
 <input type="file" id="camera-new" accept="image/*" capture="environment" style="display:none">
@@ -121,7 +130,6 @@
 </div>
 
 <script>
-// --- PWA REGISTRACE ---
 if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js')
     .then(() => console.log('Service Worker běží'))
@@ -162,18 +170,12 @@ function requestNotifications() {
 
 function checkAndSendNotification() {
     if (!("Notification" in window) || Notification.permission !== "granted") return;
-    
     const today = new Date().toLocaleDateString('cs-CZ');
     const lastNotified = localStorage.getItem('lastNotifyDate');
-    
-    // Zjistíme, jestli máme tento měsíc úkoly
     const currentMonthNum = new Date().getMonth() + 1;
     let tasksCount = 0;
-    currentPlants.forEach(p => {
-        if(p.tasks) p.tasks.forEach(t => { if(t.month === currentMonthNum) tasksCount++; });
-    });
+    currentPlants.forEach(p => { if(p.tasks) p.tasks.forEach(t => { if(t.month === currentMonthNum) tasksCount++; }); });
 
-    // Upozorníme jen 1x denně a jen když jsou úkoly
     if (tasksCount > 0 && lastNotified !== today) {
         new Notification("🌿 PlantMaster", {
             body: `Máte v zahradě ${tasksCount} aktuálních úkolů na tento měsíc! Otevřete aplikaci pro detaily.`,
@@ -196,7 +198,7 @@ async function render() {
 
     updateCalendar();
     filterPlants(); 
-    checkAndSendNotification(); // Zkontroluje notifikace při startu
+    checkAndSendNotification();
 }
 
 function filterPlants() {
@@ -304,50 +306,95 @@ function resizeImage(file) {
     });
 }
 
+// --- FUNKCE PRO GENEROVÁNÍ ZÁLOHY ZIP ---
+async function exportData() {
+    if (currentPlants.length === 0) {
+        alert("Zatím nemáte žádné kytky k zálohování.");
+        return;
+    }
+
+    document.getElementById('loader').style.display = 'flex';
+    document.getElementById('loader-text').innerText = "Vytvářím zálohu (ZIP balíček)...";
+
+    try {
+        const zip = new JSZip();
+        const photoFolder = zip.folder("Fotky");
+
+        // Vytvoření textu pro Excel (CSV)
+        let csvContent = "\uFEFF"; // Značka pro Excel, aby správně četl českou diakritiku
+        csvContent += "Název;Přidáno;Zálivka;Světlo;Toxicita;Poznámky\n";
+
+        currentPlants.forEach((p, pIndex) => {
+            // Funkce pro bezpečné vložení textu do buňky v Excelu
+            const clean = (str) => {
+                if (!str) return "";
+                return '"' + String(str).replace(/"/g, '""').replace(/\n/g, ' ') + '"';
+            };
+            
+            csvContent += `${clean(p.name)};${clean(p.dateAdded)};${clean(p.water)};${clean(p.light)};${clean(p.toxicity)};${clean(p.notes)}\n`;
+
+            // Zpracování fotek
+            const imagesToExport = p.images || [{data: p.img, date: p.dateAdded}];
+            imagesToExport.forEach((imgObj, iIndex) => {
+                if(imgObj.data) {
+                    const b64Data = imgObj.data.split(',')[1];
+                    const safeName = (p.name || "Kytka").replace(/[^a-zA-Z0-9]/g, "_");
+                    const fileName = `${safeName}_${pIndex}_foto_${iIndex + 1}.jpg`;
+                    photoFolder.file(fileName, b64Data, {base64: true});
+                }
+            });
+        });
+
+        zip.file("Prehled_rostlin.csv", csvContent);
+
+        // Vygenerování balíčku a stažení
+        const content = await zip.generateAsync({type:"blob"});
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(content);
+        const todayStr = new Date().toISOString().split('T')[0];
+        link.download = `PlantMaster_Zaloha_${todayStr}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        document.getElementById('loader').style.display = 'none';
+    } catch (err) {
+        document.getElementById('loader').style.display = 'none';
+        alert("Chyba při vytváření zálohy: " + err.message);
+    }
+}
+
 document.getElementById('camera-new').onchange = async (e) => {
     const file = e.target.files[0]; const key = localStorage.getItem('G_KEY');
     if (!file || !key) return alert("Chybí fotka nebo klíč!");
-
-    document.getElementById('loader').style.display = 'flex';
-    document.getElementById('loader-text').innerText = "AI analyzuje novou rostlinu...";
-
+    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "AI analyzuje novou rostlinu...";
     try {
-        const resizedBase64 = await resizeImage(file);
-        const b64Data = resizedBase64.split(',')[1];
+        const resizedBase64 = await resizeImage(file); const b64Data = resizedBase64.split(',')[1];
         const aiPrompt = `Jsi expert botanik. Odpověz POUZE ve formátu JSON: {"name": "Český název", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol", "details": "Detaily a postřiky"}]}`;
-
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [ { text: aiPrompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } } ]}], generationConfig: { response_mime_type: "application/json" } })
         });
-
         const data = await resp.json(); if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
         let res = JSON.parse(data.candidates[0].content.parts[0].text);
         const dateString = new Date().toLocaleDateString('cs-CZ');
-
         const tx = db.transaction("plants", "readwrite");
         tx.objectStore("plants").add({ 
             name: res.name || "Neznámá", water: res.water || "Neznámé", light: res.light || "Neznámé", toxicity: res.toxicity || "Neznámé",
             tasks: res.tasks || [], dateAdded: dateString, notes: "", images: [{ data: resizedBase64, date: dateString }] 
         });
         tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
-
     } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba: " + err.message); }
 };
 
 document.getElementById('camera-add').onchange = async (e) => {
     const file = e.target.files[0]; if (!file || !openPlantId) return;
     document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Přidávám fotku do alba...";
-
     try {
-        const resizedBase64 = await resizeImage(file);
-        const dateString = new Date().toLocaleDateString('cs-CZ');
-
-        const tx = db.transaction("plants", "readwrite");
-        const store = tx.objectStore("plants");
+        const resizedBase64 = await resizeImage(file); const dateString = new Date().toLocaleDateString('cs-CZ');
+        const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
         store.get(openPlantId).onsuccess = (ev) => {
-            let plant = ev.target.result;
-            if(!plant.images) plant.images = [{data: plant.img, date: plant.dateAdded}];
+            let plant = ev.target.result; if(!plant.images) plant.images = [{data: plant.img, date: plant.dateAdded}];
             plant.images.push({ data: resizedBase64, date: dateString });
             store.put(plant).onsuccess = () => {
                 document.getElementById('loader').style.display = 'none';
@@ -360,25 +407,19 @@ document.getElementById('camera-add').onchange = async (e) => {
 async function runAIDoctor() {
     const key = localStorage.getItem('G_KEY'); if (!key) return alert("Chybí API klíč!");
     const plant = currentPlants.find(p => p.id === openPlantId); if(!plant || !plant.images || plant.images.length < 2) return;
-
     document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "AI Doktor porovnává historii...";
-
     try {
-        const oldestImgBase64 = plant.images[0].data.split(',')[1];
-        const newestImgBase64 = plant.images[plant.images.length - 1].data.split(',')[1];
+        const oldestImgBase64 = plant.images[0].data.split(',')[1]; const newestImgBase64 = plant.images[plant.images.length - 1].data.split(',')[1];
         const aiPrompt = `Jsi expert botanik. Zde jsou dvě fotky stejné rostliny v čase. První je starší, druhá je nejnovější. Zhodnoť, zda se její zdravotní stav zlepšil nebo zhoršil. Vypadá zdravě? Co jí případně chybí a jak by měl majitel upravit péči? Odpověz stručně, jasně, přátelsky a v češtině.`;
-
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [ { text: aiPrompt }, { text: "STARŠÍ FOTKA:" }, { inline_data: { mime_type: "image/jpeg", data: oldestImgBase64 } }, { text: "NEJNOVĚJŠÍ FOTKA:" }, { inline_data: { mime_type: "image/jpeg", data: newestImgBase64 } } ]}] })
         });
-
         const data = await resp.json(); if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
         document.getElementById('loader').style.display = 'none';
         const docResBox = document.getElementById('doctor-output');
         docResBox.innerHTML = `<strong>🩺 Zpráva od AI Doktora:</strong><br>${data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>')}`;
         docResBox.style.display = 'block';
-
     } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba Doktora: " + err.message); }
 }
 </script>
