@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v9.0</title>
+    <title>PlantMaster AI v9.1</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -18,7 +18,6 @@
         .version-tag { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; display: block; }
         .container { padding: 0 15px; }
         
-        /* Hledání a Filtry */
         #search-box { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; outline: none; }
         .filter-controls { display: flex; gap: 10px; margin-bottom: 20px; }
         .filter-select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.9rem; outline: none; background: white; color: #444; }
@@ -82,11 +81,13 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 9.0 (Filtry & Řazení)</span>
+    <span class="version-tag">Verze 9.1 (Diagnostika notifikací)</span>
 </header>
 
 <div class="container">
     <button id="btn-notify-allow" onclick="requestNotifications()" style="display:none; background:#ff9800; color:white; border:none; padding:10px; border-radius:8px; width:100%; margin-bottom:15px; font-weight:bold; cursor:pointer;">🔔 Povolit chytrá upozornění</button>
+    
+    <button id="btn-notify-test" onclick="forceTestNotification()" style="display:none; background:#9c27b0; color:white; border:none; padding:10px; border-radius:8px; width:100%; margin-bottom:15px; font-weight:bold; cursor:pointer;">🔔 TEST NOTIFIKACE</button>
 
     <input type="text" id="search-box" placeholder="🔍 Hledat podle názvu..." onkeyup="filterPlants()">
     
@@ -168,10 +169,10 @@ if ('serviceWorker' in navigator) {
 }
 
 let db;
-let currentPlants = []; // Udržuje "syrová" data obráceně od nejnovějších
+let currentPlants = []; 
 let openPlantId = null;
 
-const req = indexedDB.open("PlantDB", 5); // Zvýšena verze DB
+const req = indexedDB.open("PlantDB", 5); 
 req.onupgradeneeded = (e) => {
     db = e.target.result;
     if (!db.objectStoreNames.contains("plants")) db.createObjectStore("plants", { keyPath: "id", autoIncrement: true });
@@ -184,8 +185,13 @@ function setKey() {
 }
 
 function checkNotificationPermission() {
-    if ("Notification" in window && Notification.permission === "default") {
-        document.getElementById('btn-notify-allow').style.display = 'block';
+    if ("Notification" in window) {
+        if (Notification.permission === "default") {
+            document.getElementById('btn-notify-allow').style.display = 'block';
+        } else if (Notification.permission === "granted") {
+            // Pokud už máme povoleno, ukážeme fialové testovací tlačítko
+            document.getElementById('btn-notify-test').style.display = 'block';
+        }
     }
 }
 
@@ -193,11 +199,38 @@ function requestNotifications() {
     Notification.requestPermission().then(perm => {
         if(perm === "granted") {
             document.getElementById('btn-notify-allow').style.display = 'none';
-            alert("Upozornění zapnuta!"); checkAndSendNotification();
+            document.getElementById('btn-notify-test').style.display = 'block';
+            alert("Upozornění zapnuta! Zkuste kliknout na fialové tlačítko Test.");
         }
     });
 }
 
+// ZMĚNA 1: Testovací funkce nezávislá na datu
+function forceTestNotification() {
+    if (!("Notification" in window) || Notification.permission !== "granted") {
+        alert("Notifikace nejsou povoleny systémem.");
+        return;
+    }
+
+    // Zkusíme to poslat moderněji přes Service Workera (pokud je dostupný)
+    if (navigator.serviceWorker) {
+        navigator.serviceWorker.ready.then(function(registration) {
+            registration.showNotification("🌿 Test PlantMaster", {
+                body: "Tohle je testovací upozornění. Vše funguje!",
+                icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png",
+                vibrate: [200, 100, 200]
+            });
+        }).catch(err => alert("Chyba SW notifikace: " + err));
+    } else {
+        // Nouzový pád na starý způsob
+        new Notification("🌿 Test PlantMaster", {
+            body: "Test přes starou metodu.",
+            icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png"
+        });
+    }
+}
+
+// ZMĚNA 2: Přepsána i hlavní funkce na modernější zápis
 function checkAndSendNotification() {
     if (!("Notification" in window) || Notification.permission !== "granted") return;
     const today = new Date().toLocaleDateString('cs-CZ'); const lastNotified = localStorage.getItem('lastNotifyDate');
@@ -205,7 +238,16 @@ function checkAndSendNotification() {
     currentPlants.forEach(p => { if(p.tasks) p.tasks.forEach(t => { if(t.month === currentMonthNum) tasksCount++; }); });
 
     if (tasksCount > 0 && lastNotified !== today) {
-        new Notification("🌿 PlantMaster", { body: `Máte v zahradě ${tasksCount} aktuálních úkolů na tento měsíc!`, icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png" });
+        if (navigator.serviceWorker) {
+            navigator.serviceWorker.ready.then(function(registration) {
+                registration.showNotification("🌿 PlantMaster", { 
+                    body: `Máte v zahradě ${tasksCount} aktuálních úkolů na tento měsíc!`, 
+                    icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png" 
+                });
+            });
+        } else {
+            new Notification("🌿 PlantMaster", { body: `Máte v zahradě ${tasksCount} aktuálních úkolů na tento měsíc!`, icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png" });
+        }
         localStorage.setItem('lastNotifyDate', today);
     }
 }
@@ -216,7 +258,7 @@ async function render() {
     
     currentPlants = plants.map(p => {
         if(p.img && (!p.images || p.images.length === 0)) p.images = [{ data: p.img, date: p.dateAdded || new Date().toLocaleDateString('cs-CZ') }];
-        if(!p.category) p.category = "Ostatní"; // Nastavení defaultní kategorie pro staré kytky
+        if(!p.category) p.category = "Ostatní"; 
         return p;
     }).reverse();
 
@@ -224,7 +266,6 @@ async function render() {
     filterPlants(); 
 }
 
-// --- NOVÁ CHYTRÁ FUNKCE PRO FILTROVÁNÍ A ŘAZENÍ ---
 function filterPlants() {
     const query = document.getElementById('search-box').value.toLowerCase();
     const sortVal = document.getElementById('sort-select').value;
@@ -232,54 +273,33 @@ function filterPlants() {
     
     let filtered = [...currentPlants];
     
-    // Krok 1: Filtrování (Podle textu a kategorie)
     filtered = filtered.filter(p => {
         const matchesText = p.name.toLowerCase().includes(query);
         let matchesFilter = true;
-        
         if (filterVal !== "all") {
-            if (filterVal === "other") {
-                matchesFilter = (!p.category || p.category === "Ostatní" || p.category === "Neznámá");
-            } else {
-                matchesFilter = (p.category === filterVal);
-            }
+            if (filterVal === "other") { matchesFilter = (!p.category || p.category === "Ostatní" || p.category === "Neznámá"); } 
+            else { matchesFilter = (p.category === filterVal); }
         }
         return matchesText && matchesFilter;
     });
     
-    // Krok 2: Řazení
     filtered.sort((a, b) => {
         if (sortVal === "az") return a.name.localeCompare(b.name, 'cs');
         if (sortVal === "za") return b.name.localeCompare(a.name, 'cs');
-        if (sortVal === "oldest") return a.id - b.id; // Menší ID = starší kytka
-        return b.id - a.id; // Nejnovější (výchozí) = Větší ID
+        if (sortVal === "oldest") return a.id - b.id; 
+        return b.id - a.id; 
     });
 
-    // Krok 3: Vykreslení
     const list = document.getElementById('plant-list');
     list.innerHTML = '';
     
-    if (filtered.length === 0) {
-        list.innerHTML = '<p style="text-align:center; color:#888;">Nebyly nalezeny žádné rostliny.</p>';
-        return;
-    }
+    if (filtered.length === 0) { list.innerHTML = '<p style="text-align:center; color:#888;">Nebyly nalezeny žádné rostliny.</p>'; return; }
     
     filtered.forEach((p) => {
-        // Musíme najít původní index v hlavním poli pro správné fungování detailu
         const originalIndex = currentPlants.indexOf(p);
         const latestImg = (p.images && p.images.length > 0) ? p.images[p.images.length - 1].data : p.img;
         const catBadge = p.category && p.category !== "Ostatní" ? `<div class="cat-badge-small">${p.category}</div>` : '';
-        
-        list.innerHTML += `
-            <div class="card" onclick="openDetail(${originalIndex})">
-                <img src="${latestImg}">
-                <div class="card-info">
-                    <h3>${p.name}</h3>
-                    ${catBadge}
-                    <p>💧 ${p.water ? p.water.substring(0, 30) + '...' : 'Otevři pro detaily'}</p>
-                </div>
-            </div>
-        `;
+        list.innerHTML += `<div class="card" onclick="openDetail(${originalIndex})"><img src="${latestImg}"><div class="card-info"><h3>${p.name}</h3>${catBadge}<p>💧 ${p.water ? p.water.substring(0, 30) + '...' : 'Otevři pro detaily'}</p></div></div>`;
     });
 }
 
@@ -308,8 +328,7 @@ function updateCalendar() {
 }
 
 function openDetail(index) {
-    const p = currentPlants[index];
-    openPlantId = p.id;
+    const p = currentPlants[index]; openPlantId = p.id;
     const galBox = document.getElementById('det-gallery'); galBox.innerHTML = '';
     const imagesToRender = p.images || [{data: p.img, date: p.dateAdded}];
     imagesToRender.forEach(imgObj => { galBox.innerHTML += `<div class="gallery-item"><img src="${imgObj.data}"><div class="gallery-date">${imgObj.date}</div></div>`; });
@@ -322,13 +341,9 @@ function openDetail(index) {
     document.getElementById('det-light').innerText = p.light || "Neznámé";
     document.getElementById('det-notes').value = p.notes || "";
     
-    // Odznak kategorie
     const catBox = document.getElementById('det-category');
-    if(p.category && p.category !== "Ostatní") {
-        catBox.style.display = "inline-block"; catBox.innerText = p.category;
-    } else {
-        catBox.style.display = "none";
-    }
+    if(p.category && p.category !== "Ostatní") { catBox.style.display = "inline-block"; catBox.innerText = p.category; } 
+    else { catBox.style.display = "none"; }
 
     const toxBox = document.getElementById('det-toxicity');
     if(p.toxicity && p.toxicity.toLowerCase().includes("ne")) { toxBox.className = "tox-badge tox-safe"; toxBox.innerText = "✅ " + p.toxicity; } 
@@ -376,10 +391,8 @@ async function exportData() {
     if (currentPlants.length === 0) return alert("Zatím nemáte žádné kytky k zálohování.");
     document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Vytvářím zálohu (ZIP balíček)...";
     try {
-        const zip = new JSZip();
-        zip.file("databaze.json", JSON.stringify(currentPlants));
-        const photoFolder = zip.folder("Fotky");
-        let csvContent = "\uFEFFNázev;Druh;Přidáno;Zálivka;Světlo;Toxicita;Poznámky\n";
+        const zip = new JSZip(); zip.file("databaze.json", JSON.stringify(currentPlants));
+        const photoFolder = zip.folder("Fotky"); let csvContent = "\uFEFFNázev;Druh;Přidáno;Zálivka;Světlo;Toxicita;Poznámky\n";
 
         currentPlants.forEach((p, pIndex) => {
             const clean = (str) => { if (!str) return ""; return '"' + String(str).replace(/"/g, '""').replace(/\n/g, ' ') + '"'; };
@@ -431,10 +444,7 @@ document.getElementById('camera-new').onchange = async (e) => {
     document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "AI analyzuje novou rostlinu...";
     try {
         const resizedBase64 = await resizeImage(file); const b64Data = resizedBase64.split(',')[1];
-        
-        // UPRAVENÝ PROMPT: Přidán striktní požadavek na kategorii
         const aiPrompt = `Jsi expert botanik. Odpověz POUZE ve formátu JSON: {"name": "Český název", "category": "Kategorie (vyber POUZE jednu z: Pokojová rostlina, Keř, Strom, Bylina, Sukulent / Kaktus, Ostatní)", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol", "details": "Detaily a postřiky"}]}`;
-        
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [ { text: aiPrompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } } ]}], generationConfig: { response_mime_type: "application/json" } })
