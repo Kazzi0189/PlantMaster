@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v12.2</title>
+    <title>PlantMaster AI v13.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <style>
-        :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; --det: #8e24aa; }
+        :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; --det: #8e24aa; --yt: #f44336; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; }
         
         header { background: var(--p); color: white; padding: 20px 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; position: relative; }
@@ -20,6 +20,9 @@
         .btn-header-settings { position: absolute; right: 15px; top: 20px; background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: white; padding: 5px; }
         
         .container { padding: 0 15px; }
+        
+        #inbox-section { display:none; background: #fff3e0; border-left: 5px solid #ff9800; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        #inbox-section h3 { margin: 0 0 10px 0; color: #e65100; font-size: 1.1rem; }
         
         #search-box { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; outline: none; }
         .filter-controls { display: flex; gap: 10px; margin-bottom: 20px; }
@@ -32,8 +35,7 @@
         #calendar-tasks::-webkit-scrollbar { width: 6px; }
         #calendar-tasks::-webkit-scrollbar-track { background: #e8f5e9; border-radius: 8px; }
         #calendar-tasks::-webkit-scrollbar-thumb { background: #a5d6a7; border-radius: 8px; }
-        #calendar-tasks::-webkit-scrollbar-thumb:hover { background: #81c784; }
-
+        
         .task-item { background: white; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
         .task-header { padding: 12px; font-size: 0.95rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .task-header strong { color: var(--p); margin-right: 5px; }
@@ -48,7 +50,6 @@
         
         .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--p); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 6px 16px rgba(46,125,50,0.4); border: none; cursor: pointer; z-index: 100; }
         
-        /* Zvýšený z-index, aby překryl i menu nastavení */
         #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; text-align: center; padding: 20px;}
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         
@@ -66,9 +67,10 @@
         
         .btn-add-photo { background: white; color: var(--p); border: 2px dashed var(--p); padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
         
-        .btn-doctor { background: var(--doc); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(25,118,210,0.3); display: none; }
+        .btn-doctor { background: var(--doc); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 0.95rem; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(25,118,210,0.3); display: none; }
         .btn-detective { background: var(--det); box-shadow: 0 4px 10px rgba(142,36,170,0.3); }
-        .btn-update { background: #fbc02d; color: #333; box-shadow: 0 4px 10px rgba(251,192,45,0.4); margin-top: 10px; display: block; }
+        .btn-youtube { background: var(--yt); box-shadow: 0 4px 10px rgba(244,67,54,0.3); display: block; margin-top: 10px; width: 100%; }
+        .btn-update { background: #fbc02d; color: #333; box-shadow: 0 4px 10px rgba(251,192,45,0.4); margin-top: 10px; display: block; width: 100%; }
         
         .doctor-result { background: #e3f2fd; border-left: 5px solid var(--doc); padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.95rem; line-height: 1.5; display: none; }
         .detective-result { background: #f3e5f5; border-left: 5px solid var(--det); padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.95rem; line-height: 1.5; display: none; }
@@ -103,12 +105,18 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 12.2 (Stabilní Export)</span>
+    <span class="version-tag">Verze 13.0 (Video Schránka)</span>
     <button class="btn-header-settings" onclick="openSettings()">⚙️</button>
 </header>
 
 <div class="container">
     <button id="btn-notify-allow" onclick="requestNotifications()" style="display:none; background:#ff9800; color:white; border:none; padding:10px; border-radius:8px; width:100%; margin-bottom:15px; font-weight:bold; cursor:pointer;">🔔 Povolit chytrá upozornění</button>
+
+    <div id="inbox-section">
+        <h3>📥 Nová videa ze sdílení (<span id="inbox-count">0</span>)</h3>
+        <p style="font-size: 0.85rem; color: #666; margin-top:0;">Přiřaďte tato videa k vašim rostlinám:</p>
+        <div id="inbox-list"></div>
+    </div>
 
     <input type="text" id="search-box" placeholder="🔍 Hledat podle názvu..." onkeyup="filterPlants()">
     
@@ -166,6 +174,8 @@
             <button class="btn-doctor btn-detective" id="btn-ai-detective" onclick="runAIDetective()" style="display:block;">🔎 Zjistit odrůdu</button>
         </div>
         
+        <button class="btn-doctor btn-youtube" onclick="searchYouTube()"><span style="font-size:1.2em">🎥</span> Hledat návody na YouTube</button>
+        
         <div class="doctor-result" id="doctor-output"></div>
         <div class="detective-result" id="detective-output"></div>
     </div>
@@ -180,6 +190,12 @@
         
         <div class="info-box"><h4>💧 Zálivka</h4><p id="det-water"></p></div>
         <div class="info-box"><h4>☀️ Světlo</h4><p id="det-light"></p></div>
+        
+        <div class="info-box" id="det-videos-box" style="display:none;">
+            <h4>🎥 Moje uložená videa</h4>
+            <div id="det-videos-list"></div>
+        </div>
+        
         <div class="info-box">
             <h4>📝 Moje poznámky</h4>
             <textarea id="det-notes" class="notes-input" placeholder="Kdy byla přesazena, od koho ji mám..."></textarea>
@@ -210,7 +226,140 @@ req.onupgradeneeded = (e) => {
     db = e.target.result;
     if (!db.objectStoreNames.contains("plants")) db.createObjectStore("plants", { keyPath: "id", autoIncrement: true });
 };
-req.onsuccess = (e) => { db = e.target.result; checkNotificationPermission(); render(); };
+req.onsuccess = (e) => { 
+    db = e.target.result; 
+    checkNotificationPermission(); 
+    checkSharedUrl(); // Kontrola, zda jsme neotevřeli appku ze sdílení YouTube
+    render(); 
+};
+
+// --- LOGIKA SCHRÁNKY YOUTUBE VIDEÍ ---
+
+// Funkce zachytí odkaz, pokud na aplikaci přijdeme přes tlačítko Sdílet z YouTube
+function checkSharedUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const sharedUrl = params.get('url') || params.get('text');
+    
+    if (sharedUrl && (sharedUrl.includes('youtu.be') || sharedUrl.includes('youtube.com'))) {
+        let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+        
+        // Vytáhneme čistý odkaz (občas Android přidá text jako "Podívejte se na toto video: https...")
+        const urlMatch = sharedUrl.match(/(https?:\/\/[^\s]+)/);
+        const cleanUrl = urlMatch ? urlMatch[0] : sharedUrl;
+        
+        if(!inbox.some(v => v.url === cleanUrl)) {
+            inbox.push({ url: cleanUrl, date: new Date().toLocaleDateString('cs-CZ') });
+            localStorage.setItem('pm_video_inbox', JSON.stringify(inbox));
+        }
+        
+        // Vyčistíme URL lištu prohlížeče, abychom to neukládali znovu po obnovení stránky
+        window.history.replaceState({}, document.title, window.location.pathname);
+        alert("🎬 Video úspěšně přijato z YouTube a čeká ve Schránce na přiřazení!");
+    }
+}
+
+// Funkce vydoluje ID videa pro zobrazení přehrávače
+function getYTId(url) {
+    let match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    return match ? match[1] : null;
+}
+
+// Vykreslení nepřiřazených videí nahoře na hlavní obrazovce
+function renderInbox() {
+    let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+    const section = document.getElementById('inbox-section');
+    const list = document.getElementById('inbox-list');
+    
+    if(inbox.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+    
+    section.style.display = 'block';
+    document.getElementById('inbox-count').innerText = inbox.length;
+    list.innerHTML = '';
+    
+    // Připravíme si roletku ze všech našich rostlin
+    let optionsHTML = '<option value="">-- Vyberte rostlinu --</option>';
+    currentPlants.forEach(p => {
+        optionsHTML += `<option value="${p.id}">${p.name}</option>`;
+    });
+
+    inbox.forEach((v, index) => {
+        const ytId = getYTId(v.url);
+        let embedHTML = ytId ? `<iframe width="100%" height="150" src="https://www.youtube.com/embed/${ytId}" frameborder="0" allowfullscreen style="border-radius:8px; margin-bottom:10px;"></iframe>` : `<a href="${v.url}" target="_blank" style="display:block; margin-bottom:10px; word-break:break-all;">${v.url}</a>`;
+        
+        list.innerHTML += `
+        <div style="background: white; padding: 12px; border-radius: 8px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            ${embedHTML}
+            <select id="inbox-sel-${index}" style="width:100%; padding:10px; margin-bottom:10px; border-radius:6px; border:1px solid #ccc; font-size:1rem;">
+                ${optionsHTML}
+            </select>
+            <div style="display:flex; gap:10px;">
+                <button onclick="assignVideo(${index})" style="flex:1; background:var(--p); color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">💾 Uložit k rostlině</button>
+                <button onclick="deleteInboxVideo(${index})" style="background:#f44336; color:white; border:none; padding:10px; border-radius:6px; font-weight:bold; cursor:pointer;">🗑️ Smazat</button>
+            </div>
+        </div>`;
+    });
+}
+
+function assignVideo(index) {
+    let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+    const plantIdStr = document.getElementById(`inbox-sel-${index}`).value;
+    if(!plantIdStr) return alert("Musíte vybrat rostlinu ze seznamu.");
+    
+    const plantId = parseInt(plantIdStr);
+    const video = inbox[index];
+    
+    const tx = db.transaction("plants", "readwrite");
+    const store = tx.objectStore("plants");
+    store.get(plantId).onsuccess = (e) => {
+        let plant = e.target.result;
+        if(!plant.videos) plant.videos = [];
+        plant.videos.push(video);
+        
+        store.put(plant).onsuccess = () => {
+            inbox.splice(index, 1);
+            localStorage.setItem('pm_video_inbox', JSON.stringify(inbox));
+            render(); // Aktualizuje celou aplikaci (včetně schránky)
+            alert("Video bylo úspěšně uloženo do deníku rostliny!");
+        };
+    };
+}
+
+function deleteInboxVideo(index) {
+    if(confirm("Opravdu smazat toto video ze schránky?")) {
+        let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+        inbox.splice(index, 1);
+        localStorage.setItem('pm_video_inbox', JSON.stringify(inbox));
+        renderInbox();
+    }
+}
+
+function searchYouTube() {
+    const p = currentPlants.find(x => x.id === openPlantId);
+    if(p) {
+        const query = encodeURIComponent(`${p.name} pěstování a péče řez`);
+        window.open(`https://www.youtube.com/results?search_query=${query}`, '_blank');
+    }
+}
+
+function removeSavedVideo(plantId, videoIdx) {
+    if(confirm("Opravdu chcete toto video z profilu rostliny smazat?")) {
+        const tx = db.transaction("plants", "readwrite");
+        const store = tx.objectStore("plants");
+        store.get(plantId).onsuccess = (e) => {
+            let plant = e.target.result;
+            plant.videos.splice(videoIdx, 1);
+            store.put(plant).onsuccess = () => {
+                render().then(() => {
+                    const idx = currentPlants.findIndex(p => p.id === plantId);
+                    if(idx !== -1) openDetail(idx);
+                });
+            };
+        };
+    }
+}
 
 function openSettings() { document.getElementById('settings-view').style.display = 'flex'; }
 function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
@@ -233,24 +382,6 @@ function requestNotifications() {
             alert("Upozornění zapnuta!");
         }
     });
-}
-
-function checkAndSendNotification() {
-    if (!("Notification" in window) || Notification.permission !== "granted") return;
-    const today = new Date().toLocaleDateString('cs-CZ'); const lastNotified = localStorage.getItem('lastNotifyDate');
-    const currentMonthNum = new Date().getMonth() + 1; let tasksCount = 0;
-    currentPlants.forEach(p => { if(p.tasks) p.tasks.forEach(t => { if(t.month === currentMonthNum) tasksCount++; }); });
-
-    if (tasksCount > 0 && lastNotified !== today) {
-        if (navigator.serviceWorker) {
-            navigator.serviceWorker.ready.then(function(registration) {
-                registration.showNotification("🌿 PlantMaster", { body: `Máte v zahradě ${tasksCount} aktuálních úkolů na tento měsíc!`, icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png" });
-            });
-        } else {
-            new Notification("🌿 PlantMaster", { body: `Máte v zahradě ${tasksCount} aktuálních úkolů na tento měsíc!`, icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png" });
-        }
-        localStorage.setItem('lastNotifyDate', today);
-    }
 }
 
 function handleAPIError(err, context) {
@@ -276,6 +407,7 @@ async function render() {
     }).reverse();
 
     filterPlants(); 
+    renderInbox(); // Přidáno volání schránky
 }
 
 function filterPlants() {
@@ -365,6 +497,26 @@ function openDetail(index) {
     document.getElementById('det-light').innerText = p.light || "Neznámé";
     document.getElementById('det-notes').value = p.notes || "";
     
+    // Zobrazení mini-kina uvnitř detailu
+    const vidBox = document.getElementById('det-videos-box');
+    const vidList = document.getElementById('det-videos-list');
+    if(p.videos && p.videos.length > 0) {
+        vidBox.style.display = 'block';
+        vidList.innerHTML = '';
+        p.videos.forEach((v, idx) => {
+            const ytId = getYTId(v.url);
+            if(ytId) {
+                vidList.innerHTML += `
+                <div style="margin-bottom:15px; position:relative; padding-top:10px;">
+                    <iframe width="100%" height="200" src="https://www.youtube.com/embed/${ytId}" frameborder="0" allowfullscreen style="border-radius:12px; border:1px solid #ddd;"></iframe>
+                    <button onclick="removeSavedVideo(${p.id}, ${idx})" style="position:absolute; top:0px; right:-5px; background:rgba(244,67,54,0.9); color:white; border:none; border-radius:50%; width:35px; height:35px; cursor:pointer; font-weight:bold; box-shadow:0 2px 5px rgba(0,0,0,0.3);">✕</button>
+                </div>`;
+            }
+        });
+    } else {
+        vidBox.style.display = 'none';
+    }
+    
     const catBox = document.getElementById('det-category');
     if(p.category && p.category !== "Ostatní") { catBox.style.display = "inline-block"; catBox.innerText = p.category; } 
     else { catBox.style.display = "none"; }
@@ -412,14 +564,8 @@ function resizeImage(file) {
 }
 
 async function exportData() {
-    if (currentPlants.length === 0) {
-        closeSettings();
-        return alert("Zatím nemáte žádné kytky k zálohování.");
-    }
-    
-    // ZMĚNA LOGIKY: Zobrazíme loader a tím rovnou překryjeme menu, aniž bychom ho rušili
-    document.getElementById('loader').style.display = 'flex'; 
-    document.getElementById('loader-text').innerText = "Vytvářím zálohu (ZIP balíček)...";
+    if (currentPlants.length === 0) { closeSettings(); return alert("Zatím nemáte žádné kytky k zálohování."); }
+    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Vytvářím zálohu (ZIP balíček)...";
     
     try {
         const zip = new JSZip(); zip.file("databaze.json", JSON.stringify(currentPlants));
@@ -443,34 +589,22 @@ async function exportData() {
         zip.file("Prehled_rostlin.csv", csvContent);
         const content = await zip.generateAsync({type:"blob"}); 
         
-        const link = document.createElement('a'); 
-        link.href = URL.createObjectURL(content);
-        const todayStr = new Date().toISOString().split('T')[0]; 
-        link.download = `PlantMaster_Zaloha_${todayStr}.zip`;
+        const safeBlob = new Blob([content], { type: "application/octet-stream" });
+        const link = document.createElement('a'); link.href = URL.createObjectURL(safeBlob);
         
-        document.body.appendChild(link); 
-        link.click(); 
+        const todayStr = new Date().toISOString().split('T')[0]; link.download = `PlantMaster_Zaloha_${todayStr}.zip`;
+        document.body.appendChild(link); link.click(); 
         
         setTimeout(() => { 
-            document.body.removeChild(link); 
-            URL.revokeObjectURL(link.href);
-            // ZMĚNA LOGIKY: Teprve po úspěšném stažení všechno naráz uklidíme
-            document.getElementById('loader').style.display = 'none';
-            closeSettings();
+            document.body.removeChild(link); URL.revokeObjectURL(link.href);
+            document.getElementById('loader').style.display = 'none'; closeSettings();
         }, 100);
-        
-    } catch (err) { 
-        document.getElementById('loader').style.display = 'none'; 
-        alert("Chyba při vytváření zálohy: " + err.message); 
-    }
+    } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba při vytváření zálohy: " + err.message); }
 }
 
 document.getElementById('import-file').onchange = async (e) => {
     const file = e.target.files[0]; if (!file) return;
-    
-    // ZMĚNA LOGIKY: Zavřeme okno až po samotném výběru souboru
     closeSettings();
-    
     document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Čtu ZIP balíček...";
     try {
         const zip = new JSZip(); const contents = await zip.loadAsync(file);
