@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v7.0</title>
+    <title>PlantMaster AI v8.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -65,9 +65,9 @@
         .btn-close { position: absolute; top: 15px; left: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); z-index: 10; }
         .btn-delete { background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; }
         
-        /* Tlačítka menu */
         .btn-menu { display: block; margin: 10px auto; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 0.95rem; cursor: pointer; width: 100%; box-sizing: border-box;}
         .btn-backup { background: #1976d2; box-shadow: 0 4px 10px rgba(25,118,210,0.3); }
+        .btn-restore { background: #388e3c; box-shadow: 0 4px 10px rgba(56,142,60,0.3); }
         .btn-settings { background: #757575; }
         
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -77,7 +77,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 7.0 (Záloha & Export)</span>
+    <span class="version-tag">Verze 8.0 (Kompletní Záloha & Obnova)</span>
 </header>
 
 <div class="container">
@@ -94,6 +94,9 @@
 
     <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
         <button class="btn-menu btn-backup" onclick="exportData()">💾 ZÁLOHOVAT DATA A FOTKY (ZIP)</button>
+        <button class="btn-menu btn-restore" onclick="document.getElementById('import-file').click()">📂 OBNOVIT ZE ZÁLOHY (ZIP)</button>
+        <input type="file" id="import-file" accept=".zip" style="display:none">
+        
         <button class="btn-menu btn-settings" onclick="setKey()">⚙️ Změnit API klíč</button>
     </div>
 </div>
@@ -198,7 +201,6 @@ async function render() {
 
     updateCalendar();
     filterPlants(); 
-    checkAndSendNotification();
 }
 
 function filterPlants() {
@@ -308,32 +310,26 @@ function resizeImage(file) {
 
 // --- FUNKCE PRO GENEROVÁNÍ ZÁLOHY ZIP ---
 async function exportData() {
-    if (currentPlants.length === 0) {
-        alert("Zatím nemáte žádné kytky k zálohování.");
-        return;
-    }
+    if (currentPlants.length === 0) return alert("Zatím nemáte žádné kytky k zálohování.");
 
     document.getElementById('loader').style.display = 'flex';
     document.getElementById('loader-text').innerText = "Vytvářím zálohu (ZIP balíček)...";
 
     try {
         const zip = new JSZip();
-        const photoFolder = zip.folder("Fotky");
+        
+        // 1. Záchranný otisk paměti pro budoucí Import (NOVÉ)
+        zip.file("databaze.json", JSON.stringify(currentPlants));
 
-        // Vytvoření textu pro Excel (CSV)
-        let csvContent = "\uFEFF"; // Značka pro Excel, aby správně četl českou diakritiku
+        // 2. Fotky do složky
+        const photoFolder = zip.folder("Fotky");
+        let csvContent = "\uFEFF"; 
         csvContent += "Název;Přidáno;Zálivka;Světlo;Toxicita;Poznámky\n";
 
         currentPlants.forEach((p, pIndex) => {
-            // Funkce pro bezpečné vložení textu do buňky v Excelu
-            const clean = (str) => {
-                if (!str) return "";
-                return '"' + String(str).replace(/"/g, '""').replace(/\n/g, ' ') + '"';
-            };
-            
+            const clean = (str) => { if (!str) return ""; return '"' + String(str).replace(/"/g, '""').replace(/\n/g, ' ') + '"'; };
             csvContent += `${clean(p.name)};${clean(p.dateAdded)};${clean(p.water)};${clean(p.light)};${clean(p.toxicity)};${clean(p.notes)}\n`;
 
-            // Zpracování fotek
             const imagesToExport = p.images || [{data: p.img, date: p.dateAdded}];
             imagesToExport.forEach((imgObj, iIndex) => {
                 if(imgObj.data) {
@@ -345,9 +341,9 @@ async function exportData() {
             });
         });
 
+        // 3. Tabulka
         zip.file("Prehled_rostlin.csv", csvContent);
 
-        // Vygenerování balíčku a stažení
         const content = await zip.generateAsync({type:"blob"});
         const link = document.createElement('a');
         link.href = URL.createObjectURL(content);
@@ -363,6 +359,71 @@ async function exportData() {
         alert("Chyba při vytváření zálohy: " + err.message);
     }
 }
+
+// --- FUNKCE PRO IMPORT ZE ZÁLOHY ZIP ---
+document.getElementById('import-file').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    document.getElementById('loader').style.display = 'flex';
+    document.getElementById('loader-text').innerText = "Čtu ZIP balíček...";
+
+    try {
+        const zip = new JSZip();
+        const contents = await zip.loadAsync(file);
+        
+        if (!contents.file("databaze.json")) {
+            throw new Error("V tomto ZIP souboru chybí strojová data (databaze.json). Zřejmě se nejedná o platnou zálohu.");
+        }
+
+        const jsonStr = await contents.file("databaze.json").async("string");
+        const importedPlants = JSON.parse(jsonStr);
+
+        if (!Array.isArray(importedPlants) || importedPlants.length === 0) {
+            throw new Error("Záloha je prázdná.");
+        }
+
+        document.getElementById('loader').style.display = 'none';
+
+        // Ochranná otázka před nahráním dat
+        const promptMsg = `Našli jsme data v záloze (${importedPlants.length} rostlin).\n\nNapište '1' pro PŘEPSÁNÍ (smaže vaši současnou zahradu a nahradí ji zálohou).\nNapište '2' pro PŘIDÁNÍ (přidá kytky ze zálohy k vašim stávajícím).\n\n(Cokoliv jiného import zruší)`;
+        const action = prompt(promptMsg, "1");
+
+        if (action !== "1" && action !== "2") {
+            alert("Import byl zrušen uživatelem.");
+            e.target.value = ""; // Vyčištění paměti prohlížeče
+            return;
+        }
+
+        document.getElementById('loader').style.display = 'flex';
+        document.getElementById('loader-text').innerText = "Zapisuji data do zahrady...";
+
+        const tx = db.transaction("plants", "readwrite");
+        const store = tx.objectStore("plants");
+
+        if (action === "1") {
+            store.clear(); // Kompletní smazání starých dat
+        }
+
+        // Nahrání všech kytek
+        importedPlants.forEach(p => {
+            delete p.id; // Smažeme staré ID, databáze aplikaci sama přidělí nové bezchybné pořadí
+            store.add(p);
+        });
+
+        tx.oncomplete = () => {
+            document.getElementById('loader').style.display = 'none';
+            alert("Kytky ze zálohy byly úspěšně importovány!");
+            e.target.value = ""; 
+            render();
+        };
+
+    } catch (err) {
+        document.getElementById('loader').style.display = 'none';
+        alert("Chyba při importu: " + err.message);
+        e.target.value = ""; 
+    }
+};
 
 document.getElementById('camera-new').onchange = async (e) => {
     const file = e.target.files[0]; const key = localStorage.getItem('G_KEY');
