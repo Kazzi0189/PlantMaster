@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v11.0</title>
+    <title>PlantMaster AI v11.1</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -56,7 +56,6 @@
         
         .btn-add-photo { background: white; color: var(--p); border: 2px dashed var(--p); padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
         
-        /* Tlačítka pro AI nástroje */
         .btn-doctor { background: var(--doc); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(25,118,210,0.3); display: none; }
         .btn-detective { background: var(--det); box-shadow: 0 4px 10px rgba(142,36,170,0.3); }
         .btn-update { background: #fbc02d; color: #333; box-shadow: 0 4px 10px rgba(251,192,45,0.4); margin-top: 10px; display: block; }
@@ -94,7 +93,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 11.0 (Botanický Detektiv)</span>
+    <span class="version-tag">Verze 11.1 (Chytré upozornění na limity)</span>
 </header>
 
 <div class="container">
@@ -232,6 +231,25 @@ function checkAndSendNotification() {
             new Notification("🌿 PlantMaster", { body: `Máte v zahradě ${tasksCount} aktuálních úkolů na tento měsíc!`, icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png" });
         }
         localStorage.setItem('lastNotifyDate', today);
+    }
+}
+
+// --- NOVÁ FUNKCE PRO CHYTRÉ ZPRACOVÁNÍ CHYB AI ---
+function handleAPIError(err, context) {
+    document.getElementById('loader').style.display = 'none';
+    const msg = err.message || "";
+    
+    // Zkontrolujeme, zda jde o překročení limitu (Quota exceeded nebo 429)
+    if (msg.includes("Quota exceeded") || msg.includes("rate-limits")) {
+        // Pokusíme se vyhledat, za kolik sekund to můžeme zkusit znovu
+        const timeMatch = msg.match(/retry in ([\d\.]+)s/i);
+        const seconds = timeMatch ? Math.ceil(parseFloat(timeMatch[1])) : "pár";
+        
+        // Zobrazíme krásnou a srozumitelnou hlášku
+        alert(`🛑 AI potřebuje pauzu!\n\nVyčerpali jste rychlostní limit pro bezplatné dotazy. Nechte umělou inteligenci chvíli vydechnout a zkuste to prosím znovu za ${seconds} sekund.`);
+    } else {
+        // Pokud je to jiná chyba (např. chybí internet)
+        alert(`❌ Chyba (${context}): ${msg}`);
     }
 }
 
@@ -452,7 +470,7 @@ document.getElementById('camera-new').onchange = async (e) => {
             tasks: res.tasks || [], dateAdded: dateString, notes: "", images: [{ data: resizedBase64, date: dateString }] 
         });
         tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
-    } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba: " + err.message); }
+    } catch (err) { handleAPIError(err, "Analyzátor"); } // OCHRANNÁ SÍŤ
 };
 
 document.getElementById('camera-add').onchange = async (e) => {
@@ -488,10 +506,9 @@ async function runAIDoctor() {
         const docResBox = document.getElementById('doctor-output');
         docResBox.innerHTML = `<strong>🩺 Zpráva od AI Doktora:</strong><br>${data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>')}`;
         docResBox.style.display = 'block';
-    } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba Doktora: " + err.message); }
+    } catch (err) { handleAPIError(err, "AI Doktor"); } // OCHRANNÁ SÍŤ
 }
 
-// --- NOVÉ: AI Detektiv ---
 async function runAIDetective() {
     const key = localStorage.getItem('G_KEY'); if (!key) return alert("Chybí API klíč!");
     const plant = currentPlants.find(p => p.id === openPlantId); if(!plant || !plant.images) return;
@@ -500,7 +517,6 @@ async function runAIDetective() {
     document.getElementById('loader-text').innerText = "Detektiv zkoumá všechny fotky...";
 
     try {
-        // Připravíme všechny obrázky k odeslání do AI
         let aiParts = [{ text: `Jsi expert botanik. Prohlédni si všechny tyto fotky rostliny, kterou aktuálně nazýváme '${plant.name}'. Dokážeš z nich s jistotou určit přesnou odrůdu nebo kultivar? Odpověz POUZE ve formátu JSON: {"found": true/false, "exactName": "Přesný název odrůdy (pokud found je true, např. 'Jabloň Gala')", "message": "Zpráva pro uživatele - buď stručné zdůvodnění (pokud found je true), nebo přátelská žádost o to, co přesně má ještě vyfotit - např. detail květu, průřez plodem, kůru (pokud found je false)."}` }];
         
         plant.images.forEach((imgObj, index) => {
@@ -522,17 +538,15 @@ async function runAIDetective() {
         let html = `<strong>🔎 Botanický detektiv:</strong><br>${res.message.replace(/\n/g, '<br>')}`;
         
         if (res.found && res.exactName) {
-            // Pokud našel, nabídneme aktualizaci profilu
             html += `<br><button class="btn-doctor btn-update" onclick="updatePlantProfile('${res.exactName}')">✨ Aktualizovat profil na: ${res.exactName}</button>`;
         }
         
         detResBox.innerHTML = html;
         detResBox.style.display = 'block';
 
-    } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba Detektiva: " + err.message); }
+    } catch (err) { handleAPIError(err, "AI Detektiv"); } // OCHRANNÁ SÍŤ
 }
 
-// --- NOVÉ: Přepis DNA kytky ---
 async function updatePlantProfile(exactName) {
     const key = localStorage.getItem('G_KEY'); if (!key) return;
     const plant = currentPlants.find(p => p.id === openPlantId);
@@ -552,7 +566,6 @@ async function updatePlantProfile(exactName) {
         const data = await resp.json(); if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
         let res = JSON.parse(data.candidates[0].content.parts[0].text);
         
-        // Aktualizace v databázi (zachováme ID, datum, fotky a poznámky, ale přepíšeme data péče)
         const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
         plant.name = res.name || exactName;
         plant.category = res.category || "Ostatní";
@@ -570,9 +583,8 @@ async function updatePlantProfile(exactName) {
             });
         };
 
-    } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba při aktualizaci: " + err.message); }
+    } catch (err) { handleAPIError(err, "Aktualizace DNA"); } // OCHRANNÁ SÍŤ
 }
-
 </script>
 </body>
 </html>
