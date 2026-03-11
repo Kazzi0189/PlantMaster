@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v11.1</title>
+    <title>PlantMaster AI v12.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -13,9 +13,13 @@
     <style>
         :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; --det: #8e24aa; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; }
-        header { background: var(--p); color: white; padding: 20px 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; }
+        
+        /* Úprava hlavičky pro ikonu nastavení */
+        header { background: var(--p); color: white; padding: 20px 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; position: relative; }
         header h1 { margin: 0; font-size: 1.5rem; }
         .version-tag { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; display: block; }
+        .btn-header-settings { position: absolute; right: 15px; top: 20px; background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: white; padding: 5px; }
+        
         .container { padding: 0 15px; }
         
         #search-box { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; outline: none; }
@@ -46,6 +50,12 @@
         .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--p); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 6px 16px rgba(46,125,50,0.4); border: none; cursor: pointer; z-index: 100; }
         #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 999; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; text-align: center; padding: 20px;}
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        
+        /* Nové menu nastavení */
+        #settings-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .settings-box { background: white; padding: 25px; border-radius: 16px; width: 85%; max-width: 320px; position: relative; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .settings-box h3 { margin-top: 0; color: var(--p); margin-bottom: 20px; font-size: 1.4rem; }
+        .btn-settings-close { position: absolute; top: -15px; right: -15px; width: 40px; height: 40px; background: #d32f2f; color: white; border: none; border-radius: 50%; font-size: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: flex; justify-content: center; align-items: center; }
         
         #detail-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 500; overflow-y: auto; padding-bottom: 30px; }
         .gallery-wrapper { padding: 15px 15px 0 15px; }
@@ -93,7 +103,8 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 11.1 (Chytré upozornění na limity)</span>
+    <span class="version-tag">Verze 12.0 (Čistý design)</span>
+    <button class="btn-header-settings" onclick="openSettings()">⚙️</button>
 </header>
 
 <div class="container">
@@ -126,14 +137,19 @@
     </div>
 
     <div id="plant-list"></div>
+    </div>
 
-    <div style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
-        <button class="btn-menu btn-backup" onclick="exportData()">💾 ZÁLOHOVAT DATA A FOTKY (ZIP)</button>
-        <button class="btn-menu btn-restore" onclick="document.getElementById('import-file').click()">📂 OBNOVIT ZE ZÁLOHY (ZIP)</button>
-        <input type="file" id="import-file" accept=".zip" style="display:none">
-        <button class="btn-menu btn-settings" onclick="setKey()">⚙️ Změnit API klíč</button>
+<div id="settings-view">
+    <div class="settings-box">
+        <button class="btn-settings-close" onclick="closeSettings()">✕</button>
+        <h3>⚙️ Nastavení</h3>
+        <button class="btn-menu btn-backup" onclick="closeSettings(); exportData()">💾 ZÁLOHOVAT DATA A FOTKY</button>
+        <button class="btn-menu btn-restore" onclick="closeSettings(); document.getElementById('import-file').click()">📂 OBNOVIT ZE ZÁLOHY</button>
+        <button class="btn-menu btn-settings" onclick="closeSettings(); setKey()">🔑 Změnit API klíč</button>
     </div>
 </div>
+
+<input type="file" id="import-file" accept=".zip" style="display:none">
 
 <button class="fab" onclick="document.getElementById('camera-new').click()">+</button>
 <input type="file" id="camera-new" accept="image/*" capture="environment" style="display:none">
@@ -196,6 +212,14 @@ req.onupgradeneeded = (e) => {
 };
 req.onsuccess = (e) => { db = e.target.result; checkNotificationPermission(); render(); };
 
+// --- LOGIKA NASTAVENÍ ---
+function openSettings() {
+    document.getElementById('settings-view').style.display = 'flex';
+}
+function closeSettings() {
+    document.getElementById('settings-view').style.display = 'none';
+}
+
 function setKey() {
     const k = prompt("Vložte API klíč z Google AI Studio:");
     if (k) { localStorage.setItem('G_KEY', k.trim()); alert("Klíč uložen."); }
@@ -234,21 +258,14 @@ function checkAndSendNotification() {
     }
 }
 
-// --- NOVÁ FUNKCE PRO CHYTRÉ ZPRACOVÁNÍ CHYB AI ---
 function handleAPIError(err, context) {
     document.getElementById('loader').style.display = 'none';
     const msg = err.message || "";
-    
-    // Zkontrolujeme, zda jde o překročení limitu (Quota exceeded nebo 429)
     if (msg.includes("Quota exceeded") || msg.includes("rate-limits")) {
-        // Pokusíme se vyhledat, za kolik sekund to můžeme zkusit znovu
         const timeMatch = msg.match(/retry in ([\d\.]+)s/i);
         const seconds = timeMatch ? Math.ceil(parseFloat(timeMatch[1])) : "pár";
-        
-        // Zobrazíme krásnou a srozumitelnou hlášku
         alert(`🛑 AI potřebuje pauzu!\n\nVyčerpali jste rychlostní limit pro bezplatné dotazy. Nechte umělou inteligenci chvíli vydechnout a zkuste to prosím znovu za ${seconds} sekund.`);
     } else {
-        // Pokud je to jiná chyba (např. chybí internet)
         alert(`❌ Chyba (${context}): ${msg}`);
     }
 }
@@ -431,6 +448,10 @@ async function exportData() {
 
 document.getElementById('import-file').onchange = async (e) => {
     const file = e.target.files[0]; if (!file) return;
+    
+    // Zabezpečení zavření menu (pokud by ještě bylo otevřené z nějakého důvodu)
+    closeSettings();
+    
     document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Čtu ZIP balíček...";
     try {
         const zip = new JSZip(); const contents = await zip.loadAsync(file);
@@ -470,7 +491,7 @@ document.getElementById('camera-new').onchange = async (e) => {
             tasks: res.tasks || [], dateAdded: dateString, notes: "", images: [{ data: resizedBase64, date: dateString }] 
         });
         tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
-    } catch (err) { handleAPIError(err, "Analyzátor"); } // OCHRANNÁ SÍŤ
+    } catch (err) { handleAPIError(err, "Analyzátor"); }
 };
 
 document.getElementById('camera-add').onchange = async (e) => {
@@ -506,7 +527,7 @@ async function runAIDoctor() {
         const docResBox = document.getElementById('doctor-output');
         docResBox.innerHTML = `<strong>🩺 Zpráva od AI Doktora:</strong><br>${data.candidates[0].content.parts[0].text.replace(/\n/g, '<br>')}`;
         docResBox.style.display = 'block';
-    } catch (err) { handleAPIError(err, "AI Doktor"); } // OCHRANNÁ SÍŤ
+    } catch (err) { handleAPIError(err, "AI Doktor"); }
 }
 
 async function runAIDetective() {
@@ -544,7 +565,7 @@ async function runAIDetective() {
         detResBox.innerHTML = html;
         detResBox.style.display = 'block';
 
-    } catch (err) { handleAPIError(err, "AI Detektiv"); } // OCHRANNÁ SÍŤ
+    } catch (err) { handleAPIError(err, "AI Detektiv"); } 
 }
 
 async function updatePlantProfile(exactName) {
@@ -583,7 +604,7 @@ async function updatePlantProfile(exactName) {
             });
         };
 
-    } catch (err) { handleAPIError(err, "Aktualizace DNA"); } // OCHRANNÁ SÍŤ
+    } catch (err) { handleAPIError(err, "Aktualizace DNA"); } 
 }
 </script>
 </body>
