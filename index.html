@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v10.0</title>
+    <title>PlantMaster AI v11.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     
     <style>
-        :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; }
+        :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; --det: #8e24aa; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; }
         header { background: var(--p); color: white; padding: 20px 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; }
         header h1 { margin: 0; font-size: 1.5rem; }
@@ -25,13 +25,7 @@
         .calendar-section { background: #e8f5e9; border-radius: 16px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--p); }
         .calendar-section h3 { margin: 0 0 10px 0; color: var(--p); font-size: 1.1rem; }
         
-        /* ZMĚNA: Kompaktní a rolovací seznam úkolů */
-        #calendar-tasks { 
-            max-height: 250px; 
-            overflow-y: auto; 
-            padding-right: 5px; 
-        }
-        /* Design posuvníku */
+        #calendar-tasks { max-height: 250px; overflow-y: auto; padding-right: 5px; }
         #calendar-tasks::-webkit-scrollbar { width: 6px; }
         #calendar-tasks::-webkit-scrollbar-track { background: #e8f5e9; border-radius: 8px; }
         #calendar-tasks::-webkit-scrollbar-thumb { background: #a5d6a7; border-radius: 8px; }
@@ -61,8 +55,14 @@
         .gallery-date { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; }
         
         .btn-add-photo { background: white; color: var(--p); border: 2px dashed var(--p); padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        
+        /* Tlačítka pro AI nástroje */
         .btn-doctor { background: var(--doc); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(25,118,210,0.3); display: none; }
+        .btn-detective { background: var(--det); box-shadow: 0 4px 10px rgba(142,36,170,0.3); }
+        .btn-update { background: #fbc02d; color: #333; box-shadow: 0 4px 10px rgba(251,192,45,0.4); margin-top: 10px; display: block; }
+        
         .doctor-result { background: #e3f2fd; border-left: 5px solid var(--doc); padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.95rem; line-height: 1.5; display: none; }
+        .detective-result { background: #f3e5f5; border-left: 5px solid var(--det); padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.95rem; line-height: 1.5; display: none; }
         
         .detail-content { padding: 0 20px 20px 20px; }
         .detail-header { display: flex; justify-content: space-between; align-items: baseline; margin: 15px 0 5px 0; }
@@ -94,12 +94,11 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 10.0 (Chytrý Kalendář)</span>
+    <span class="version-tag">Verze 11.0 (Botanický Detektiv)</span>
 </header>
 
 <div class="container">
     <button id="btn-notify-allow" onclick="requestNotifications()" style="display:none; background:#ff9800; color:white; border:none; padding:10px; border-radius:8px; width:100%; margin-bottom:15px; font-weight:bold; cursor:pointer;">🔔 Povolit chytrá upozornění</button>
-    <button id="btn-notify-test" onclick="forceTestNotification()" style="display:none; background:#9c27b0; color:white; border:none; padding:10px; border-radius:8px; width:100%; margin-bottom:15px; font-weight:bold; cursor:pointer;">🔔 TEST NOTIFIKACE</button>
 
     <input type="text" id="search-box" placeholder="🔍 Hledat podle názvu..." onkeyup="filterPlants()">
     
@@ -146,9 +145,16 @@
     <div class="gallery-wrapper">
         <div class="gallery-scroll" id="det-gallery"></div>
         <button class="btn-add-photo" onclick="document.getElementById('camera-add').click()">📸 Přidat aktuální fotku</button>
-        <button class="btn-doctor" id="btn-ai-doctor" onclick="runAIDoctor()">🩺 Zhodnotit zdraví (AI Doktor)</button>
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-doctor" id="btn-ai-doctor" onclick="runAIDoctor()">🩺 Zdraví</button>
+            <button class="btn-doctor btn-detective" id="btn-ai-detective" onclick="runAIDetective()" style="display:block;">🔎 Zjistit odrůdu</button>
+        </div>
+        
         <div class="doctor-result" id="doctor-output"></div>
+        <div class="detective-result" id="detective-output"></div>
     </div>
+    
     <div class="detail-content">
         <div class="detail-header"><h2 id="det-name">Název</h2></div>
         
@@ -197,12 +203,8 @@ function setKey() {
 }
 
 function checkNotificationPermission() {
-    if ("Notification" in window) {
-        if (Notification.permission === "default") {
-            document.getElementById('btn-notify-allow').style.display = 'block';
-        } else if (Notification.permission === "granted") {
-            document.getElementById('btn-notify-test').style.display = 'block';
-        }
+    if ("Notification" in window && Notification.permission === "default") {
+        document.getElementById('btn-notify-allow').style.display = 'block';
     }
 }
 
@@ -210,21 +212,9 @@ function requestNotifications() {
     Notification.requestPermission().then(perm => {
         if(perm === "granted") {
             document.getElementById('btn-notify-allow').style.display = 'none';
-            document.getElementById('btn-notify-test').style.display = 'block';
-            alert("Upozornění zapnuta! Zkuste kliknout na fialové tlačítko Test.");
+            alert("Upozornění zapnuta!");
         }
     });
-}
-
-function forceTestNotification() {
-    if (!("Notification" in window) || Notification.permission !== "granted") { alert("Notifikace nejsou povoleny systémem."); return; }
-    if (navigator.serviceWorker) {
-        navigator.serviceWorker.ready.then(function(registration) {
-            registration.showNotification("🌿 Test PlantMaster", { body: "Tohle je testovací upozornění. Vše funguje!", icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png", vibrate: [200, 100, 200] });
-        }).catch(err => alert("Chyba SW notifikace: " + err));
-    } else {
-        new Notification("🌿 Test PlantMaster", { body: "Test přes starou metodu.", icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png" });
-    }
 }
 
 function checkAndSendNotification() {
@@ -255,11 +245,9 @@ async function render() {
         return p;
     }).reverse();
 
-    // Filtrování při načtení zajistí, že se rovnou vykreslí kytky i kalendář ze zobrazených dat
     filterPlants(); 
 }
 
-// ZMĚNA: Filtrování teď ovládá i kalendář
 function filterPlants() {
     const query = document.getElementById('search-box').value.toLowerCase();
     const sortVal = document.getElementById('sort-select').value;
@@ -284,7 +272,6 @@ function filterPlants() {
         return b.id - a.id; 
     });
 
-    // 1. Překreslení karet
     const list = document.getElementById('plant-list');
     list.innerHTML = '';
     
@@ -299,7 +286,6 @@ function filterPlants() {
         });
     }
 
-    // 2. Překreslení kalendáře POUZE z aktuálně vyfiltrovaných kytek
     updateCalendar(filtered);
 }
 
@@ -309,17 +295,14 @@ function toggleTask(element) {
     else { details.style.display = 'block'; arrow.style.transform = 'rotate(180deg)'; }
 }
 
-// ZMĚNA: Funkce teď přijímá pole rostlin (z filtrování)
 function updateCalendar(plantsArray) {
     const months = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
     const currentMonthNum = new Date().getMonth() + 1; 
     document.getElementById('calendar-title').innerText = `📅 Úkoly na tento měsíc (${months[currentMonthNum-1]})`;
     
     const calBox = document.getElementById('calendar-tasks'); 
-    calBox.innerHTML = ''; 
-    let tasksFound = false;
+    calBox.innerHTML = ''; let tasksFound = false;
 
-    // Procházíme jen to pole, které nám filterPlants poslal
     plantsArray.forEach(p => {
         if(p.tasks && Array.isArray(p.tasks)) {
             p.tasks.forEach(task => {
@@ -332,9 +315,7 @@ function updateCalendar(plantsArray) {
         }
     });
     
-    if(!tasksFound) {
-        calBox.innerHTML = '<i>U vybraných rostlin se v tomto měsíci nemusí nic dělat. Odpočívejte! ☕</i>';
-    }
+    if(!tasksFound) { calBox.innerHTML = '<i>U vybraných rostlin se v tomto měsíci nemusí nic dělat. Odpočívejte! ☕</i>'; }
 }
 
 function openDetail(index) {
@@ -343,7 +324,10 @@ function openDetail(index) {
     const imagesToRender = p.images || [{data: p.img, date: p.dateAdded}];
     imagesToRender.forEach(imgObj => { galBox.innerHTML += `<div class="gallery-item"><img src="${imgObj.data}"><div class="gallery-date">${imgObj.date}</div></div>`; });
 
-    const docBtn = document.getElementById('btn-ai-doctor'); const docRes = document.getElementById('doctor-output'); docRes.style.display = 'none';
+    const docBtn = document.getElementById('btn-ai-doctor'); 
+    document.getElementById('doctor-output').style.display = 'none'; 
+    document.getElementById('detective-output').style.display = 'none';
+    
     if(imagesToRender.length >= 2) docBtn.style.display = 'block'; else docBtn.style.display = 'none';
     
     document.getElementById('det-name').innerText = p.name;
@@ -506,6 +490,89 @@ async function runAIDoctor() {
         docResBox.style.display = 'block';
     } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba Doktora: " + err.message); }
 }
+
+// --- NOVÉ: AI Detektiv ---
+async function runAIDetective() {
+    const key = localStorage.getItem('G_KEY'); if (!key) return alert("Chybí API klíč!");
+    const plant = currentPlants.find(p => p.id === openPlantId); if(!plant || !plant.images) return;
+    
+    document.getElementById('loader').style.display = 'flex'; 
+    document.getElementById('loader-text').innerText = "Detektiv zkoumá všechny fotky...";
+
+    try {
+        // Připravíme všechny obrázky k odeslání do AI
+        let aiParts = [{ text: `Jsi expert botanik. Prohlédni si všechny tyto fotky rostliny, kterou aktuálně nazýváme '${plant.name}'. Dokážeš z nich s jistotou určit přesnou odrůdu nebo kultivar? Odpověz POUZE ve formátu JSON: {"found": true/false, "exactName": "Přesný název odrůdy (pokud found je true, např. 'Jabloň Gala')", "message": "Zpráva pro uživatele - buď stručné zdůvodnění (pokud found je true), nebo přátelská žádost o to, co přesně má ještě vyfotit - např. detail květu, průřez plodem, kůru (pokud found je false)."}` }];
+        
+        plant.images.forEach((imgObj, index) => {
+            aiParts.push({ text: `Fotka ${index + 1}:` });
+            aiParts.push({ inline_data: { mime_type: "image/jpeg", data: imgObj.data.split(',')[1] } });
+        });
+
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+            method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: aiParts }], generationConfig: { response_mime_type: "application/json" } })
+        });
+
+        const data = await resp.json(); if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
+        let res = JSON.parse(data.candidates[0].content.parts[0].text);
+        
+        document.getElementById('loader').style.display = 'none';
+        
+        const detResBox = document.getElementById('detective-output');
+        let html = `<strong>🔎 Botanický detektiv:</strong><br>${res.message.replace(/\n/g, '<br>')}`;
+        
+        if (res.found && res.exactName) {
+            // Pokud našel, nabídneme aktualizaci profilu
+            html += `<br><button class="btn-doctor btn-update" onclick="updatePlantProfile('${res.exactName}')">✨ Aktualizovat profil na: ${res.exactName}</button>`;
+        }
+        
+        detResBox.innerHTML = html;
+        detResBox.style.display = 'block';
+
+    } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba Detektiva: " + err.message); }
+}
+
+// --- NOVÉ: Přepis DNA kytky ---
+async function updatePlantProfile(exactName) {
+    const key = localStorage.getItem('G_KEY'); if (!key) return;
+    const plant = currentPlants.find(p => p.id === openPlantId);
+    
+    document.getElementById('loader').style.display = 'flex'; 
+    document.getElementById('loader-text').innerText = `Generuji nové postupy pro ${exactName}...`;
+
+    try {
+        const latestImgBase64 = plant.images[plant.images.length - 1].data.split(',')[1];
+        const aiPrompt = `Jsi expert botanik. Uživatel potvrdil, že na fotce je specifická rostlina/odrůda: '${exactName}'. Vygeneruj pro ni přesná data. Odpověz POUZE ve formátu JSON: {"name": "${exactName}", "category": "Kategorie (vyber jednu z: Pokojová rostlina, Keř, Strom, Bylina, Sukulent / Kaktus, Ostatní)", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol", "details": "Detaily a postřiky"}]}`;
+
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+            method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [ { text: aiPrompt }, { inline_data: { mime_type: "image/jpeg", data: latestImgBase64 } } ]}], generationConfig: { response_mime_type: "application/json" } })
+        });
+        
+        const data = await resp.json(); if (!resp.ok) throw new Error(data.error?.message || "Chyba API");
+        let res = JSON.parse(data.candidates[0].content.parts[0].text);
+        
+        // Aktualizace v databázi (zachováme ID, datum, fotky a poznámky, ale přepíšeme data péče)
+        const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
+        plant.name = res.name || exactName;
+        plant.category = res.category || "Ostatní";
+        plant.water = res.water || plant.water;
+        plant.light = res.light || plant.light;
+        plant.toxicity = res.toxicity || plant.toxicity;
+        plant.tasks = res.tasks || plant.tasks;
+        
+        store.put(plant).onsuccess = () => {
+            document.getElementById('loader').style.display = 'none';
+            alert(`Úspěch! Profil rostliny byl aktualizován na ${exactName}.`);
+            render().then(() => {
+                const idx = currentPlants.findIndex(p => p.id === openPlantId);
+                if(idx !== -1) openDetail(idx);
+            });
+        };
+
+    } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba při aktualizaci: " + err.message); }
+}
+
 </script>
 </body>
 </html>
