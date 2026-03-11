@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v14.0</title>
+    <title>PlantMaster AI v15.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -120,7 +120,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 14.0 (Kompletní Videotéka)</span>
+    <span class="version-tag">Verze 15.0 (Česká videotéka)</span>
     <button class="btn-header-settings" onclick="openSettings()">⚙️</button>
 </header>
 
@@ -363,7 +363,7 @@ function deleteInboxVideo(index) {
     }
 }
 
-// --- YOUTUBE IN-APP HLEDÁNÍ (Režim Akce) ---
+// --- YOUTUBE IN-APP HLEDÁNÍ S ČESKÝM FILTREM ---
 
 function openYTSearchUI() {
     const ui = document.getElementById('yt-search-ui');
@@ -385,7 +385,6 @@ async function runYTSearch(queryModifier, loadMore = false) {
     const plant = currentPlants.find(x => x.id === openPlantId);
     if (!plant) return;
 
-    // Pokud neklikáme na "Načíst další", tvoříme nové hledání od nuly
     if (!loadMore) {
         currentYTSearchQuery = `${plant.name} ${queryModifier}`;
         currentYTPageToken = '';
@@ -395,7 +394,8 @@ async function runYTSearch(queryModifier, loadMore = false) {
     }
 
     try {
-        let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&q=${encodeURIComponent(currentYTSearchQuery)}&type=video&key=${key}`;
+        // Přidány parametry relevanceLanguage=cs a regionCode=CZ pro preferenci českého obsahu
+        let url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&relevanceLanguage=cs&regionCode=CZ&q=${encodeURIComponent(currentYTSearchQuery)}&type=video&key=${key}`;
         if (loadMore && currentYTPageToken) {
             url += `&pageToken=${currentYTPageToken}`;
         }
@@ -404,7 +404,7 @@ async function runYTSearch(queryModifier, loadMore = false) {
         const data = await response.json();
 
         if (data.error) {
-            throw new Error(data.error.message || "Chyba API. Máte zapnuté YouTube Data API v3 v Google Cloud?");
+            throw new Error(data.error.message || "Chyba API. Máte zapnuté YouTube Data API v3 a povolené v sekci omezení klíčů?");
         }
 
         const resultsContainer = document.getElementById('yt-results-list');
@@ -420,8 +420,6 @@ async function runYTSearch(queryModifier, loadMore = false) {
             const videoId = item.id.videoId;
             const title = item.snippet.title;
             const thumbUrl = item.snippet.thumbnails.medium.url;
-            
-            // Unikneme uvozovkám pro inline onclick
             const safeTitle = title.replace(/'/g, "\\'").replace(/"/g, "&quot;");
 
             resultsContainer.innerHTML += `
@@ -434,7 +432,6 @@ async function runYTSearch(queryModifier, loadMore = false) {
             </div>`;
         });
 
-        // Správa stránkování pro tlačítko "Načíst další"
         if (data.nextPageToken) {
             currentYTPageToken = data.nextPageToken;
             const loadBtn = document.getElementById('yt-load-more');
@@ -460,7 +457,6 @@ function saveYTVideoToPlant(videoId) {
         let plant = e.target.result;
         if(!plant.videos) plant.videos = [];
         
-        // Prevence uložení stejného videa dvakrát
         if(plant.videos.some(v => getYTId(v.url) === videoId)) {
             return alert("Toto video už máte u této rostliny uložené!");
         }
@@ -469,12 +465,10 @@ function saveYTVideoToPlant(videoId) {
         
         store.put(plant).onsuccess = () => {
             alert("Video uloženo!");
-            // Vynutíme překreslení detailu (přehrávač dole)
             render().then(() => {
                 const idx = currentPlants.findIndex(p => p.id === openPlantId);
                 if(idx !== -1) {
                     openDetail(idx); 
-                    // Vrátíme UI hledání, aby nebylo uživatelům nečekaně skryto po kliknutí
                     document.getElementById('yt-search-ui').style.display = 'block';
                     document.getElementById('btn-open-yt').innerHTML = 'Zavřít hledání ✕';
                 }
@@ -629,7 +623,6 @@ function openDetail(index) {
     document.getElementById('doctor-output').style.display = 'none'; 
     document.getElementById('detective-output').style.display = 'none';
     
-    // Resetování rozhraní YouTube hledání při každém otevření nové rostliny
     document.getElementById('yt-search-ui').style.display = 'none';
     document.getElementById('btn-open-yt').innerHTML = '<span style="font-size:1.2em">🎥</span> Hledat návody na YouTube';
     document.getElementById('yt-results-list').innerHTML = '';
