@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v9.1</title>
+    <title>PlantMaster AI v10.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -24,6 +24,19 @@
         
         .calendar-section { background: #e8f5e9; border-radius: 16px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--p); }
         .calendar-section h3 { margin: 0 0 10px 0; color: var(--p); font-size: 1.1rem; }
+        
+        /* ZMĚNA: Kompaktní a rolovací seznam úkolů */
+        #calendar-tasks { 
+            max-height: 250px; 
+            overflow-y: auto; 
+            padding-right: 5px; 
+        }
+        /* Design posuvníku */
+        #calendar-tasks::-webkit-scrollbar { width: 6px; }
+        #calendar-tasks::-webkit-scrollbar-track { background: #e8f5e9; border-radius: 8px; }
+        #calendar-tasks::-webkit-scrollbar-thumb { background: #a5d6a7; border-radius: 8px; }
+        #calendar-tasks::-webkit-scrollbar-thumb:hover { background: #81c784; }
+
         .task-item { background: white; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; }
         .task-header { padding: 12px; font-size: 0.95rem; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
         .task-header strong { color: var(--p); margin-right: 5px; }
@@ -81,12 +94,11 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 9.1 (Diagnostika notifikací)</span>
+    <span class="version-tag">Verze 10.0 (Chytrý Kalendář)</span>
 </header>
 
 <div class="container">
     <button id="btn-notify-allow" onclick="requestNotifications()" style="display:none; background:#ff9800; color:white; border:none; padding:10px; border-radius:8px; width:100%; margin-bottom:15px; font-weight:bold; cursor:pointer;">🔔 Povolit chytrá upozornění</button>
-    
     <button id="btn-notify-test" onclick="forceTestNotification()" style="display:none; background:#9c27b0; color:white; border:none; padding:10px; border-radius:8px; width:100%; margin-bottom:15px; font-weight:bold; cursor:pointer;">🔔 TEST NOTIFIKACE</button>
 
     <input type="text" id="search-box" placeholder="🔍 Hledat podle názvu..." onkeyup="filterPlants()">
@@ -189,7 +201,6 @@ function checkNotificationPermission() {
         if (Notification.permission === "default") {
             document.getElementById('btn-notify-allow').style.display = 'block';
         } else if (Notification.permission === "granted") {
-            // Pokud už máme povoleno, ukážeme fialové testovací tlačítko
             document.getElementById('btn-notify-test').style.display = 'block';
         }
     }
@@ -205,32 +216,17 @@ function requestNotifications() {
     });
 }
 
-// ZMĚNA 1: Testovací funkce nezávislá na datu
 function forceTestNotification() {
-    if (!("Notification" in window) || Notification.permission !== "granted") {
-        alert("Notifikace nejsou povoleny systémem.");
-        return;
-    }
-
-    // Zkusíme to poslat moderněji přes Service Workera (pokud je dostupný)
+    if (!("Notification" in window) || Notification.permission !== "granted") { alert("Notifikace nejsou povoleny systémem."); return; }
     if (navigator.serviceWorker) {
         navigator.serviceWorker.ready.then(function(registration) {
-            registration.showNotification("🌿 Test PlantMaster", {
-                body: "Tohle je testovací upozornění. Vše funguje!",
-                icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png",
-                vibrate: [200, 100, 200]
-            });
+            registration.showNotification("🌿 Test PlantMaster", { body: "Tohle je testovací upozornění. Vše funguje!", icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png", vibrate: [200, 100, 200] });
         }).catch(err => alert("Chyba SW notifikace: " + err));
     } else {
-        // Nouzový pád na starý způsob
-        new Notification("🌿 Test PlantMaster", {
-            body: "Test přes starou metodu.",
-            icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png"
-        });
+        new Notification("🌿 Test PlantMaster", { body: "Test přes starou metodu.", icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png" });
     }
 }
 
-// ZMĚNA 2: Přepsána i hlavní funkce na modernější zápis
 function checkAndSendNotification() {
     if (!("Notification" in window) || Notification.permission !== "granted") return;
     const today = new Date().toLocaleDateString('cs-CZ'); const lastNotified = localStorage.getItem('lastNotifyDate');
@@ -240,10 +236,7 @@ function checkAndSendNotification() {
     if (tasksCount > 0 && lastNotified !== today) {
         if (navigator.serviceWorker) {
             navigator.serviceWorker.ready.then(function(registration) {
-                registration.showNotification("🌿 PlantMaster", { 
-                    body: `Máte v zahradě ${tasksCount} aktuálních úkolů na tento měsíc!`, 
-                    icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png" 
-                });
+                registration.showNotification("🌿 PlantMaster", { body: `Máte v zahradě ${tasksCount} aktuálních úkolů na tento měsíc!`, icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png" });
             });
         } else {
             new Notification("🌿 PlantMaster", { body: `Máte v zahradě ${tasksCount} aktuálních úkolů na tento měsíc!`, icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png" });
@@ -262,10 +255,11 @@ async function render() {
         return p;
     }).reverse();
 
-    updateCalendar();
+    // Filtrování při načtení zajistí, že se rovnou vykreslí kytky i kalendář ze zobrazených dat
     filterPlants(); 
 }
 
+// ZMĚNA: Filtrování teď ovládá i kalendář
 function filterPlants() {
     const query = document.getElementById('search-box').value.toLowerCase();
     const sortVal = document.getElementById('sort-select').value;
@@ -290,17 +284,23 @@ function filterPlants() {
         return b.id - a.id; 
     });
 
+    // 1. Překreslení karet
     const list = document.getElementById('plant-list');
     list.innerHTML = '';
     
-    if (filtered.length === 0) { list.innerHTML = '<p style="text-align:center; color:#888;">Nebyly nalezeny žádné rostliny.</p>'; return; }
-    
-    filtered.forEach((p) => {
-        const originalIndex = currentPlants.indexOf(p);
-        const latestImg = (p.images && p.images.length > 0) ? p.images[p.images.length - 1].data : p.img;
-        const catBadge = p.category && p.category !== "Ostatní" ? `<div class="cat-badge-small">${p.category}</div>` : '';
-        list.innerHTML += `<div class="card" onclick="openDetail(${originalIndex})"><img src="${latestImg}"><div class="card-info"><h3>${p.name}</h3>${catBadge}<p>💧 ${p.water ? p.water.substring(0, 30) + '...' : 'Otevři pro detaily'}</p></div></div>`;
-    });
+    if (filtered.length === 0) { 
+        list.innerHTML = '<p style="text-align:center; color:#888;">Nebyly nalezeny žádné rostliny.</p>'; 
+    } else {
+        filtered.forEach((p) => {
+            const originalIndex = currentPlants.indexOf(p);
+            const latestImg = (p.images && p.images.length > 0) ? p.images[p.images.length - 1].data : p.img;
+            const catBadge = p.category && p.category !== "Ostatní" ? `<div class="cat-badge-small">${p.category}</div>` : '';
+            list.innerHTML += `<div class="card" onclick="openDetail(${originalIndex})"><img src="${latestImg}"><div class="card-info"><h3>${p.name}</h3>${catBadge}<p>💧 ${p.water ? p.water.substring(0, 30) + '...' : 'Otevři pro detaily'}</p></div></div>`;
+        });
+    }
+
+    // 2. Překreslení kalendáře POUZE z aktuálně vyfiltrovaných kytek
+    updateCalendar(filtered);
 }
 
 function toggleTask(element) {
@@ -309,22 +309,32 @@ function toggleTask(element) {
     else { details.style.display = 'block'; arrow.style.transform = 'rotate(180deg)'; }
 }
 
-function updateCalendar() {
+// ZMĚNA: Funkce teď přijímá pole rostlin (z filtrování)
+function updateCalendar(plantsArray) {
     const months = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
     const currentMonthNum = new Date().getMonth() + 1; 
     document.getElementById('calendar-title').innerText = `📅 Úkoly na tento měsíc (${months[currentMonthNum-1]})`;
-    const calBox = document.getElementById('calendar-tasks'); calBox.innerHTML = ''; let tasksFound = false;
-    currentPlants.forEach(p => {
+    
+    const calBox = document.getElementById('calendar-tasks'); 
+    calBox.innerHTML = ''; 
+    let tasksFound = false;
+
+    // Procházíme jen to pole, které nám filterPlants poslal
+    plantsArray.forEach(p => {
         if(p.tasks && Array.isArray(p.tasks)) {
             p.tasks.forEach(task => {
                 if(task.month === currentMonthNum) {
-                    tasksFound = true; const detailsHTML = task.details ? task.details : 'Bez dalších podrobností.';
+                    tasksFound = true; 
+                    const detailsHTML = task.details ? task.details : 'Bez dalších podrobností.';
                     calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><div><strong>${p.name}:</strong> ${task.action}</div><div class="task-arrow">▼</div></div><div class="task-details">${detailsHTML}</div></div>`;
                 }
             });
         }
     });
-    if(!tasksFound) calBox.innerHTML = '<i>V tomto měsíci se zahradou nemusíte nic dělat. Odpočívejte! ☕</i>';
+    
+    if(!tasksFound) {
+        calBox.innerHTML = '<i>U vybraných rostlin se v tomto měsíci nemusí nic dělat. Odpočívejte! ☕</i>';
+    }
 }
 
 function openDetail(index) {
