@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v12.1</title>
+    <title>PlantMaster AI v12.2</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -47,7 +47,9 @@
         .cat-badge-small { display: inline-block; font-size: 0.7rem; background: #e0f2f1; color: #00695c; padding: 2px 6px; border-radius: 4px; margin-bottom: 5px; font-weight: bold; }
         
         .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--p); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 6px 16px rgba(46,125,50,0.4); border: none; cursor: pointer; z-index: 100; }
-        #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 999; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; text-align: center; padding: 20px;}
+        
+        /* Zvýšený z-index, aby překryl i menu nastavení */
+        #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; text-align: center; padding: 20px;}
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         
         #settings-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
@@ -101,7 +103,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 12.1 (Oprava exportu)</span>
+    <span class="version-tag">Verze 12.2 (Stabilní Export)</span>
     <button class="btn-header-settings" onclick="openSettings()">⚙️</button>
 </header>
 
@@ -141,8 +143,8 @@
     <div class="settings-box">
         <button class="btn-settings-close" onclick="closeSettings()">✕</button>
         <h3>⚙️ Nastavení</h3>
-        <button class="btn-menu btn-backup" onclick="closeSettings(); exportData()">💾 ZÁLOHOVAT DATA A FOTKY</button>
-        <button class="btn-menu btn-restore" onclick="closeSettings(); document.getElementById('import-file').click()">📂 OBNOVIT ZE ZÁLOHY</button>
+        <button class="btn-menu btn-backup" onclick="exportData()">💾 ZÁLOHOVAT DATA A FOTKY</button>
+        <button class="btn-menu btn-restore" onclick="document.getElementById('import-file').click()">📂 OBNOVIT ZE ZÁLOHY</button>
         <button class="btn-menu btn-settings" onclick="closeSettings(); setKey()">🔑 Změnit API klíč</button>
     </div>
 </div>
@@ -409,10 +411,16 @@ function resizeImage(file) {
     });
 }
 
-// --- OPRAVA EXPORTU (Záchrana před Google Diskem) ---
 async function exportData() {
-    if (currentPlants.length === 0) return alert("Zatím nemáte žádné kytky k zálohování.");
-    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Vytvářím zálohu (ZIP balíček)...";
+    if (currentPlants.length === 0) {
+        closeSettings();
+        return alert("Zatím nemáte žádné kytky k zálohování.");
+    }
+    
+    // ZMĚNA LOGIKY: Zobrazíme loader a tím rovnou překryjeme menu, aniž bychom ho rušili
+    document.getElementById('loader').style.display = 'flex'; 
+    document.getElementById('loader-text').innerText = "Vytvářím zálohu (ZIP balíček)...";
+    
     try {
         const zip = new JSZip(); zip.file("databaze.json", JSON.stringify(currentPlants));
         const photoFolder = zip.folder("Fotky"); let csvContent = "\uFEFFNázev;Druh;Přidáno;Zálivka;Světlo;Toxicita;Poznámky\n";
@@ -435,20 +443,34 @@ async function exportData() {
         zip.file("Prehled_rostlin.csv", csvContent);
         const content = await zip.generateAsync({type:"blob"}); 
         
-        // Použijeme octet-stream k vynucení přímého stažení souboru (obejití cloudových služeb)
-        const safeBlob = new Blob([content], { type: "application/octet-stream" });
         const link = document.createElement('a'); 
-        link.href = URL.createObjectURL(safeBlob);
+        link.href = URL.createObjectURL(content);
+        const todayStr = new Date().toISOString().split('T')[0]; 
+        link.download = `PlantMaster_Zaloha_${todayStr}.zip`;
         
-        const todayStr = new Date().toISOString().split('T')[0]; link.download = `PlantMaster_Zaloha_${todayStr}.zip`;
-        document.body.appendChild(link); link.click(); document.body.removeChild(link);
-        document.getElementById('loader').style.display = 'none';
-    } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba při vytváření zálohy: " + err.message); }
+        document.body.appendChild(link); 
+        link.click(); 
+        
+        setTimeout(() => { 
+            document.body.removeChild(link); 
+            URL.revokeObjectURL(link.href);
+            // ZMĚNA LOGIKY: Teprve po úspěšném stažení všechno naráz uklidíme
+            document.getElementById('loader').style.display = 'none';
+            closeSettings();
+        }, 100);
+        
+    } catch (err) { 
+        document.getElementById('loader').style.display = 'none'; 
+        alert("Chyba při vytváření zálohy: " + err.message); 
+    }
 }
 
 document.getElementById('import-file').onchange = async (e) => {
     const file = e.target.files[0]; if (!file) return;
+    
+    // ZMĚNA LOGIKY: Zavřeme okno až po samotném výběru souboru
     closeSettings();
+    
     document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Čtu ZIP balíček...";
     try {
         const zip = new JSZip(); const contents = await zip.loadAsync(file);
