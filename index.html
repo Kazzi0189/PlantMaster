@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v12.0</title>
+    <title>PlantMaster AI v12.1</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -14,7 +14,6 @@
         :root { --p: #2e7d32; --bg: #f4f7f6; --text: #333; --card: #ffffff; --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; --det: #8e24aa; }
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; }
         
-        /* Úprava hlavičky pro ikonu nastavení */
         header { background: var(--p); color: white; padding: 20px 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; position: relative; }
         header h1 { margin: 0; font-size: 1.5rem; }
         .version-tag { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; display: block; }
@@ -51,7 +50,6 @@
         #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 999; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; text-align: center; padding: 20px;}
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         
-        /* Nové menu nastavení */
         #settings-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
         .settings-box { background: white; padding: 25px; border-radius: 16px; width: 85%; max-width: 320px; position: relative; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
         .settings-box h3 { margin-top: 0; color: var(--p); margin-bottom: 20px; font-size: 1.4rem; }
@@ -92,9 +90,9 @@
         .btn-delete { background: #ffebee; color: #d32f2f; border: 1px solid #ffcdd2; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 10px; }
         
         .btn-menu { display: block; margin: 10px auto; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: bold; font-size: 0.95rem; cursor: pointer; width: 100%; box-sizing: border-box;}
-        .btn-backup { background: #1976d2; box-shadow: 0 4px 10px rgba(25,118,210,0.3); }
-        .btn-restore { background: #388e3c; box-shadow: 0 4px 10px rgba(56,142,60,0.3); }
-        .btn-settings { background: #757575; }
+        .btn-backup { background: #1976d2; box-shadow: 0 4px 10px rgba(25,118,210,0.3); color: white; }
+        .btn-restore { background: #388e3c; box-shadow: 0 4px 10px rgba(56,142,60,0.3); color: white; }
+        .btn-settings { background: #757575; color: white; }
         
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
@@ -103,7 +101,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 12.0 (Čistý design)</span>
+    <span class="version-tag">Verze 12.1 (Oprava exportu)</span>
     <button class="btn-header-settings" onclick="openSettings()">⚙️</button>
 </header>
 
@@ -137,7 +135,7 @@
     </div>
 
     <div id="plant-list"></div>
-    </div>
+</div>
 
 <div id="settings-view">
     <div class="settings-box">
@@ -212,13 +210,8 @@ req.onupgradeneeded = (e) => {
 };
 req.onsuccess = (e) => { db = e.target.result; checkNotificationPermission(); render(); };
 
-// --- LOGIKA NASTAVENÍ ---
-function openSettings() {
-    document.getElementById('settings-view').style.display = 'flex';
-}
-function closeSettings() {
-    document.getElementById('settings-view').style.display = 'none';
-}
+function openSettings() { document.getElementById('settings-view').style.display = 'flex'; }
+function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
 
 function setKey() {
     const k = prompt("Vložte API klíč z Google AI Studio:");
@@ -416,6 +409,7 @@ function resizeImage(file) {
     });
 }
 
+// --- OPRAVA EXPORTU (Záchrana před Google Diskem) ---
 async function exportData() {
     if (currentPlants.length === 0) return alert("Zatím nemáte žádné kytky k zálohování.");
     document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Vytvářím zálohu (ZIP balíček)...";
@@ -439,7 +433,13 @@ async function exportData() {
         });
 
         zip.file("Prehled_rostlin.csv", csvContent);
-        const content = await zip.generateAsync({type:"blob"}); const link = document.createElement('a'); link.href = URL.createObjectURL(content);
+        const content = await zip.generateAsync({type:"blob"}); 
+        
+        // Použijeme octet-stream k vynucení přímého stažení souboru (obejití cloudových služeb)
+        const safeBlob = new Blob([content], { type: "application/octet-stream" });
+        const link = document.createElement('a'); 
+        link.href = URL.createObjectURL(safeBlob);
+        
         const todayStr = new Date().toISOString().split('T')[0]; link.download = `PlantMaster_Zaloha_${todayStr}.zip`;
         document.body.appendChild(link); link.click(); document.body.removeChild(link);
         document.getElementById('loader').style.display = 'none';
@@ -448,10 +448,7 @@ async function exportData() {
 
 document.getElementById('import-file').onchange = async (e) => {
     const file = e.target.files[0]; if (!file) return;
-    
-    // Zabezpečení zavření menu (pokud by ještě bylo otevřené z nějakého důvodu)
     closeSettings();
-    
     document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Čtu ZIP balíček...";
     try {
         const zip = new JSZip(); const contents = await zip.loadAsync(file);
