@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v16.0</title>
+    <title>PlantMaster AI v17.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -121,7 +121,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 16.0 (Vlastní Exportní Formát)</span>
+    <span class="version-tag">Verze 17.0 (Odlehčený Export)</span>
     <button class="btn-header-settings" onclick="openSettings()">⚙️</button>
 </header>
 
@@ -717,34 +717,50 @@ function resizeImage(file) {
     });
 }
 
-// OPRAVA EXPORTU: Změna koncovky na vlastní formát pro oklamání Androidu
 async function exportData() {
     if (currentPlants.length === 0) { closeSettings(); return alert("Zatím nemáte žádné kytky k zálohování."); }
-    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Vytvářím zálohu (.plantbak)...";
+    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Vytvářím odlehčenou zálohu (.plantbak)...";
     
     try {
-        const zip = new JSZip(); zip.file("databaze.json", JSON.stringify(currentPlants));
-        const photoFolder = zip.folder("Fotky"); let csvContent = "\uFEFFNázev;Druh;Využití;Přidáno;Zálivka;Světlo;Toxicita;Poznámky\n";
+        const zip = new JSZip(); 
+        const photoFolder = zip.folder("Fotky"); 
+        let csvContent = "\uFEFFNázev;Druh;Využití;Přidáno;Zálivka;Světlo;Toxicita;Poznámky;Videa\n";
 
-        currentPlants.forEach((p, pIndex) => {
+        // Vytvoříme si hlubokou kopii dat, abychom nezničili aktivní zahradu v telefonu
+        let plantsToExport = JSON.parse(JSON.stringify(currentPlants));
+
+        plantsToExport.forEach((p, pIndex) => {
             const clean = (str) => { if (!str) return ""; return '"' + String(str).replace(/"/g, '""').replace(/\n/g, ' ') + '"'; };
-            csvContent += `${clean(p.name)};${clean(p.category || "Ostatní")};${clean(p.usage || "Ostatní")};${clean(p.dateAdded)};${clean(p.water)};${clean(p.light)};${clean(p.toxicity)};${clean(p.notes)}\n`;
+            
+            // Extrakce videí do textového řetězce pro CSV
+            const videosStr = (p.videos || []).map(v => v.url).join(', ');
+            
+            csvContent += `${clean(p.name)};${clean(p.category || "Ostatní")};${clean(p.usage || "Ostatní")};${clean(p.dateAdded)};${clean(p.water)};${clean(p.light)};${clean(p.toxicity)};${clean(p.notes)};${clean(videosStr)}\n`;
 
-            const imagesToExport = p.images || [{data: p.img, date: p.dateAdded}];
-            imagesToExport.forEach((imgObj, iIndex) => {
-                if(imgObj.data) {
-                    const b64Data = imgObj.data.split(',')[1];
-                    const safeName = (p.name || "Kytka").replace(/[^a-zA-Z0-9]/g, "_");
-                    const fileName = `${safeName}_${pIndex}_foto_${iIndex + 1}.jpg`;
-                    photoFolder.file(fileName, b64Data, {base64: true});
-                }
-            });
+            if (p.images) {
+                p.images.forEach((imgObj, iIndex) => {
+                    if(imgObj.data && imgObj.data.includes('base64,')) {
+                        const b64Data = imgObj.data.split(',')[1];
+                        const safeName = (p.name || "Kytka").replace(/[^a-zA-Z0-9]/g, "_");
+                        const fileName = `${safeName}_${p.id || pIndex}_foto_${iIndex + 1}.jpg`;
+                        
+                        // Fyzicky uložíme fotku do složky Fotky
+                        photoFolder.file(fileName, b64Data, {base64: true});
+
+                        // V databázi nahradíme obří text jen odkazem na název souboru
+                        imgObj.exportPath = fileName;
+                        delete imgObj.data;
+                    }
+                });
+            }
+            // Smažeme zastaralý hlavní obrázek, uvolní to místo
+            delete p.img;
         });
 
+        zip.file("databaze.json", JSON.stringify(plantsToExport));
         zip.file("Prehled_rostlin.csv", csvContent);
         const content = await zip.generateAsync({type:"blob"}); 
         
-        // Změna koncovky z .zip na .plantbak, Android nebude vědět, co s tím a prostě to stáhne
         const safeBlob = new Blob([content], { type: "application/octet-stream" });
         const link = document.createElement('a'); link.href = URL.createObjectURL(safeBlob);
         
@@ -763,18 +779,38 @@ async function exportData() {
 document.getElementById('import-file').onchange = async (e) => {
     const file = e.target.files[0]; if (!file) return;
     closeSettings();
-    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Čtu zálohu...";
+    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Čtu zálohu a načítám fotky...";
     try {
         const zip = new JSZip(); const contents = await zip.loadAsync(file);
         if (!contents.file("databaze.json")) throw new Error("V tomto souboru chybí strojová data (databaze.json).");
-        const jsonStr = await contents.file("databaze.json").async("string"); const importedPlants = JSON.parse(jsonStr);
+        
+        const jsonStr = await contents.file("databaze.json").async("string"); 
+        let importedPlants = JSON.parse(jsonStr);
         if (!Array.isArray(importedPlants) || importedPlants.length === 0) throw new Error("Záloha je prázdná.");
         
         document.getElementById('loader').style.display = 'none';
         const action = prompt(`Našli jsme data v záloze (${importedPlants.length} rostlin).\n\nNapište '1' pro PŘEPSÁNÍ (smaže vaši současnou zahradu a nahradí ji zálohou).\nNapište '2' pro PŘIDÁNÍ.\n\n(Cokoliv jiného import zruší)`, "1");
         if (action !== "1" && action !== "2") { alert("Import zrušen."); e.target.value = ""; return; }
 
-        document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Zapisuji data do zahrady...";
+        document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Rekonstruuji fotky a zapisuji do zahrady...";
+
+        // Nyní rekonstruujeme obrázky - aplikace si je vytáhne ze složky Fotky
+        for (let p of importedPlants) {
+            if (p.images) {
+                for (let imgObj of p.images) {
+                    if (imgObj.exportPath) {
+                        const photoFile = contents.file(`Fotky/${imgObj.exportPath}`);
+                        if (photoFile) {
+                            const base64Data = await photoFile.async("base64");
+                            imgObj.data = "data:image/jpeg;base64," + base64Data;
+                        }
+                        // Po přečtení smažeme odkaz, fotka už je v paměti
+                        delete imgObj.exportPath; 
+                    }
+                }
+            }
+        }
+
         const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
         if (action === "1") store.clear(); 
         importedPlants.forEach(p => { delete p.id; store.add(p); });
