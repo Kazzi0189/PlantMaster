@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v17.0</title>
+    <title>PlantMaster AI v18.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -17,7 +17,8 @@
         header { background: var(--p); color: white; padding: 20px 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); text-align: center; margin-bottom: 20px; position: relative; }
         header h1 { margin: 0; font-size: 1.5rem; }
         .version-tag { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; display: block; }
-        .btn-header-settings { position: absolute; right: 15px; top: 20px; background: transparent; border: none; font-size: 1.5rem; cursor: pointer; color: white; padding: 5px; }
+        .header-btns { position: absolute; right: 15px; top: 20px; display: flex; gap: 10px; }
+        .btn-header { background: transparent; border: none; font-size: 1.4rem; cursor: pointer; color: white; padding: 5px; }
         
         .container { padding: 0 15px; }
         
@@ -54,10 +55,14 @@
         #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; text-align: center; padding: 20px;}
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         
-        #settings-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        #settings-view, #help-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
         .settings-box { background: white; padding: 25px; border-radius: 16px; width: 85%; max-width: 320px; position: relative; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .settings-box h3 { margin-top: 0; color: var(--p); margin-bottom: 20px; font-size: 1.4rem; }
-        .btn-settings-close { position: absolute; top: -15px; right: -15px; width: 40px; height: 40px; background: #d32f2f; color: white; border: none; border-radius: 50%; font-size: 20px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: flex; justify-content: center; align-items: center; }
+        .help-box { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 500px; height: 80vh; position: relative; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: left; }
+        .help-box h2 { color: var(--p); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .help-box h3 { color: var(--p); font-size: 1.1rem; margin-top: 20px; }
+        .help-box p, .help-box li { font-size: 0.95rem; line-height: 1.5; color: #444; }
+        
+        .btn-modal-close { position: absolute; top: 15px; right: 15px; width: 35px; height: 35px; background: #eee; border: none; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 10; }
         
         #detail-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 500; overflow-y: auto; padding-bottom: 30px; }
         .gallery-wrapper { padding: 15px 15px 0 15px; }
@@ -121,8 +126,11 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 17.0 (Odlehčený Export)</span>
-    <button class="btn-header-settings" onclick="openSettings()">⚙️</button>
+    <span class="version-tag">Verze 18.0 (Integrovaný Manuál)</span>
+    <div class="header-btns">
+        <button class="btn-header" onclick="openHelp()">❓</button>
+        <button class="btn-header" onclick="openSettings()">⚙️</button>
+    </div>
 </header>
 
 <div class="container">
@@ -166,9 +174,48 @@
     <div id="plant-list"></div>
 </div>
 
+<div id="help-view">
+    <div class="help-box">
+        <button class="btn-modal-close" onclick="closeHelp()">✕</button>
+        <h2>📖 Uživatelský manuál</h2>
+        
+        <p>Vítejte v PlantMaster AI! Tato aplikace kombinuje botaniku s umělou inteligencí pro špičkovou péči o vaši zahradu.</p>
+
+        <h3>1. Přidání a správa rostlin</h3>
+        <ul>
+            <li><strong>Nová rostlina (+):</strong> Klikněte na zelené tlačítko dole. Po vyfocení AI automaticky určí druh, využití (zelenina/ovoce), zálivku a toxicitu.</li>
+            <li><strong>Filtry:</strong> Pomocí roletek nahoře můžete seznam kytiček řadit nebo filtrovat (např. zobrazit jen zeleninu).</li>
+        </ul>
+
+        <h3>2. Videonávody (YouTube)</h3>
+        <p>Aplikace nabízí dva režimy práce s videem:</p>
+        <ul>
+            <li><strong>Režim „Gauč“:</strong> Pokud na YouTube uvidíte super video, dejte "Sdílet" do PlantMasteru. Video se objeví nahoře ve schránce a můžete ho přiřadit k rostlině na později.</li>
+            <li><strong>Režim „Akce“:</strong> V detailu každé rostliny najdete tlačítko pro YouTube hledání. Můžete bleskově hledat rady pro řez, hnojení nebo škůdce přímo pro danou odrůdu.</li>
+        </ul>
+
+        <h3>3. Expertní AI funkce</h3>
+        <ul>
+            <li><strong>🩺 AI Doktor:</strong> Máte-li v albu kytky aspoň 2 fotky v čase, doktor porovná její vývoj a poradí, jak zlepšit její zdraví.</li>
+            <li><strong>🔎 AI Detektiv:</strong> Pomůže vám s jistotou určit přesnou odrůdu (např. u jabloní) a následně aktualizovat celý profil rostliny podle přesných dat.</li>
+        </ul>
+
+        <h3>4. Kalendář a úkoly</h3>
+        <p>Na hlavní obrazovce vidíte automatický kalendář. Ten čerpá data ze všech vašich rostlin a upozorní vás, co je v aktuálním měsíci potřeba udělat (např. řez v březnu).</p>
+
+        <h3>5. Zálohování (Export)</h3>
+        <ul>
+            <li><strong>💾 Zálohovat:</strong> Vytvoří soubor <strong>.plantbak</strong>. Tento formát je odlehčený, aby šel poslat Gmailem. Obsahuje vše: fotky, poznámky i odkazy na videa.</li>
+            <li><strong>📂 Obnovit:</strong> Umožňuje nahrát soubor .plantbak zpět do telefonu. Aplikace sama zrekonstruuje celou zahradu.</li>
+        </ul>
+        
+        <p style="margin-top: 30px; font-size: 0.8rem; text-align: center; opacity: 0.6;">Verze aplikace 18.0</p>
+    </div>
+</div>
+
 <div id="settings-view">
     <div class="settings-box">
-        <button class="btn-settings-close" onclick="closeSettings()">✕</button>
+        <button class="btn-modal-close" onclick="closeSettings()">✕</button>
         <h3>⚙️ Nastavení</h3>
         <button class="btn-menu btn-backup" onclick="exportData()">💾 ZÁLOHOVAT DATA A FOTKY</button>
         <button class="btn-menu btn-restore" onclick="document.getElementById('import-file').click()">📂 OBNOVIT ZE ZÁLOHY</button>
@@ -497,8 +544,11 @@ function removeSavedVideo(plantId, videoIdx) {
     }
 }
 
+// OTEVÍRÁNÍ A ZAVÍRÁNÍ MODÁLNÍCH OKEN
 function openSettings() { document.getElementById('settings-view').style.display = 'flex'; }
 function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
+function openHelp() { document.getElementById('help-view').style.display = 'flex'; }
+function closeHelp() { document.getElementById('help-view').style.display = 'none'; }
 
 function setKey() {
     const k = prompt("Vložte API klíč z Google AI Studio:");
@@ -726,13 +776,10 @@ async function exportData() {
         const photoFolder = zip.folder("Fotky"); 
         let csvContent = "\uFEFFNázev;Druh;Využití;Přidáno;Zálivka;Světlo;Toxicita;Poznámky;Videa\n";
 
-        // Vytvoříme si hlubokou kopii dat, abychom nezničili aktivní zahradu v telefonu
         let plantsToExport = JSON.parse(JSON.stringify(currentPlants));
 
         plantsToExport.forEach((p, pIndex) => {
             const clean = (str) => { if (!str) return ""; return '"' + String(str).replace(/"/g, '""').replace(/\n/g, ' ') + '"'; };
-            
-            // Extrakce videí do textového řetězce pro CSV
             const videosStr = (p.videos || []).map(v => v.url).join(', ');
             
             csvContent += `${clean(p.name)};${clean(p.category || "Ostatní")};${clean(p.usage || "Ostatní")};${clean(p.dateAdded)};${clean(p.water)};${clean(p.light)};${clean(p.toxicity)};${clean(p.notes)};${clean(videosStr)}\n`;
@@ -744,16 +791,12 @@ async function exportData() {
                         const safeName = (p.name || "Kytka").replace(/[^a-zA-Z0-9]/g, "_");
                         const fileName = `${safeName}_${p.id || pIndex}_foto_${iIndex + 1}.jpg`;
                         
-                        // Fyzicky uložíme fotku do složky Fotky
                         photoFolder.file(fileName, b64Data, {base64: true});
-
-                        // V databázi nahradíme obří text jen odkazem na název souboru
                         imgObj.exportPath = fileName;
                         delete imgObj.data;
                     }
                 });
             }
-            // Smažeme zastaralý hlavní obrázek, uvolní to místo
             delete p.img;
         });
 
@@ -794,7 +837,6 @@ document.getElementById('import-file').onchange = async (e) => {
 
         document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Rekonstruuji fotky a zapisuji do zahrady...";
 
-        // Nyní rekonstruujeme obrázky - aplikace si je vytáhne ze složky Fotky
         for (let p of importedPlants) {
             if (p.images) {
                 for (let imgObj of p.images) {
@@ -804,7 +846,6 @@ document.getElementById('import-file').onchange = async (e) => {
                             const base64Data = await photoFile.async("base64");
                             imgObj.data = "data:image/jpeg;base64," + base64Data;
                         }
-                        // Po přečtení smažeme odkaz, fotka už je v paměti
                         delete imgObj.exportPath; 
                     }
                 }
