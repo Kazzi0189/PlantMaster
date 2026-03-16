@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v24.1</title>
+    <title>PlantMaster AI v25.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -34,7 +34,8 @@
 
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; transition: background 0.3s, color 0.3s; }
         
-        header { background: var(--p); color: var(--header-text); padding: 20px 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: center; margin-bottom: 20px; position: sticky; top: 0; z-index: 1000; transition: background 0.3s; }
+        /* OPRAVA: Záhlaví už není sticky, roluje přirozeně nahoru */
+        header { background: var(--p); color: var(--header-text); padding: 20px 15px; border-radius: 0 0 20px 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); text-align: center; margin-bottom: 10px; position: relative; z-index: 10; transition: background 0.3s; }
         header h1 { margin: 0; font-size: 1.5rem; }
         .version-tag { font-size: 0.75rem; opacity: 0.9; margin-top: 5px; display: block; font-weight: bold; }
         .header-btns { position: absolute; right: 15px; top: 20px; display: flex; gap: 10px; }
@@ -42,14 +43,17 @@
         
         .container { padding: 0 15px; }
         
+        /* NOVINKA: Obal pro hledání a filtry, který zůstane přilepený nahoře */
+        .sticky-controls { position: sticky; top: 0; background: var(--bg); z-index: 100; padding: 10px 0; border-bottom: 1px solid transparent; transition: 0.3s; }
+        
         #inbox-section { display:none; background: var(--card); border-left: 5px solid #ff9800; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px var(--shadow); }
         #inbox-section h3 { margin: 0 0 10px 0; color: #ff9800; font-size: 1.1rem; }
         
         #search-box { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 12px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; outline: none; background: var(--input-bg); color: var(--text); }
-        .filter-controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        .filter-controls { display: flex; gap: 10px; }
         .filter-select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.9rem; outline: none; background: var(--input-bg); color: var(--text); }
         
-        .calendar-section { background: var(--card); border-radius: 16px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--p); box-shadow: 0 2px 8px var(--shadow); }
+        .calendar-section { background: var(--card); border-radius: 16px; padding: 15px; margin-top: 10px; margin-bottom: 20px; border-left: 5px solid var(--p); box-shadow: 0 2px 8px var(--shadow); }
         .calendar-section h3 { margin: 0 0 10px 0; color: var(--p); font-size: 1.1rem; }
         
         #calendar-tasks { max-height: 250px; overflow-y: auto; padding-right: 5px; }
@@ -66,17 +70,17 @@
         .use-badge-small { display: inline-block; font-size: 0.7rem; background: rgba(255,152,0,0.1); color: #fb8c00; padding: 2px 6px; border-radius: 4px; margin-bottom: 5px; font-weight: bold; }
         .water-badge-small { display: inline-block; font-size: 0.7rem; background: rgba(33,150,243,0.1); color: #1e88e5; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-top: 5px; display: block; width: fit-content; }
         
-        .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--p); color: var(--header-text); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 6px 16px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 100; transition: background 0.3s; }
+        .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--p); color: var(--header-text); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 6px 16px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 150; transition: background 0.3s; }
         
         #multi-select-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.2); z-index: 150; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; flex-wrap: wrap; gap: 10px; }
         .btn-cancel-sel { padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-weight: bold; cursor: pointer; }
         .btn-del-sel { padding: 10px 15px; border-radius: 8px; border: none; background: var(--warn); color: white; font-weight: bold; cursor: pointer; }
         .sel-cat-drop { padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); flex-grow: 1; outline: none; }
 
-        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: white; font-weight: bold; text-align: center; padding: 20px; backdrop-filter: blur(3px); }
+        #loader { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 4000; flex-direction: column; justify-content: center; align-items: center; color: white; font-weight: bold; text-align: center; padding: 20px; backdrop-filter: blur(3px); }
         .spinner { width: 40px; height: 40px; border: 4px solid #fff; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         
-        #settings-view, #help-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        #settings-view, #help-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
         .settings-box, .help-box { background: var(--card); padding: 25px; border-radius: 16px; width: 85%; max-width: 320px; position: relative; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.4); color: var(--text); }
         .help-box { max-width: 500px; height: 80vh; overflow-y: auto; text-align: left; }
         .help-box h2 { color: var(--p); margin-top: 0; border-bottom: 2px solid var(--border); padding-bottom: 10px; }
@@ -84,7 +88,9 @@
         
         .btn-modal-close { position: absolute; top: 15px; right: 15px; width: 35px; height: 35px; background: var(--border); color: var(--text); border: none; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; justify-content: center; align-items: center; z-index: 10; }
         
-        #detail-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 500; overflow-y: auto; padding-bottom: 30px; }
+        /* OPRAVA Z-INDEXU PRO DETAIL ROSTLINY */
+        #detail-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding-bottom: 30px; }
+        
         .gallery-wrapper { padding: 15px 15px 0 15px; }
         .gallery-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; }
         .gallery-item { flex: 0 0 85%; scroll-snap-align: center; position: relative; }
@@ -131,8 +137,17 @@
         .use-badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; margin-bottom: 15px; background: rgba(255,152,0,0.1); color: #fb8c00; border: 1px solid rgba(255,152,0,0.3); }
         
         .info-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px var(--shadow); border: 1px solid var(--border); }
-        .info-box h4 { margin: 0 0 5px 0; color: var(--text); font-size: 0.9rem; text-transform: uppercase; opacity: 0.7; }
+        .info-box h4 { margin: 0 0 10px 0; color: var(--text); font-size: 0.95rem; opacity: 0.8; border-bottom: 1px solid var(--border); padding-bottom: 5px;}
         .info-box p { margin: 0; font-size: 0.95rem; line-height: 1.4; color: var(--text); }
+        
+        /* Styly pro historii a úkoly */
+        .task-action-item { display: flex; justify-content: space-between; align-items: center; background: var(--bg); padding: 10px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border); }
+        .btn-done { background: var(--safe); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        
+        .history-timeline { border-left: 2px solid var(--p); padding-left: 15px; margin-left: 5px; }
+        .history-entry { position: relative; margin-bottom: 15px; font-size: 0.9rem; line-height: 1.4; }
+        .history-entry::before { content: ''; position: absolute; left: -21px; top: 4px; width: 10px; height: 10px; background: var(--p); border-radius: 50%; }
+        .history-date { font-weight: bold; color: var(--p); display: block; font-size: 0.8rem; margin-bottom: 2px; }
         
         textarea.notes-input { width: 100%; height: 80px; padding: 10px; padding-right: 45px; border: 1px solid var(--input-border); border-radius: 8px; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; background: var(--input-bg); color: var(--text); }
         .btn-save-notes { background: var(--p); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
@@ -156,7 +171,7 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 24.1 (Kritická oprava databáze a klikání)</span>
+    <span class="version-tag">Verze 25.0 (Historie, Úkoly & Oprava UI)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openHelp()">❓</button>
         <button class="btn-header" onclick="openSettings()">⚙️</button>
@@ -172,28 +187,29 @@
         <div id="inbox-list"></div>
     </div>
  
-    <input type="text" id="search-box" placeholder="🔍 Hledat podle názvu..." onkeyup="filterPlants()">
-    
-    <div class="filter-controls">
-        <select id="sort-select" class="filter-select" onchange="filterPlants()">
-            <option value="newest">Od nejnovější</option>
-            <option value="oldest">Od nejstarší</option>
-            <option value="az">Abecedně A-Z</option>
-            <option value="za">Abecedně Z-A</option>
-       </select>
-        
-        <select id="filter-select" class="filter-select" onchange="filterPlants()">
-            <option value="all">Všechno</option>
-            <option value="Pokojová rostlina">Pokojovky</option>
-            <option value="Keř">Keře</option>
-            <option value="Strom">Stromy</option>
-            <option value="Bylina">Byliny</option>
-            <option value="Sukulent / Kaktus">Sukulenty a Kaktusy</option>
-            <option value="Zelenina">Zelenina</option>
-            <option value="Ovoce">Ovoce</option>
-            <option value="Bylinka / Koření">Bylinky a koření</option>
-            <option value="other">Ostatní</option>
-       </select>
+    <div class="sticky-controls" id="search-container">
+        <input type="text" id="search-box" placeholder="🔍 Hledat podle názvu..." onkeyup="filterPlants()">
+        <div class="filter-controls">
+            <select id="sort-select" class="filter-select" onchange="filterPlants()">
+                <option value="newest">Od nejnovější</option>
+                <option value="oldest">Od nejstarší</option>
+                <option value="az">Abecedně A-Z</option>
+                <option value="za">Abecedně Z-A</option>
+           </select>
+            
+            <select id="filter-select" class="filter-select" onchange="filterPlants()">
+                <option value="all">Všechno</option>
+                <option value="Pokojová rostlina">Pokojovky</option>
+                <option value="Keř">Keře</option>
+                <option value="Strom">Stromy</option>
+                <option value="Bylina">Byliny</option>
+                <option value="Sukulent / Kaktus">Sukulenty a Kaktusy</option>
+                <option value="Zelenina">Zelenina</option>
+                <option value="Ovoce">Ovoce</option>
+                <option value="Bylinka / Koření">Bylinky a koření</option>
+                <option value="other">Ostatní</option>
+           </select>
+        </div>
     </div>
  
     <div class="calendar-section" id="calendar-view">
@@ -236,9 +252,8 @@
         <h3>1. Přidání a správa rostlin</h3>
         <ul>
            <li><strong>Nová rostlina (+):</strong> Klikněte na zelené tlačítko dole. Po vyfocení AI automaticky určí druh, zálivku a toxicitu.</li>
-           <li><strong>Hromadná správa:</strong> Podržte prst déle na jakékoliv rostlině v seznamu. Aktivuje se režim výběru. Můžete naklikat více rostlin a dole je hromadně smazat nebo přesunout do jiné kategorie.</li>
-           <li><strong>Zálivka:</strong> V detailu najdete tlačítko "Zalít dnes". Aplikace si bude pamatovat datum.</li>
-           <li><strong>Chytrý Zoom (Fotky):</strong> Otevřete si fotku a roztáhněte ji dvěma prsty až 5x.</li>
+           <li><strong>Hromadná správa:</strong> Podržte prst déle na jakékoliv rostlině v seznamu. Aktivuje se režim výběru.</li>
+           <li><strong>Deník a Úkoly (Nové!):</strong> V detailu rostliny si můžete odškrtávat aktuální úkoly. Zapisují se automaticky do historie, abyste věděli, kdy jste co provedli.</li>
         </ul>
  
         <h3>2. Videonávody (YouTube)</h3>
@@ -339,7 +354,12 @@
         <button class="btn-water-now" onclick="waterPlantNow()">💧 ZALÍT DNES</button>
         <p style="text-align:center; font-size:0.85rem; color:var(--text-muted); margin-top:5px;" id="det-last-watered"></p>
         
-        <div class="info-box" style="margin-top: 20px;"><h4>💧 Jak zalévat</h4><p id="det-water"></p></div>
+        <div class="info-box" id="det-tasks-box" style="display:none; border-color: var(--p);">
+            <h4 style="color: var(--p);">🎯 Úkoly na tento měsíc</h4>
+            <div id="det-tasks-list"></div>
+        </div>
+
+        <div class="info-box"><h4>💧 Jak zalévat</h4><p id="det-water"></p></div>
         <div class="info-box"><h4>☀️ Světlo</h4><p id="det-light"></p></div>
         
         <div class="info-box" id="det-videos-box" style="display:none;">
@@ -355,6 +375,12 @@
             </div>
             <button class="btn-save-notes" onclick="saveNotes()">💾 Uložit poznámku</button>
         </div>
+
+        <div class="info-box" id="det-history-box" style="display:none;">
+            <h4>📜 Deník a Historie</h4>
+            <div class="history-timeline" id="det-history-list"></div>
+        </div>
+
         <button class="btn-delete" id="det-delete-btn">🗑️ Smazat rostlinu</button>
     </div>
 </div>
@@ -377,12 +403,12 @@ if ('serviceWorker' in navigator) {
 }
 
 // -------------------------------------------------------------
-// OPRAVA FATÁLNÍ CHYBY - Změněn název proměnné na 'cardStartY'
+// GHOST CLICKS A HROMADNÝ VÝBĚR (Opraveno)
 // -------------------------------------------------------------
 let isSelectMode = false;
 let selectedPlants = new Set();
 let pressTimer;
-let cardStartY = 0; // OPRAVA ZDE
+let cardStartY = 0; 
 let didLongPress = false;
 
 function startPress(e, plantId) {
@@ -426,10 +452,7 @@ function handleCardClick(e, plantId, originalIdx) {
         } else {
             selectedPlants.add(plantId);
         }
-        
-        if (selectedPlants.size === 0) {
-            isSelectMode = false;
-        }
+        if (selectedPlants.size === 0) isSelectMode = false;
         
         updateSelectModeUI();
         filterPlants();
@@ -464,10 +487,7 @@ function deleteSelected() {
         const tx = db.transaction("plants", "readwrite");
         const store = tx.objectStore("plants");
         selectedPlants.forEach(id => store.delete(id));
-        tx.oncomplete = () => {
-            cancelSelection();
-            render();
-        };
+        tx.oncomplete = () => { cancelSelection(); render(); };
     }
 }
 
@@ -494,11 +514,28 @@ function bulkMoveCategory() {
                 };
             };
         });
-    } else {
-        document.getElementById('bulk-cat-select').value = "";
-    }
+    } else { document.getElementById('bulk-cat-select').value = ""; }
 }
+
 // -------------------------------------------------------------
+// VYLEPŠENÍ SCROLLOVÁNÍ - Plovoucí lišta reaguje na posun
+// -------------------------------------------------------------
+let lastScrollTop = 0;
+window.addEventListener("scroll", function() {
+    let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+    const searchContainer = document.getElementById("search-container");
+    
+    // Přidáme stín, když lišta odroluje odshora
+    if (currentScroll > 50) {
+        searchContainer.style.boxShadow = "0 4px 10px rgba(0,0,0,0.1)";
+        searchContainer.style.padding = "5px 15px";
+    } else {
+        searchContainer.style.boxShadow = "none";
+        searchContainer.style.padding = "10px 0";
+    }
+    lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
+}, false);
+
 
 let db;
 let currentPlants = []; 
@@ -689,6 +726,9 @@ function deletePhoto(plantId, photoIdx, event) {
     }
 }
 
+// ---------------------------------------------------------
+// SYSTÉM ÚKOLŮ A HISTORIE (Zálivka a Úkoly)
+// ---------------------------------------------------------
 function waterPlantNow() {
     if(!openPlantId) return;
     const tx = db.transaction("plants", "readwrite");
@@ -696,9 +736,33 @@ function waterPlantNow() {
     store.get(openPlantId).onsuccess = (e) => {
         let plant = e.target.result;
         plant.lastWatered = new Date().toISOString();
+        
+        // Záznam do historie
+        if(!plant.history) plant.history = [];
+        plant.history.push({ date: new Date().toISOString(), action: "Rostlina byla zalita", type: "water" });
+
         store.put(plant).onsuccess = () => {
             document.getElementById('det-last-watered').innerText = "Poslední zálivka: Před chvílí";
-            render(); 
+            render().then(() => { const idx = currentPlants.findIndex(p => p.id === openPlantId); if(idx !== -1) openDetail(idx); });
+        };
+    };
+}
+
+function completeTask(taskAction) {
+    if(!openPlantId) return;
+    const tx = db.transaction("plants", "readwrite");
+    const store = tx.objectStore("plants");
+    store.get(openPlantId).onsuccess = (e) => {
+        let plant = e.target.result;
+        
+        if(!plant.history) plant.history = [];
+        plant.history.push({ date: new Date().toISOString(), action: `Splněn úkol: ${taskAction}`, type: "task" });
+
+        store.put(plant).onsuccess = () => {
+            render().then(() => { 
+                const idx = currentPlants.findIndex(p => p.id === openPlantId); 
+                if(idx !== -1) openDetail(idx); 
+            });
         };
     };
 }
@@ -716,10 +780,10 @@ function getWateringText(isoDateStr) {
 }
 
 // ---------------------------------------------------------
-// CHYTRÝ ZOOM FOTKY (Gesta) - Proměnné přejmenovány
+// CHYTRÝ ZOOM FOTKY (Gesta)
 // ---------------------------------------------------------
 let currentScale = 1; let currentTranslateX = 0; let currentTranslateY = 0;
-let startX = 0; let zoomStartY = 0; let startScale = 1; let startDistance = 0; // OPRAVA ZDE
+let startX = 0; let zoomStartY = 0; let startScale = 1; let startDistance = 0;
 let isPanning = false; let lastTap = 0;
 
 const lightboxObj = document.getElementById('lightbox');
@@ -745,7 +809,7 @@ lightboxObj.addEventListener('click', (e) => {
 
 lightboxObj.addEventListener('touchstart', (e) => {
     if (e.touches.length === 2) { startDistance = getDistance(e.touches); startScale = currentScale; isPanning = false; } 
-    else if (e.touches.length === 1 && currentScale > 1) { isPanning = true; startX = e.touches[0].clientX - currentTranslateX; zoomStartY = e.touches[0].clientY - currentTranslateY; } // OPRAVA ZDE
+    else if (e.touches.length === 1 && currentScale > 1) { isPanning = true; startX = e.touches[0].clientX - currentTranslateX; zoomStartY = e.touches[0].clientY - currentTranslateY; } 
 }, {passive: false});
 
 lightboxObj.addEventListener('touchmove', (e) => {
@@ -755,7 +819,7 @@ lightboxObj.addEventListener('touchmove', (e) => {
         currentScale = Math.max(1, Math.min(startScale * (getDistance(e.touches) / startDistance), 5));
         updateTransform();
     } else if (e.touches.length === 1 && isPanning) {
-        currentTranslateX = e.touches[0].clientX - startX; currentTranslateY = e.touches[0].clientY - zoomStartY; // OPRAVA ZDE
+        currentTranslateX = e.touches[0].clientX - startX; currentTranslateY = e.touches[0].clientY - zoomStartY; 
         updateTransform();
     }
 }, {passive: false});
@@ -873,15 +937,11 @@ function filterPlants() {
    updateCalendar(filtered);
 }
  
-function toggleTask(element) {
-    const details = element.nextElementSibling; const arrow = element.querySelector('.task-arrow');
-    if (details.style.display === 'block') { details.style.display = 'none'; arrow.style.transform = 'rotate(0deg)'; } 
-    else { details.style.display = 'block'; arrow.style.transform = 'rotate(180deg)'; }
-}
- 
 function updateCalendar(plantsArray) {
     const months = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
     const currentMonthNum = new Date().getMonth() + 1; 
+    const currentYear = new Date().getFullYear();
+    
    document.getElementById('calendar-title').innerText = `📅 Úkoly na tento měsíc (${months[currentMonthNum-1]})`;
     const calBox = document.getElementById('calendar-tasks'); calBox.innerHTML = ''; let tasksFound = false;
  
@@ -889,9 +949,18 @@ function updateCalendar(plantsArray) {
         if(p.tasks && Array.isArray(p.tasks)) {
            p.tasks.forEach(task => {
                if(task.month === currentMonthNum) {
-                   tasksFound = true; 
-                   const detailsHTML = task.details ? task.details : 'Bez dalších podrobností.';
-                   calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><div><strong>${p.name}:</strong> ${task.action}</div><div class="task-arrow">▼</div></div><div class="task-details">${detailsHTML}</div></div>`;
+                   // Kontrola: Je tento úkol pro tento rok už odškrtnutý v historii?
+                   const isDone = (p.history || []).some(h => {
+                       if (h.type !== 'task') return false;
+                       const d = new Date(h.date);
+                       return h.action === `Splněn úkol: ${task.action}` && d.getFullYear() === currentYear && (d.getMonth() + 1) === currentMonthNum;
+                   });
+                   
+                   if (!isDone) {
+                       tasksFound = true; 
+                       const detailsHTML = task.details ? task.details : 'Bez dalších podrobností.';
+                       calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><div><strong>${p.name}:</strong> ${task.action}</div><div class="task-arrow">▼</div></div><div class="task-details">${detailsHTML}</div></div>`;
+                   }
                 }
             });
         }
@@ -925,6 +994,7 @@ function openDetail(index) {
    
    if (!SpeechRecognition) document.getElementById('btn-mic').style.display = 'none';
     
+    // Zobrazení videí
     const vidBox = document.getElementById('det-videos-box'); const vidList = document.getElementById('det-videos-list');
     if(p.videos && p.videos.length > 0) {
        vidBox.style.display = 'block'; vidList.innerHTML = '';
@@ -938,10 +1008,63 @@ function openDetail(index) {
         });
     } else { vidBox.style.display = 'none'; }
     
+    // Zobrazení odznaků
     const catBox = document.getElementById('det-category'); if(p.category && p.category !== "Ostatní") { catBox.style.display = "inline-block"; catBox.innerText = p.category; } else catBox.style.display = "none";
     const useBox = document.getElementById('det-usage'); if(p.usage && p.usage !== "Ostatní" && p.usage !== "Okrasná") { useBox.style.display = "inline-block"; useBox.innerText = p.usage; } else useBox.style.display = "none";
     const toxBox = document.getElementById('det-toxicity'); if(p.toxicity && p.toxicity.toLowerCase().includes("ne")) { toxBox.className = "tox-badge tox-safe"; toxBox.innerText = "✅ " + p.toxicity; } else { toxBox.className = "tox-badge tox-danger"; toxBox.innerText = "⚠️ " + (p.toxicity || "Může být jedovatá"); }
  
+   // VYKRESLENÍ ÚKOLŮ K ODŠKRTNUTÍ
+   const tasksBox = document.getElementById('det-tasks-box');
+   const tasksList = document.getElementById('det-tasks-list');
+   const currentMonthNum = new Date().getMonth() + 1;
+   const currentYear = new Date().getFullYear();
+   tasksList.innerHTML = '';
+   let hasPendingTasks = false;
+
+   if(p.tasks && Array.isArray(p.tasks)) {
+       p.tasks.forEach(task => {
+           if(task.month === currentMonthNum) {
+               const isDone = (p.history || []).some(h => h.type === 'task' && h.action === `Splněn úkol: ${task.action}` && new Date(h.date).getFullYear() === currentYear && (new Date(h.date).getMonth() + 1) === currentMonthNum);
+               if(!isDone) {
+                   hasPendingTasks = true;
+                   tasksList.innerHTML += `
+                   <div class="task-action-item">
+                       <div><strong>${task.action}</strong><br><span style="font-size:0.85em; color:var(--text-muted);">${task.details || ''}</span></div>
+                       <button class="btn-done" onclick="completeTask('${task.action}')">✓ Hotovo</button>
+                   </div>`;
+               }
+           }
+       });
+   }
+   tasksBox.style.display = hasPendingTasks ? 'block' : 'none';
+
+   // VYKRESLENÍ HISTORIE / DENÍKU
+   const histBox = document.getElementById('det-history-box');
+   const histList = document.getElementById('det-history-list');
+   histList.innerHTML = '';
+   
+   if (p.history && p.history.length > 0) {
+       histBox.style.display = 'block';
+       // Seřadit historii od nejnovější po nejstarší
+       let sortedHistory = [...p.history].sort((a, b) => new Date(b.date) - new Date(a.date));
+       
+       sortedHistory.forEach(h => {
+           const d = new Date(h.date);
+           const dateStr = `${d.getDate()}. ${d.getMonth()+1}. ${d.getFullYear()}`;
+           let icon = "📝";
+           if(h.type === 'water') icon = "💧";
+           if(h.type === 'task') icon = "✅";
+           
+           histList.innerHTML += `
+           <div class="history-entry">
+               <span class="history-date">${dateStr}</span>
+               ${icon} ${h.action}
+           </div>`;
+       });
+   } else {
+       histBox.style.display = 'none';
+   }
+
    document.getElementById('det-delete-btn').onclick = () => deletePlant(p.id);
    document.getElementById('detail-view').style.display = 'block';
 }
@@ -1040,7 +1163,7 @@ document.getElementById('camera-new').onchange = async (e) => {
         const data = await resp.json(); if (!resp.ok) throw new Error(data.error?.message);
         let res = JSON.parse(data.candidates[0].content.parts[0].text);
         const tx = db.transaction("plants", "readwrite");
-       tx.objectStore("plants").add({ name: res.name || "Neznámá", category: res.category || "Ostatní", usage: res.usage || "Ostatní", water: res.water || "Neznámé", light: res.light || "Neznámé", toxicity: res.toxicity || "Neznámé", tasks: res.tasks || [], dateAdded: new Date().toLocaleDateString('cs-CZ'), notes: "", images: [{ data: resizedBase64, date: new Date().toLocaleDateString('cs-CZ') }] });
+       tx.objectStore("plants").add({ name: res.name || "Neznámá", category: res.category || "Ostatní", usage: res.usage || "Ostatní", water: res.water || "Neznámé", light: res.light || "Neznámé", toxicity: res.toxicity || "Neznámé", tasks: res.tasks || [], history: [], dateAdded: new Date().toLocaleDateString('cs-CZ'), notes: "", images: [{ data: resizedBase64, date: new Date().toLocaleDateString('cs-CZ') }] });
         tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
     } catch (err) { handleAPIError(err, "Analyzátor"); }
 };
