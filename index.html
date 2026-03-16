@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v26.8</title>
+    <title>PlantMaster AI v26.9</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -45,9 +45,6 @@
         .container { padding: 0 15px; }
         .sticky-controls { position: sticky; top: 0; background: var(--bg); z-index: 100; padding: 10px 0; border-bottom: 1px solid transparent; transition: 0.3s; }
         
-        #inbox-section { display:none; background: var(--card); border-left: 5px solid #ff9800; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px var(--shadow); }
-        #inbox-section h3 { margin: 0 0 10px 0; color: #ff9800; font-size: 1.1rem; }
-        
         #search-box { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 12px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; outline: none; background: var(--input-bg); color: var(--text); }
         .filter-controls { display: flex; gap: 10px; }
         .filter-select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); font-size: 0.9rem; outline: none; background: var(--input-bg); color: var(--text); }
@@ -61,23 +58,20 @@
         .task-header strong { color: var(--p); margin-right: 5px; }
         .task-details { padding: 12px; background: var(--input-bg); border-top: 1px dashed var(--border); font-size: 0.9rem; line-height: 1.5; color: var(--text-muted); display: none; }
         
-        .task-product { margin-top: 10px; font-size: 0.85rem; background: #e3f2fd; color: #1565c0; padding: 10px; border-radius: 8px; display: block; border: 1px solid #bbdefb; }
-        [data-theme="dark"] .task-product { background: rgba(33,150,243,0.1); color: #64b5f6; border-color: rgba(33,150,243,0.3); }
-        
-        .btn-shop { background: var(--shop); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; text-decoration: none; box-shadow: 0 2px 4px rgba(255,152,0,0.3); display: inline-block;}
-        .btn-agro { background: var(--agro); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; text-decoration: none; box-shadow: 0 2px 4px rgba(46,125,50,0.3); display: inline-block;}
-        .btn-ai-shop { background: var(--ai-shop); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(103,58,183,0.3); display: flex; align-items: center; gap: 5px;}
+        .btn-shop { background: var(--shop); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(255,152,0,0.3); display: inline-block;}
+        .btn-agro { background: var(--agro); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(46,125,50,0.3); display: inline-block;}
         .btn-done { background: var(--safe); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; }
  
-        .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px var(--shadow); display: flex; align-items: center; cursor: pointer; transition: 0.2s; user-select: none; border: 3px solid transparent; }
+        .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px var(--shadow); display: flex; align-items: center; cursor: pointer; transition: 0.2s; user-select: none; border: 3px solid transparent; position: relative; }
         .card img { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; margin-right: 15px; border: 1px solid var(--border); pointer-events: none; }
         .card-info h3 { margin: 0 0 5px 0; font-size: 1.1rem; color: var(--p); }
         .cat-badge-small { display: inline-block; font-size: 0.7rem; background: rgba(0,150,136,0.1); color: #00897b; padding: 2px 6px; border-radius: 4px; margin-bottom: 5px; font-weight: bold; margin-right: 4px;}
         .water-badge-small { display: inline-block; font-size: 0.7rem; background: rgba(33,150,243,0.1); color: #1e88e5; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-top: 5px; display: block; width: fit-content; }
-        
+        .alert-badge { position: absolute; top: 10px; right: 10px; background: var(--warn); color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; justify-content: center; align-items: center; font-weight: bold; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+
         .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--p); color: var(--header-text); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 6px 16px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 150; }
         
-        #multi-select-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.2); z-index: 150; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; flex-wrap: wrap; gap: 10px; }
+        #multi-select-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); padding: 15px; box-shadow: 0 -4px 15px rgba(0,0,0,0.2); z-index: 150; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; }
         .btn-cancel-sel { padding: 10px 15px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-weight: bold; cursor: pointer; }
         .btn-del-sel { padding: 10px 15px; border-radius: 8px; border: none; background: var(--warn); color: white; font-weight: bold; cursor: pointer; }
 
@@ -86,60 +80,40 @@
         
         #settings-view, #help-view { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 3000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
         .settings-box, .help-box { background: var(--card); padding: 25px; border-radius: 16px; width: 85%; max-width: 320px; position: relative; text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.4); color: var(--text); }
-        .help-box { max-width: 500px; height: 80vh; overflow-y: auto; text-align: left; }
-        .btn-modal-close { position: absolute; top: 15px; right: 15px; width: 35px; height: 35px; background: var(--border); color: var(--text); border: none; border-radius: 50%; font-size: 18px; cursor: pointer; display: flex; justify-content: center; align-items: center; }
         
         #detail-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding-bottom: 30px; }
-        .btn-close { position: fixed; top: 15px; left: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); z-index: 2500; }
+        .btn-close { position: fixed; top: 15px; left: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; display: flex; justify-content: center; align-items: center; z-index: 2500; }
         
-        .gallery-wrapper { padding: 15px 15px 0 15px; margin-top: 40px; }
-        .gallery-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; }
+        .gallery-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; margin-top: 40px; padding-left: 15px; padding-right: 15px; }
         .gallery-item { flex: 0 0 85%; scroll-snap-align: center; position: relative; }
-        .gallery-item img { width: 100%; height: 220px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 10px var(--shadow); border: 1px solid var(--border); }
-        .gallery-date { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; pointer-events: none; }
+        .gallery-item img { width: 100%; height: 220px; object-fit: cover; border-radius: 16px; border: 1px solid var(--border); }
         
-        #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; overflow: hidden; touch-action: none; }
-        #lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; transition: transform 0.1s ease-out; }
+        #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; touch-action: none; }
+        #lightbox img { max-width: 95vw; max-height: 90vh; transition: transform 0.1s ease-out; }
         
-        .btn-add-photo { background: var(--card); color: var(--p); border: 2px dashed var(--p); padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-water-now { background: #2196f3; color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(33,150,243,0.3); }
-        
-        .btn-doctor { background: var(--doc); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 0.95rem; cursor: pointer; margin-top: 15px; display: none; }
-        .btn-detective { background: var(--det); display: block; }
-        .btn-youtube { background: var(--yt); display: block; margin-top: 10px; width: 100%; }
-        .btn-update { background: #fbc02d; color: #333; margin-top: 10px; display: block; width: 100%; }
-        
-        .doctor-result, .detective-result { padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 0.95rem; line-height: 1.5; display: none; background: var(--card); color: var(--text); border: 1px solid var(--border); }
-        .doctor-result { border-left: 5px solid var(--doc); }
-        .detective-result { border-left: 5px solid var(--det); }
-        
-        #yt-search-ui { display: none; background: var(--card); padding: 15px; border-radius: 12px; margin-top: 15px; border: 2px solid var(--yt); color: var(--text); }
-        
-        .detail-content { padding: 0 20px 20px 20px; }
-        .detail-header { display: flex; justify-content: space-between; align-items: baseline; margin: 15px 0 5px 0; }
-        .detail-header h2 { margin: 0; color: var(--p); font-size: 1.6rem; }
-        
-        .tox-badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; margin-bottom: 15px; }
-        .tox-danger { background: rgba(211,47,47,0.1); color: var(--warn); border: 1px solid rgba(211,47,47,0.3); }
-        .tox-safe { background: rgba(56,142,60,0.1); color: var(--safe); border: 1px solid rgba(56,142,60,0.3); }
-        .cat-badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; margin-bottom: 15px; margin-right: 5px; background: rgba(0,150,136,0.1); color: #00897b; border: 1px solid rgba(0,150,136,0.3); }
         
         .info-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px var(--shadow); border: 1px solid var(--border); }
         .info-box h4 { margin: 0 0 10px 0; color: var(--text); font-size: 0.95rem; opacity: 0.8; border-bottom: 1px solid var(--border); padding-bottom: 5px;}
-        .info-box p { margin: 0; font-size: 0.95rem; line-height: 1.4; color: var(--text); }
-        
-        .task-action-item { display: flex; flex-direction: column; align-items: flex-start; background: var(--bg); padding: 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--border); }
-        .task-action-header { display: flex; justify-content: space-between; align-items: center; width: 100%; }
         
         .history-timeline { border-left: 2px solid var(--p); padding-left: 15px; margin-left: 5px; }
-        .history-entry { position: relative; margin-bottom: 15px; font-size: 0.9rem; line-height: 1.4; }
+        .history-entry { position: relative; margin-bottom: 15px; font-size: 0.9rem; line-height: 1.4; display: flex; justify-content: space-between; align-items: flex-start; }
         .history-entry::before { content: ''; position: absolute; left: -21px; top: 4px; width: 10px; height: 10px; background: var(--p); border-radius: 50%; }
+        .btn-undo { background: rgba(0,0,0,0.05); border: none; padding: 5px 8px; border-radius: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer; }
         
-        textarea.notes-input { width: 100%; height: 80px; padding: 10px; border: 1px solid var(--input-border); border-radius: 8px; margin-bottom: 10px; box-sizing: border-box; background: var(--input-bg); color: var(--text); font-family: inherit; }
-        .btn-save-notes { background: var(--p); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
+        textarea.notes-input { width: 100%; height: 80px; padding: 10px; border: 1px solid var(--input-border); border-radius: 8px; box-sizing: border-box; background: var(--input-bg); color: var(--text); font-family: inherit; }
         .mic-btn { position: absolute; top: 10px; right: 10px; background: var(--p); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .mic-btn.recording { background: var(--warn); animation: pulse 1s infinite; }
         
+        .notify-control { display: flex; align-items: center; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border); }
+        .switch { position: relative; display: inline-block; width: 46px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #ccc; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--p); }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
@@ -147,37 +121,26 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 26.8 (Interaktivní Deník a Deník Úkolů)</span>
+    <span class="version-tag">Verze 26.9 (Hlídač a Undo systém)</span>
     <div class="header-btns">
-        <button class="btn-header" onclick="openHelp()">❓</button>
         <button class="btn-header" onclick="openSettings()">⚙️</button>
     </div>
 </header>
  
 <div class="container">
-    <div id="inbox-section">
-        <h3>📥 Nová videa ze sdílení (<span id="inbox-count">0</span>)</h3>
-        <div id="inbox-list"></div>
-    </div>
- 
     <div class="sticky-controls" id="search-container">
         <input type="text" id="search-box" placeholder="🔍 Hledat rostlinu..." onkeyup="filterPlants()">
         <div class="filter-controls">
             <select id="sort-select" class="filter-select" onchange="filterPlants()">
-                <option value="newest">Od nejnovější</option>
+                <option value="newest">Nejnovější</option>
                 <option value="az">A-Z</option>
-           </select>
-            <select id="filter-select" class="filter-select" onchange="filterPlants()">
-                <option value="all">Všechno</option>
-                <option value="Pokojová rostlina">Pokojovky</option>
-                <option value="other">Ostatní</option>
            </select>
         </div>
     </div>
  
     <div class="calendar-section" id="calendar-view">
-        <h3 id="calendar-title">📅 Úkoly na tento měsíc</h3>
-        <div id="calendar-tasks">Zatím žádné úkoly.</div>
+        <h3 id="calendar-title">📅 Úkoly</h3>
+        <div id="calendar-tasks">Načítám...</div>
     </div>
  
     <div id="plant-list"></div>
@@ -185,29 +148,20 @@
 
 <div id="multi-select-bar">
     <span style="font-weight: bold;">Vybráno: <span id="sel-count">0</span></span>
-    <div style="display:flex; gap:10px;">
-        <button class="btn-cancel-sel" onclick="cancelSelection()">Zrušit</button>
-        <button class="btn-del-sel" onclick="deleteSelected()">🗑️ Smazat</button>
-    </div>
-</div>
- 
-<div id="help-view">
-    <div class="help-box">
-        <button class="btn-modal-close" onclick="closeHelp()">✕</button>
-        <h2>📖 Uživatelský deník úkolů</h2>
-        <p>Aplikace se vás nyní při splnění úkolu zeptá na konkrétní přípravek a jeho poměr (např. 2 ml na 1 litr vody). Tyto údaje se uloží do historie rostliny, abyste měli dokonalý přehled o své péči.</p>
-    </div>
+    <button class="btn-cancel-sel" onclick="cancelSelection()">Zrušit</button>
+    <button class="btn-del-sel" onclick="deleteSelected()">🗑️ Smazat</button>
 </div>
  
 <div id="settings-view">
     <div class="settings-box">
         <button class="btn-modal-close" onclick="closeSettings()">✕</button>
         <h3>⚙️ Nastavení</h3>
-        <button class="btn-menu btn-backup" onclick="exportData()">💾 ZÁLOHOVAT DATA</button>
-        <button class="btn-menu btn-restore" onclick="document.getElementById('import-file').click()">📂 OBNOVIT ZE ZÁLOHY</button>
-        <button class="btn-menu btn-settings" onclick="closeSettings(); setKey()">🔑 Změnit API klíč</button>
+        <button class="btn-done" style="width:100%; margin-bottom:15px;" onclick="requestNotificationPermission()">🔔 Aktivovat oznámení</button>
+        <button class="btn-shop" style="width:100%; margin-bottom:10px; background:#1976d2;" onclick="exportData()">💾 Zálohovat data</button>
+        <button class="btn-agro" style="width:100%; margin-bottom:10px;" onclick="document.getElementById('import-file').click()">📂 Obnovit data</button>
+        <button class="btn-header" style="color:var(--text); font-size:1rem;" onclick="setKey()">🔑 Změnit API klíč</button>
         <hr>
-        <button class="btn-delete" style="background:var(--warn); color:white; width:100%; border:none; padding:10px; border-radius:8px;" onclick="deleteAllData()">⚠️ SMAZAT VŠE</button>
+        <button class="btn-del-sel" style="width:100%;" onclick="deleteAllData()">⚠️ SMAZAT VŠE</button>
     </div>
 </div>
  
@@ -220,53 +174,58 @@
     <button class="btn-close" onclick="closeDetail()">✕</button>
     <div class="gallery-wrapper">
         <div class="gallery-scroll" id="det-gallery"></div>
-        <button class="btn-add-photo" onclick="document.getElementById('camera-add').click()">📸 Přidat fotku</button>
+        <button class="btn-add-photo" onclick="document.getElementById('camera-add').click()">📸 Přidat aktuální fotku</button>
         <div style="display: flex; gap: 10px;">
-            <button class="btn-doctor" id="btn-ai-doctor" onclick="runAIDoctor()">🩺 Zdraví</button>
-            <button class="btn-doctor btn-detective" id="btn-ai-detective" onclick="runAIDetective()" style="display:block;">🔎 Zjistit odrůdu</button>
+            <button class="btn-doctor" id="btn-ai-doctor" onclick="runAIDoctor()" style="display:block; background:var(--doc);">🩺 AI Doktor</button>
+            <button class="btn-doctor btn-detective" id="btn-ai-detective" onclick="runAIDetective()" style="display:block;">🔎 Detektiv</button>
         </div>
-        <button class="btn-doctor btn-youtube" id="btn-open-yt" onclick="openYTSearchUI()">🎥 Hledat na YouTube</button>
-        <div id="yt-search-ui">
-            <div id="yt-results-list"></div>
-        </div>
-        <div class="doctor-result" id="doctor-output"></div>
-        <div class="detective-result" id="detective-output"></div>
     </div>
     
     <div class="detail-content">
         <h2 id="det-name">Název</h2>
-        <div style="margin-bottom: 15px;">
-            <div id="det-category" class="cat-badge">Druh</div>
-            <div id="det-toxicity" class="tox-badge">Toxicita</div>
-        </div>
+        <div id="det-badges"></div>
+        
         <button class="btn-water-now" onclick="waterPlantNow()">💧 ZALÍT DNES</button>
         <p id="det-last-watered" style="text-align:center; font-size:0.85rem; color:var(--text-muted);"></p>
         
+        <div class="info-box">
+            <h4>🔔 Hlídač zálivky</h4>
+            <div style="display:flex; gap:10px; align-items:center;">
+                <label style="font-size:0.9rem;">Interval (dny):</label>
+                <input type="number" id="det-water-interval" style="width:50px; padding:5px; border-radius:5px; border:1px solid var(--border);" onchange="updatePlantWaterInterval()">
+            </div>
+            <div class="notify-control">
+                <span>Posílat oznámení:</span>
+                <label class="switch">
+                    <input type="checkbox" id="det-notify-toggle" onchange="updatePlantNotifyToggle()">
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+
         <div class="info-box" id="det-tasks-box" style="display:none; border-color: var(--p);">
-            <h4 style="color: var(--p);">🎯 Úkoly na tento měsíc</h4>
+            <h4 style="color: var(--p);">🎯 Úkoly</h4>
             <div id="det-tasks-list"></div>
         </div>
 
-        <div class="info-box"><h4>💧 Zálivka</h4><p id="det-water"></p></div>
-        <div class="info-box"><h4>☀️ Světlo</h4><p id="det-light"></p></div>
+        <div class="info-box"><h4>💧 Potřeba vody</h4><p id="det-water-info"></p></div>
         <div class="info-box">
             <h4>📝 Poznámky</h4>
             <div style="position: relative;">
-                <textarea id="det-notes" class="notes-input" placeholder="Zadejte poznámku..."></textarea>
+                <textarea id="det-notes" class="notes-input"></textarea>
                 <button id="btn-mic" class="mic-btn" onclick="toggleVoiceRecognition()">🎤</button>
             </div>
-            <button class="btn-save-notes" onclick="saveNotes()">💾 Uložit</button>
+            <button class="btn-done" style="width:100%; margin-top:10px;" onclick="saveNotes()">💾 Uložit poznámku</button>
         </div>
         <div class="info-box" id="det-history-box" style="display:none;">
             <h4>📜 Historie péče</h4>
             <div class="history-timeline" id="det-history-list"></div>
         </div>
-        <button class="btn-delete" id="det-delete-btn" style="background:rgba(211,47,47,0.1); color:var(--warn); border:1px solid var(--warn); padding:15px; border-radius:12px; width:100%; font-weight:bold; margin-top:10px;">🗑️ Smazat rostlinu</button>
+        <button class="btn-del-sel" id="det-delete-btn" style="width:100%;" onclick="deletePlant()">🗑️ Smazat rostlinu</button>
     </div>
 </div>
 
 <div id="lightbox" onclick="closeLightbox()">
-    <button class="btn-modal-close" style="position:absolute; top:20px; right:20px; color:white;">✕</button>
     <img id="lightbox-img" src="">
 </div>
  
@@ -299,7 +258,9 @@ function toggleVoiceRecognition() {
 }
 function stopVoiceRecognition() { document.getElementById('btn-mic').classList.remove('recording'); isRecording = false; }
 
+// DB SETUP
 const req = indexedDB.open("PlantDB", 6);
+req.onupgradeneeded = (e) => { db = e.target.result; if (!db.objectStoreNames.contains("plants")) db.createObjectStore("plants", { keyPath: "id", autoIncrement: true }); };
 req.onsuccess = (e) => { db = e.target.result; render(); };
 
 async function render() {
@@ -310,45 +271,33 @@ async function render() {
         return p;
     }).reverse();
     filterPlants();
-    renderInbox();
-}
-
-function renderInbox() {
-    let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
-    const sec = document.getElementById('inbox-section');
-    if(inbox.length === 0) { sec.style.display = 'none'; return; }
-    sec.style.display = 'block'; document.getElementById('inbox-count').innerText = inbox.length;
-    const list = document.getElementById('inbox-list'); list.innerHTML = '';
-    inbox.forEach((v, idx) => {
-        list.innerHTML += `<div style="background:var(--bg); padding:10px; border-radius:8px; margin-bottom:10px;">
-            <p style="font-size:0.75rem;">${v.url}</p>
-            <button onclick="deleteInboxVideo(${idx})" style="background:var(--warn); color:white; border:none; padding:5px 10px; border-radius:5px;">Smazat</button>
-        </div>`;
-    });
-}
-function deleteInboxVideo(idx) {
-    let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
-    inbox.splice(idx, 1); localStorage.setItem('pm_video_inbox', JSON.stringify(inbox)); renderInbox();
 }
 
 function filterPlants() {
     const query = document.getElementById('search-box').value.toLowerCase();
-    const filterVal = document.getElementById('filter-select').value;
-    let filtered = currentPlants.filter(p => {
-        const matchesText = p.name.toLowerCase().includes(query);
-        const matchesFilter = filterVal === "all" || p.category === filterVal;
-        return matchesText && matchesFilter;
-    });
+    let filtered = currentPlants.filter(p => p.name.toLowerCase().includes(query));
+    if(document.getElementById('sort-select').value === "az") filtered.sort((a,b) => a.name.localeCompare(b.name, 'cs'));
+    
     const list = document.getElementById('plant-list'); list.innerHTML = '';
-    filtered.forEach((p) => {
-        const originalIndex = currentPlants.indexOf(p);
-        const latestImg = p.images[p.images.length - 1].data;
-        const style = selectedPlants.has(p.id) ? 'border-color:var(--p); background:rgba(76,175,80,0.1);' : '';
+    filtered.forEach((p, idx) => {
+        const isSelected = selectedPlants.has(p.id);
+        const style = isSelected ? 'border-color:var(--p); background:rgba(76,175,80,0.1);' : '';
+        const badge = p.lastWatered ? `<div class="water-badge-small">💧 ${getWateringText(p.lastWatered)}</div>` : '';
+        
+        let alertIcon = '';
+        if(p.lastWatered && p.waterInterval && p.notifyEnabled) {
+            let next = new Date(p.lastWatered); next.setDate(next.getDate() + parseInt(p.waterInterval));
+            if(new Date() > next) alertIcon = '<div class="alert-badge">!</div>';
+        }
+
         list.innerHTML += `<div class="card" style="${style}" 
             onmousedown="startPress(event, ${p.id})" ontouchstart="startPress(event, ${p.id})" 
             onmouseup="clearPress()" ontouchend="clearPress()"
-            onclick="handleCardClick(event, ${p.id}, ${originalIndex})">
-            <img src="${latestImg}"><div class="card-info"><h3>${p.name}</h3><div class="cat-badge-small">${p.category || 'Ostatní'}</div>${p.lastWatered ? `<div class="water-badge-small">💧 ${getWateringText(p.lastWatered)}</div>` : ''}</div></div>`;
+            onclick="handleCardClick(event, ${p.id}, ${currentPlants.indexOf(p)})">
+            ${alertIcon}
+            <img src="${p.images[p.images.length - 1].data}">
+            <div class="card-info"><h3>${p.name}</h3><div class="cat-badge-small">${p.category || 'Ostatní'}</div>${badge}</div>
+        </div>`;
     });
     updateCalendar(filtered);
 }
@@ -383,57 +332,42 @@ function updateCalendar(plantsArray) {
         if(p.tasks) p.tasks.forEach(task => {
             if(task.month === curMonth) {
                 found = true;
-                let btns = '';
-                if(task.products) task.products.forEach(prod => {
-                    btns += `<div style="display:flex; gap:5px; margin-top:5px;">
-                        <button class="btn-shop" onclick="searchHeureka('${prod}', event)">🛒 ${prod}</button>
-                        <button class="btn-agro" onclick="searchAgromanual('${prod}', event)">📖 Návod</button>
-                    </div>`;
-                });
-                calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><div><strong>${p.name}:</strong> ${task.action}</div><button class="btn-done" onclick="completeTaskWithDetails(${p.id}, '${task.action.replace(/'/g, "\\'")}', ${JSON.stringify(task.products || []).replace(/"/g, '&quot;')}, event)">✓ Splnit</button></div><div class="task-details">${task.details || ''}${btns}</div></div>`;
+                calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><div><strong>${p.name}:</strong> ${task.action}</div><button class="btn-done" onclick="completeTaskWithDetails(${p.id}, '${task.action.replace(/'/g, "\\'")}', ${JSON.stringify(task.products || []).replace(/"/g, '&quot;')}, event)">✓ Splnit</button></div><div class="task-details">${task.details || ''}</div></div>`;
             }
         });
     });
-    if(!found) calBox.innerHTML = '<i>Bez úkolů.</i>';
+    if(!found) calBox.innerHTML = '<i>Bez úkolů pro tento měsíc.</i>';
 }
-function toggleTask(el) { const det = el.nextElementSibling; det.style.display = det.style.display === 'block' ? 'none' : 'block'; }
-function getWateringText(iso) { let d = Math.floor(Math.abs(new Date() - new Date(iso)) / (1000 * 60 * 60 * 24)); return d === 0 ? "Dnes" : (d === 1 ? "Včera" : `Před ${d} dny`); }
+function toggleTask(el) { const d = el.nextElementSibling; d.style.display = d.style.display === 'block' ? 'none' : 'block'; }
+function getWateringText(iso) { 
+    let d = Math.floor((new Date() - new Date(iso)) / (1000 * 60 * 60 * 24)); 
+    return d === 0 ? "Dnes" : (d === 1 ? "Včera" : `Před ${d} dny`); 
+}
 
-function searchHeureka(q, e) { if(e) e.stopPropagation(); window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent(q), '_blank'); }
-function searchAgromanual(q, e) { if(e) e.stopPropagation(); window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent(q), '_blank'); }
-
-// OPRAVENÁ A ROZŠÍŘENÁ FUNKCE SPLNIT
-async function completeTaskWithDetails(pId, action, suggestedProducts, event) {
+// ROZŠÍŘENÁ FUNKCE SPLNIT
+async function completeTaskWithDetails(pId, action, suggested, event) {
     if(event) event.stopPropagation();
-    
-    let productUsed = "Nepoužit žádný";
-    if(suggestedProducts && suggestedProducts.length > 0) {
-        let msg = `Vyberte použitý přípravek pro úkol: ${action}\n\n`;
-        suggestedProducts.forEach((p, i) => msg += `${i+1}) ${p}\n`);
-        msg += `\nNapište číslo přípravku, vlastní název, nebo nechte prázdné:`;
-        let choice = prompt(msg);
+    let product = "Nepoužit žádný";
+    if(suggested && suggested.length > 0) {
+        let msg = `Vyberte přípravek pro: ${action}\n`;
+        suggested.forEach((p, i) => msg += `${i+1}) ${p}\n`);
+        let choice = prompt(msg + "\nNapište číslo nebo vlastní název:");
         if(choice) {
             let idx = parseInt(choice) - 1;
-            if(!isNaN(idx) && suggestedProducts[idx]) productUsed = suggestedProducts[idx];
-            else productUsed = choice;
+            product = (idx >= 0 && suggested[idx]) ? suggested[idx] : choice;
         }
     } else {
-        let choice = prompt(`Splněn úkol: ${action}\n\nPoužil jste nějaký přípravek? (nechte prázdné pokud ne):`);
-        if(choice) productUsed = choice;
+        let choice = prompt(`Splněn úkol: ${action}\nPoužil jste něco?`);
+        if(choice) product = choice;
     }
-
-    let ratio = "";
-    if(productUsed !== "Nepoužit žádný") {
-        ratio = prompt(`V jakém poměru / množství jste přípravek ${productUsed} aplikoval?\n(např. 2ml / 1l vody):`);
-    }
+    let ratio = product !== "Nepoužit žádný" ? prompt("V jakém poměru / množství? (např. 2ml/1l)") : "";
 
     const tx = db.transaction("plants", "readwrite");
     const store = tx.objectStore("plants");
     store.get(pId).onsuccess = (e) => {
         let p = e.target.result; if(!p.history) p.history = [];
         let historyMsg = `Splněn úkol: ${action}`;
-        if(productUsed !== "Nepoužit žádný") historyMsg += ` (Přípravek: ${productUsed}${ratio ? ', Poměr: ' + ratio : ''})`;
-        
+        if(product !== "Nepoužit žádný") historyMsg += ` (${product}${ratio ? ', ' + ratio : ''})`;
         p.history.push({ date: new Date().toISOString(), action: historyMsg, type: "task" });
         store.put(p).onsuccess = () => { render().then(() => { if(openPlantId === pId) openDetail(currentPlants.findIndex(x => x.id === pId)); }); };
     };
@@ -442,106 +376,60 @@ async function completeTaskWithDetails(pId, action, suggestedProducts, event) {
 function openDetail(idx) {
     const p = currentPlants[idx]; openPlantId = p.id;
     const gal = document.getElementById('det-gallery'); gal.innerHTML = '';
-    p.images.forEach(img => gal.innerHTML += `<div class="gallery-item"><img src="${img.data}" onclick="openLightbox('${img.data}')"><div class="gallery-date">${img.date}</div></div>`);
+    p.images.forEach(img => gal.innerHTML += `<div class="gallery-item"><img src="${img.data}" onclick="openLightbox('${img.data}')"></div>`);
     
     document.getElementById('det-name').innerText = p.name;
-    document.getElementById('det-water').innerText = p.water || "Neznámé";
-    document.getElementById('det-light').innerText = p.light || "Neznámé";
+    document.getElementById('det-water-info').innerText = p.water || "Neznámé";
     document.getElementById('det-notes').value = p.notes || "";
-    document.getElementById('det-category').innerText = p.category || "Ostatní";
-    document.getElementById('det-last-watered').innerText = p.lastWatered ? `Poslední zálivka: ${getWateringText(p.lastWatered)}` : "Nezalito";
+    document.getElementById('det-last-watered').innerText = p.lastWatered ? `Naposledy zalito: ${getWateringText(p.lastWatered)}` : "Zatím nezalito";
+    document.getElementById('det-water-interval').value = p.waterInterval || 0;
+    document.getElementById('det-notify-toggle').checked = p.notifyEnabled || false;
     
-    const toxBox = document.getElementById('det-toxicity');
-    toxBox.innerText = p.toxicity || "Toxicita neznámá";
-    toxBox.className = (p.toxicity && p.toxicity.toLowerCase().includes("ne")) ? "tox-badge tox-safe" : "tox-badge tox-danger";
-
-    const tasksList = document.getElementById('det-tasks-list'); tasksList.innerHTML = '';
-    const curMonth = new Date().getMonth() + 1;
-    let hasTasks = false;
-    if(p.tasks) p.tasks.forEach(t => {
-        if(t.month === curMonth) {
-            hasTasks = true;
-            let pBtns = '';
-            if(t.products) t.products.forEach(prod => pBtns += `<button class="btn-shop" style="margin:2px;" onclick="searchHeureka('${prod}', event)">🛒 ${prod}</button>`);
-            tasksList.innerHTML += `<div class="task-action-item"><div class="task-action-header"><strong>${t.action}</strong><button class="btn-done" onclick="completeTaskWithDetails(${p.id}, '${t.action.replace(/'/g, "\\'")}', ${JSON.stringify(t.products || []).replace(/"/g, '&quot;')}, event)">✓ Splnit</button></div>${pBtns}</div>`;
-        }
-    });
-    document.getElementById('det-tasks-box').style.display = hasTasks ? 'block' : 'none';
-
     const histList = document.getElementById('det-history-list'); histList.innerHTML = '';
-    if(p.history) {
+    if(p.history && p.history.length > 0) {
         document.getElementById('det-history-box').style.display = 'block';
-        [...p.history].reverse().forEach(h => histList.innerHTML += `<div class="history-entry"><span style="font-weight:bold; color:var(--p); font-size:0.8rem;">${new Date(h.date).toLocaleDateString('cs-CZ')}:</span> ${h.action}</div>`);
+        [...p.history].reverse().forEach((h, i) => {
+            const realIdx = p.history.length - 1 - i;
+            histList.innerHTML += `<div class="history-entry">
+                <span><span style="font-weight:bold; color:var(--p);">${new Date(h.date).toLocaleDateString('cs-CZ')}:</span> ${h.action}</span>
+                <button class="btn-undo" onclick="undoAction(${p.id}, ${realIdx})">↩️</button>
+            </div>`;
+        });
     } else document.getElementById('det-history-box').style.display = 'none';
 
     document.getElementById('detail-view').style.display = 'block';
 }
 
-function closeDetail() { document.getElementById('detail-view').style.display = 'none'; openPlantId = null; stopVoiceRecognition(); }
-function openLightbox(src) { document.getElementById('lightbox-img').src = src; document.getElementById('lightbox').style.display = 'flex'; }
-function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; }
-
-async function runAIDoctor() {
-    const key = localStorage.getItem('G_KEY'); if (!key) return alert("Klíč!");
-    const plant = currentPlants.find(p => p.id === openPlantId);
-    document.getElementById('loader').style.display = 'flex';
-    try {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-            method: 'POST', body: JSON.stringify({ contents: [{ parts: [ { text: "Analyzuj zdraví. Česky." }, { inline_data: { mime_type: "image/jpeg", data: plant.images[plant.images.length-1].data.split(',')[1] } } ]}] })
-        });
-        const data = await resp.json(); document.getElementById('loader').style.display = 'none';
-        const diag = data.candidates[0].content.parts[0].text;
-        const out = document.getElementById('doctor-output');
-        out.innerHTML = `<strong>🩺 AI:</strong> ${diag}<br><button class="btn-agro" style="width:100%; margin-top:10px;" onclick="searchAgromanual('${diag.substring(0,30)}', event)">🔍 Ověřit Agromanuál</button>`;
-        out.style.display = 'block';
-    } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
+function undoAction(pId, hIdx) {
+    if(!confirm("Vzít tuto akci zpět?")) return;
+    const tx = db.transaction("plants", "readwrite");
+    const store = tx.objectStore("plants");
+    store.get(pId).onsuccess = (e) => {
+        let p = e.target.result;
+        const removed = p.history.splice(hIdx, 1)[0];
+        if(removed.type === "water") {
+            const lastW = p.history.filter(h => h.type === "water").pop();
+            p.lastWatered = lastW ? lastW.date : null;
+        }
+        store.put(p).onsuccess = () => { render().then(() => openDetail(currentPlants.findIndex(x => x.id === pId))); };
+    };
 }
 
-async function runAIDetective() {
-    const key = localStorage.getItem('G_KEY'); if (!key) return alert("Klíč!");
-    const plant = currentPlants.find(p => p.id === openPlantId);
-    document.getElementById('loader').style.display = 'flex';
-    try {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-            method: 'POST', body: JSON.stringify({ contents: [{ parts: [ { text: "Urči odrůdu. JSON: {\"exactName\": \"Název\"}" }, { inline_data: { mime_type: "image/jpeg", data: plant.images[plant.images.length-1].data.split(',')[1] } } ]}], generationConfig: { response_mime_type: "application/json" } })
-        });
-        const data = await resp.json(); let res = JSON.parse(data.candidates[0].content.parts[0].text);
-        document.getElementById('loader').style.display = 'none';
-        const out = document.getElementById('detective-output');
-        out.innerHTML = `<strong>🔎 Detektiv:</strong> ${res.exactName}. <button class="btn-update" onclick="updatePlantProfile('${res.exactName}')">Aktualizovat kartu</button>`;
-        out.style.display = 'block';
-    } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
+function updatePlantWaterInterval() {
+    const val = document.getElementById('det-water-interval').value;
+    const tx = db.transaction("plants", "readwrite");
+    const store = tx.objectStore("plants");
+    store.get(openPlantId).onsuccess = (e) => {
+        let p = e.target.result; p.waterInterval = val; store.put(p).onsuccess = render;
+    };
 }
-
-async function updatePlantProfile(name) {
-    const key = localStorage.getItem('G_KEY'); document.getElementById('loader').style.display = 'flex';
-    const plant = currentPlants.find(p => p.id === openPlantId);
-    try {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-            method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: `Data pro '${name}' JSON: {"water": "...", "light": "...", "toxicity": "...", "tasks": [{"month": 3, "action": "...", "details": "..."}]}` }] }], generationConfig: { response_mime_type: "application/json" } })
-        });
-        const data = await resp.json(); let res = JSON.parse(data.candidates[0].content.parts[0].text);
-        plant.name = name; plant.water = res.water; plant.light = res.light; plant.toxicity = res.toxicity; plant.tasks = res.tasks;
-        db.transaction("plants", "readwrite").objectStore("plants").put(plant).onsuccess = () => { document.getElementById('loader').style.display = 'none'; render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
-    } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
-}
-
-function openYTSearchUI() {
-    const ui = document.getElementById('yt-search-ui'); const plant = currentPlants.find(p => p.id === openPlantId);
-    if(ui.style.display === 'block') { ui.style.display = 'none'; return; }
-    ui.style.display = 'block'; document.getElementById('yt-results-list').innerHTML = 'Hledám...';
-    runYTSearch(plant.name + " pěstování");
-}
-async function runYTSearch(q) {
-    const key = localStorage.getItem('G_KEY');
-    try {
-        const resp = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=3&q=${encodeURIComponent(q)}&type=video&key=${key}`);
-        const data = await resp.json();
-        const list = document.getElementById('yt-results-list'); list.innerHTML = '';
-        data.items.forEach(v => {
-            list.innerHTML += `<div style="margin-top:10px;"><img src="${v.snippet.thumbnails.default.url}" style="width:100%;" onclick="window.open('https://youtube.com/watch?v=${v.id.videoId}')"><p style="font-size:0.75rem;">${v.snippet.title}</p></div>`;
-        });
-    } catch(err) { console.error("YT Error"); }
+function updatePlantNotifyToggle() {
+    const val = document.getElementById('det-notify-toggle').checked;
+    const tx = db.transaction("plants", "readwrite");
+    const store = tx.objectStore("plants");
+    store.get(openPlantId).onsuccess = (e) => {
+        let p = e.target.result; p.notifyEnabled = val; store.put(p).onsuccess = render;
+    };
 }
 
 function waterPlantNow() {
@@ -549,10 +437,21 @@ function waterPlantNow() {
     const store = tx.objectStore("plants");
     store.get(openPlantId).onsuccess = (e) => {
         let p = e.target.result; p.lastWatered = new Date().toISOString();
-        if(!p.history) p.history = []; p.history.push({ date: new Date().toISOString(), action: "Rostlina byla zalita", type: "water" });
+        if(!p.history) p.history = []; p.history.push({ date: new Date().toISOString(), action: "Zalito", type: "water" });
         store.put(p).onsuccess = () => { render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
     };
 }
+
+function requestNotificationPermission() {
+    if (!("Notification" in window)) return alert("Váš prohlížeč nepodporuje oznámení.");
+    Notification.requestPermission().then(p => { if(p === "granted") alert("Oznámení aktivována!"); });
+}
+
+function closeDetail() { document.getElementById('detail-view').style.display = 'none'; openPlantId = null; stopVoiceRecognition(); }
+function openLightbox(src) { document.getElementById('lightbox-img').src = src; document.getElementById('lightbox').style.display = 'flex'; }
+function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; }
+function openSettings() { document.getElementById('settings-view').style.display = 'flex'; }
+function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
 function saveNotes() {
     const tx = db.transaction("plants", "readwrite");
     const store = tx.objectStore("plants");
@@ -561,7 +460,7 @@ function saveNotes() {
         store.put(p).onsuccess = () => alert("Uloženo");
     };
 }
-function deletePlant(id) { if(confirm("Smazat?")) { db.transaction("plants", "readwrite").objectStore("plants").delete(id).onsuccess = () => { closeDetail(); render(); }; } }
+function deletePlant() { if(confirm("Smazat?")) { db.transaction("plants", "readwrite").objectStore("plants").delete(openPlantId).onsuccess = () => { closeDetail(); render(); }; } }
 
 document.getElementById('camera-new').onchange = async (e) => {
     const file = e.target.files[0]; const key = localStorage.getItem('G_KEY'); if(!file || !key) return;
@@ -570,28 +469,14 @@ document.getElementById('camera-new').onchange = async (e) => {
     reader.onload = async (ev) => {
         const b64 = ev.target.result.split(',')[1];
         try {
-            const prompt = `Expert. JSON: {"name": "Název", "category": "Pokojová rostlina/other", "water": "...", "light": "...", "toxicity": "...", "tasks": [{"month": 3, "action": "...", "details": "..."}]}`;
+            const prompt = `Expert. JSON: {"name": "Název", "category": "Kategorie", "water": "...", "tasks": [{"month": 3, "action": "...", "details": "..."}]}`;
             const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
                 method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64 } }] }], generationConfig: { response_mime_type: "application/json" } })
             });
             const data = await resp.json(); let res = JSON.parse(data.candidates[0].content.parts[0].text);
-            const tx = db.transaction("plants", "readwrite");
-            tx.objectStore("plants").add({ ...res, images: [{ data: ev.target.result, date: new Date().toLocaleDateString('cs-CZ') }], dateAdded: new Date().toLocaleDateString('cs-CZ'), history: [] });
-            tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
+            db.transaction("plants", "readwrite").objectStore("plants").add({ ...res, images: [{ data: ev.target.result, date: new Date().toLocaleDateString('cs-CZ') }], dateAdded: new Date().toLocaleDateString('cs-CZ'), history: [] });
+            document.getElementById('loader').style.display = 'none'; render();
         } catch (err) { alert("Chyba AI"); document.getElementById('loader').style.display = 'none'; }
-    };
-};
-document.getElementById('camera-add').onchange = async (e) => {
-    const file = e.target.files[0]; if(!file || !openPlantId) return;
-    document.getElementById('loader').style.display = 'flex';
-    const reader = new FileReader(); reader.readAsDataURL(file);
-    reader.onload = (ev) => {
-        const tx = db.transaction("plants", "readwrite");
-        const store = tx.objectStore("plants");
-        store.get(openPlantId).onsuccess = (ev2) => {
-            let p = ev2.target.result; p.images.push({ data: ev.target.result, date: new Date().toLocaleDateString('cs-CZ') });
-            store.put(p).onsuccess = () => { document.getElementById('loader').style.display = 'none'; render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
-        };
     };
 };
 
@@ -601,19 +486,7 @@ function exportData() {
         const l = document.createElement('a'); l.href = URL.createObjectURL(c); l.download = "Zaloha.plantbak"; l.click();
     });
 }
-document.getElementById('import-file').onchange = async (e) => {
-    const zip = new JSZip(); const contents = await zip.loadAsync(e.target.files[0]);
-    const data = JSON.parse(await contents.file("databaze.json").async("string"));
-    const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
-    store.clear(); data.forEach(p => store.add(p));
-    tx.oncomplete = () => { alert("Hotovo!"); render(); };
-};
-function deleteAllData() { if(confirm("Vše smazat?")) { db.transaction("plants", "readwrite").objectStore("plants").clear().onsuccess = render; } }
 function setKey() { let k = prompt("Klíč:"); if(k) localStorage.setItem('G_KEY', k.trim()); }
-function openSettings() { document.getElementById('settings-view').style.display = 'flex'; }
-function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
-function openHelp() { document.getElementById('help-view').style.display = 'flex'; }
-function closeHelp() { document.getElementById('help-view').style.display = 'none'; }
 </script>
 </body>
 </html>
