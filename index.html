@@ -2,8 +2,8 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PlantMaster AI v21.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PlantMaster AI v22.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -43,7 +43,6 @@
         .task-arrow { font-size: 0.8rem; color: #888; transition: transform 0.2s; }
         .task-details { padding: 12px; background: #fafafa; border-top: 1px dashed #eee; font-size: 0.9rem; line-height: 1.5; color: #555; display: none; }
  
-        /* Přidána ochrana proti textové selekci při dlouhém podržení karet */
         .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; cursor: pointer; transition: 0.2s; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
         .card img { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; margin-right: 15px; border: 1px solid #eee; pointer-events: none; }
         .card-info h3 { margin: 0 0 5px 0; font-size: 1.1rem; color: var(--p); }
@@ -76,8 +75,8 @@
         .gallery-item img { width: 100%; height: 220px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ddd; transition: 0.2s; }
         .gallery-date { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; pointer-events: none; }
         
-        #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; cursor: pointer; }
-        #lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); cursor: default; }
+        #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; overflow: hidden; }
+        #lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); cursor: zoom-in; transition: transform 0.3s ease; }
         .btn-lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); z-index: 3010; transition: 0.3s; }
         .btn-lightbox-close:hover { background: rgba(255,255,255,0.4); }
 
@@ -137,7 +136,6 @@
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
     <script>
-        // Inicializace velikosti textu ještě před načtením těla, aby to neblikalo
         const savedTextSize = localStorage.getItem('pm_text_size');
         if (savedTextSize) {
             document.documentElement.style.fontSize = savedTextSize;
@@ -148,7 +146,7 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 21.0 (Hromadná správa & Přístupnost)</span>
+    <span class="version-tag">Verze 22.0 (Oprava scrollování & Chytrý zoom fotek)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openHelp()">❓</button>
         <button class="btn-header" onclick="openSettings()">⚙️</button>
@@ -216,7 +214,7 @@
            <li><strong>Nová rostlina (+):</strong> Klikněte na zelené tlačítko dole. Po vyfocení AI automaticky určí druh, využití (zelenina/ovoce), zálivku a toxicitu.</li>
            <li><strong>Hromadné mazání:</strong> Podržte prst déle na jakékoliv rostlině v seznamu. Aktivuje se režim výběru. Můžete naklikat více rostlin a dole je hromadně smazat.</li>
            <li><strong>Smazání fotky:</strong> V detailu rostliny můžete smazat fotku kliknutím na červený koš (pokud má rostlina více než jednu fotku).</li>
-           <li><strong>Zvětšení (Zoom):</strong> Můžete používat gesto roztažení dvěma prsty kdekoliv v aplikaci, například pro zvětšení fotky v galerii nebo přečtení menšího textu.</li>
+           <li><strong>Zvětšení (Zoom):</strong> V nastavení můžete zvětšit text. Pokud si otevřete fotku v detailu, dvojitým poklepáním na ni si ji přiblížíte.</li>
         </ul>
  
         <h3>2. Videonávody (YouTube)</h3>
@@ -232,7 +230,7 @@
            <li><strong>🔎 AI Detektiv:</strong> Pomůže vám s jistotou určit přesnou odrůdu (např. u jabloní) a následně aktualizovat celý profil rostliny podle přesných dat.</li>
         </ul>
         
-        <p style="margin-top: 30px; font-size: 0.8rem; text-align: center; opacity: 0.6;">Verze aplikace 21.0</p>
+        <p style="margin-top: 30px; font-size: 0.8rem; text-align: center; opacity: 0.6;">Verze aplikace 22.0</p>
     </div>
 </div>
  
@@ -248,7 +246,6 @@
                 <button onclick="setTextSize('115%')" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; background:white; font-size:1.15em; cursor:pointer;">A</button>
                 <button onclick="setTextSize('130%')" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; background:white; font-size:1.3em; cursor:pointer;">A</button>
             </div>
-            <p style="font-size:0.8rem; color:#666; margin:8px 0 0 0;">(Lze také roztáhnout prsty na obrazovce)</p>
         </div>
 
         <button class="btn-menu btn-backup" onclick="exportData()">💾 ZÁLOHOVAT DATA A FOTKY</button>
@@ -331,7 +328,7 @@
 
 <div id="lightbox" onclick="closeLightbox(event)">
     <button class="btn-lightbox-close" onclick="closeLightbox(event)">✕</button>
-    <img id="lightbox-img" src="" alt="Detail fotky" onclick="event.stopPropagation()">
+    <img id="lightbox-img" src="" alt="Detail fotky" onclick="handleLightboxTap(event)">
 </div>
  
 <div id="loader">
@@ -346,32 +343,36 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.error('Chyba SW:', err));
 }
 
-// Logika hromadného výběru
+// Logika hromadného výběru OPRAVA - detekce posunu (scrollu)
 let isSelectMode = false;
 let selectedPlants = new Set();
 let pressTimer;
 let preventClick = false;
+let hasMoved = false;
 
 function startPress(plantId, originalIdx) {
+    hasMoved = false;
     preventClick = false;
     pressTimer = setTimeout(() => {
         preventClick = true;
-        if(!isSelectMode) {
+        if(!isSelectMode && !hasMoved) {
             isSelectMode = true;
             selectedPlants.add(plantId);
             updateSelectModeUI();
             filterPlants();
-            if(navigator.vibrate) navigator.vibrate(50); // Mírná haptická odezva
+            if(navigator.vibrate) navigator.vibrate(50);
         }
     }, 600);
 }
 
 function cancelPress() {
+    hasMoved = true;
     clearTimeout(pressTimer);
 }
 
 function endPress(plantId, originalIdx) {
     clearTimeout(pressTimer);
+    if(hasMoved) return; // Pokud jsme scrollovali, nic nedělej!
     if(preventClick) return; // Klik byl už zpracován dlouhým podržením
     
     if(isSelectMode) {
@@ -730,12 +731,31 @@ function deletePhoto(plantId, photoIdx, event) {
     }
 }
 
-// Funkce pro Lightbox (zvětšení fotek)
+// Logika pro dvojitý klik (Double-tap zoom) v Lightboxu
+let lastTap = 0;
+let isZoomed = false;
+
+function handleLightboxTap(event) {
+    event.stopPropagation();
+    const currentTime = new Date().getTime();
+    const tapLength = currentTime - lastTap;
+    const img = document.getElementById('lightbox-img');
+    
+    if (tapLength < 350 && tapLength > 0) {
+        // Dvojklik detekován!
+        isZoomed = !isZoomed;
+        img.style.transform = isZoomed ? 'scale(2)' : 'scale(1)';
+    }
+    lastTap = currentTime;
+}
+
 function openLightbox(src, event) {
     if (event) event.stopPropagation();
     const lb = document.getElementById('lightbox');
     const img = document.getElementById('lightbox-img');
     img.src = src;
+    isZoomed = false; // reset při otevření
+    img.style.transform = 'scale(1)';
     lb.style.display = 'flex';
 }
 
@@ -745,6 +765,8 @@ function closeLightbox(event) {
     const img = document.getElementById('lightbox-img');
     lb.style.display = 'none';
     img.src = '';
+    isZoomed = false;
+    img.style.transform = 'scale(1)';
 }
 
 // Změna velikosti textu v Nastavení
@@ -921,7 +943,6 @@ function openDetail(index) {
     
    imagesToRender.forEach((imgObj, iIndex) => { 
        let delBtn = '';
-       // Zobrazíme ikonu koše jen pokud je fotek více než jedna
        if (imagesToRender.length > 1) {
            delBtn = `<button onclick="deletePhoto(${p.id}, ${iIndex}, event)" style="position:absolute; top:5px; left:5px; background:rgba(244,67,54,0.9); color:white; border:none; border-radius:50%; width:30px; height:30px; display:flex; justify-content:center; align-items:center; z-index:10; box-shadow: 0 2px 5px rgba(0,0,0,0.3); cursor:pointer;">🗑️</button>`;
        }
