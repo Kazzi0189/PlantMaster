@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v26.1</title>
+    <title>PlantMaster AI v26.2</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -172,7 +172,7 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 26.1 (Kritická oprava databáze)</span>
+    <span class="version-tag">Verze 26.2 (Kompletní obnova)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openHelp()">❓</button>
         <button class="btn-header" onclick="openSettings()">⚙️</button>
@@ -396,6 +396,7 @@ if ('serviceWorker' in navigator) {
     .catch(err => console.error('Chyba SW:', err));
 }
 
+// MULTI-SELECT & GHOST CLICKS
 let isSelectMode = false;
 let selectedPlants = new Set();
 let pressTimer;
@@ -405,7 +406,6 @@ let didLongPress = false;
 function startPress(e, plantId) {
     didLongPress = false; 
     cardStartY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
-    
     pressTimer = setTimeout(() => {
         didLongPress = true; 
         if(!isSelectMode) {
@@ -421,25 +421,19 @@ function startPress(e, plantId) {
 function cancelPress(e) {
     if (e.type === 'touchmove' || e.type === 'mousemove') {
         let currentY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
-        if (Math.abs(currentY - cardStartY) > 10) {
-            clearTimeout(pressTimer);
-        }
+        if (Math.abs(currentY - cardStartY) > 10) clearTimeout(pressTimer);
     } else {
         clearTimeout(pressTimer);
     }
 }
 
 function handleCardClick(e, plantId, originalIdx) {
-    if (didLongPress) {
-        e.preventDefault(); e.stopPropagation(); didLongPress = false; return;
-    }
+    if (didLongPress) { e.preventDefault(); e.stopPropagation(); didLongPress = false; return; }
     if (isSelectMode) {
         if (selectedPlants.has(plantId)) selectedPlants.delete(plantId); else selectedPlants.add(plantId);
         if (selectedPlants.size === 0) isSelectMode = false;
         updateSelectModeUI(); filterPlants();
-    } else {
-        openDetail(originalIdx);
-    }
+    } else { openDetail(originalIdx); }
 }
 
 function updateSelectModeUI() {
@@ -477,6 +471,7 @@ function bulkMoveCategory() {
     } else { document.getElementById('bulk-cat-select').value = ""; }
 }
 
+// SCROLL
 let lastScrollTop = 0;
 window.addEventListener("scroll", function() {
     let currentScroll = window.pageYOffset || document.documentElement.scrollTop;
@@ -486,13 +481,14 @@ window.addEventListener("scroll", function() {
     lastScrollTop = currentScroll <= 0 ? 0 : currentScroll;
 }, false);
 
-
+// GLOBALS
 let db;
 let currentPlants = []; 
 let openPlantId = null;
 let currentYTSearchQuery = '';
 let currentYTPageToken = '';
 
+// SPEECH
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition; let isRecording = false;
 
@@ -513,10 +509,12 @@ function toggleVoiceRecognition() {
 }
 function stopVoiceRecognition() { document.getElementById('btn-mic').classList.remove('recording'); isRecording = false; }
  
+// INICIALIZACE DB
 const req = indexedDB.open("PlantDB", 6);
 req.onupgradeneeded = (e) => { db = e.target.result; if (!db.objectStoreNames.contains("plants")) db.createObjectStore("plants", { keyPath: "id", autoIncrement: true }); };
 req.onsuccess = (e) => { db = e.target.result; checkNotificationPermission(); checkSharedUrl(); render(); };
  
+// INBOX & YOUTUBE
 function checkSharedUrl() {
     const params = new URLSearchParams(window.location.search); const sharedUrl = params.get('url') || params.get('text');
     if (sharedUrl && (sharedUrl.includes('youtu.be') || sharedUrl.includes('youtube.com'))) {
@@ -602,6 +600,17 @@ function deletePhoto(plantId, photoIdx, event) {
         const tx = db.transaction("plants", "readwrite");
         tx.objectStore("plants").get(plantId).onsuccess = (e) => { let plant = e.target.result; plant.images.splice(photoIdx, 1); tx.objectStore("plants").put(plant).onsuccess = () => { render().then(() => { const idx = currentPlants.findIndex(p => p.id === plantId); if(idx !== -1) openDetail(idx); }); }; };
     }
+}
+
+// RENDER & ZOBRAZENÍ
+async function render() {
+    const tx = db.transaction("plants", "readonly");
+    const plants = await new Promise(res => tx.objectStore("plants").getAll().onsuccess = (e) => res(e.target.result));
+    currentPlants = plants.map(p => {
+        if(p.img && (!p.images || p.images.length === 0)) p.images = [{ data: p.img, date: p.dateAdded || new Date().toLocaleDateString('cs-CZ') }];
+       if(!p.category) p.category = "Ostatní"; if(!p.usage) p.usage = "Ostatní"; return p;
+    }).reverse();
+    filterPlants(); renderInbox(); 
 }
 
 function filterPlants() {
@@ -692,6 +701,7 @@ function toggleTask(element) {
     else { details.style.display = 'block'; arrow.style.transform = 'rotate(180deg)'; }
 }
 
+// AKCE ROSTLINY
 function waterPlantNow() {
     if(!openPlantId) return;
     const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
@@ -709,20 +719,10 @@ function completeTask(taskAction, productName) {
     store.get(openPlantId).onsuccess = (e) => {
         let plant = e.target.result;
         if(!plant.history) plant.history = [];
-        
         let actionText = `Splněn úkol: ${taskAction}`;
-        if (productName && productName.trim() !== "") {
-            actionText += ` (Použito: ${productName})`;
-        }
-        
+        if (productName && productName.trim() !== "") actionText += ` (Použito: ${productName})`;
         plant.history.push({ date: new Date().toISOString(), action: actionText, type: "task" });
-
-        store.put(plant).onsuccess = () => {
-            render().then(() => { 
-                const idx = currentPlants.findIndex(p => p.id === openPlantId); 
-                if(idx !== -1) openDetail(idx); 
-            });
-        };
+        store.put(plant).onsuccess = () => { render().then(() => { const idx = currentPlants.findIndex(p => p.id === openPlantId); if(idx !== -1) openDetail(idx); }); };
     };
 }
 
@@ -731,6 +731,7 @@ function getWateringText(isoDateStr) {
     if (diffDays === 0) return "Zalito dnes"; if (diffDays === 1) return "Zalito včera"; return `Zalito před ${diffDays} dny`;
 }
  
+// DETAIL ROSTLINY
 function openDetail(index) {
     const p = currentPlants[index]; openPlantId = p.id;
     const galBox = document.getElementById('det-gallery'); galBox.innerHTML = '';
@@ -808,6 +809,7 @@ function closeDetail() { if (isRecording) { stopVoiceRecognition(); if (recognit
 function saveNotes() { if(!openPlantId) return; const newNote = document.getElementById('det-notes').value; const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants"); store.get(openPlantId).onsuccess = (e) => { let plant = e.target.result; plant.notes = newNote; store.put(plant).onsuccess = () => { alert("Poznámka uložena!"); render(); }; }; }
 function deletePlant(id) { if(confirm("Opravdu smazat ze zahrady?")) { const tx = db.transaction("plants", "readwrite"); tx.objectStore("plants").delete(id); tx.oncomplete = () => { closeDetail(); render(); }; } }
 
+// DATA A UI HELPERY (Dříve smazané!!)
 function resizeImage(file) {
     return new Promise((resolve) => {
         const reader = new FileReader(); reader.readAsDataURL(file);
@@ -822,6 +824,32 @@ function resizeImage(file) {
     });
 }
  
+function setTextSize(size) { document.documentElement.style.fontSize = size; localStorage.setItem('pm_text_size', size); }
+function setTheme(theme) { document.documentElement.setAttribute('data-theme', theme); localStorage.setItem('pm_theme', theme); }
+function openSettings() { document.getElementById('settings-view').style.display = 'flex'; }
+function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
+function openHelp() { document.getElementById('help-view').style.display = 'flex'; }
+function closeHelp() { document.getElementById('help-view').style.display = 'none'; }
+function setKey() { const k = prompt("Vložte API klíč:"); if (k) { localStorage.setItem('G_KEY', k.trim()); alert("Klíč uložen."); } }
+
+function deleteAllData() {
+    if(confirm("Pozor! Opravdu smazat celou databázi?")) {
+        if (prompt("Napište SMAZAT") === "SMAZAT") {
+            const tx = db.transaction("plants", "readwrite"); tx.objectStore("plants").clear();
+            tx.oncomplete = () => { closeSettings(); alert("Smazáno."); render(); };
+        }
+    }
+}
+ 
+function checkNotificationPermission() { if ("Notification" in window && Notification.permission === "default") document.getElementById('btn-notify-allow').style.display = 'block'; }
+function requestNotifications() { Notification.requestPermission().then(p => { if(p === "granted") { document.getElementById('btn-notify-allow').style.display = 'none'; alert("Upozornění zapnuta!"); } }); }
+ 
+function handleAPIError(err, context) {
+   document.getElementById('loader').style.display = 'none'; const msg = err.message || "";
+    if (msg.includes("Quota exceeded") || msg.includes("rate-limits")) alert(`🛑 AI potřebuje pauzu!\n\nVyčerpali jste limit. Zkuste to za chvíli.`);
+    else alert(`❌ Chyba (${context}): ${msg}`);
+}
+
 async function exportData() {
     if (currentPlants.length === 0) { closeSettings(); return alert("Zatím nemáte žádné kytky."); }
    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Zálohuji...";
@@ -870,6 +898,7 @@ document.getElementById('import-file').onchange = async (e) => {
     } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba importu: " + err.message); e.target.value = ""; }
 };
 
+// AI FUNKCE A KAMERA
 document.getElementById('camera-new').onchange = async (e) => {
     const file = e.target.files[0]; const key = localStorage.getItem('G_KEY'); if (!file || !key) return alert("Chybí fotka nebo klíč!");
    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Analyzuji...";
@@ -901,6 +930,7 @@ document.getElementById('camera-add').onchange = async (e) => {
     } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba: " + err.message); }
 };
 
+// LIGHTBOX (CHYTRÝ ZOOM)
 let currentScale = 1; let currentTranslateX = 0; let currentTranslateY = 0;
 let startX = 0; let zoomStartY = 0; let startScale = 1; let startDistance = 0;
 let isPanning = false; let lastTap = 0;
