@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v26.3</title>
+    <title>PlantMaster AI v26.4</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -22,7 +22,7 @@
             --p: #2e7d32; --p-dark: #1b5e20; --bg: #f4f7f6; --text: #333; --text-muted: #666;
             --card: #ffffff; --border: #eee; --input-bg: #ffffff; --input-border: #ccc;
             --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; --det: #8e24aa; --yt: #f44336;
-            --shop: #ff9800;
+            --shop: #ff9800; --ai-shop: #673ab7;
             --shadow: rgba(0,0,0,0.06); --header-text: white;
         }
         
@@ -30,7 +30,7 @@
             --p: #4caf50; --p-dark: #388e3c; --bg: #121212; --text: #e0e0e0; --text-muted: #aaa;
             --card: #1e1e1e; --border: #333; --input-bg: #2d2d2d; --input-border: #444;
             --warn: #ef5350; --safe: #66bb6a; --doc: #42a5f5; --det: #ab47bc; --yt: #ef5350;
-            --shop: #ffb74d;
+            --shop: #ffb74d; --ai-shop: #9575cd;
             --shadow: rgba(0,0,0,0.5); --header-text: #121212;
         }
 
@@ -62,9 +62,10 @@
         .task-header strong { color: var(--p); margin-right: 5px; }
         .task-details { padding: 12px; background: var(--input-bg); border-top: 1px dashed var(--border); font-size: 0.9rem; line-height: 1.5; color: var(--text-muted); display: none; }
         
-        .task-product { margin-top: 10px; font-size: 0.85rem; background: #e3f2fd; color: #1565c0; padding: 8px 10px; border-radius: 6px; display: block; border: 1px solid #bbdefb; }
+        .task-product { margin-top: 10px; font-size: 0.85rem; background: #e3f2fd; color: #1565c0; padding: 10px; border-radius: 8px; display: block; border: 1px solid #bbdefb; }
         [data-theme="dark"] .task-product { background: rgba(33,150,243,0.1); color: #64b5f6; border-color: rgba(33,150,243,0.3); }
-        .btn-shop { background: var(--shop); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; margin-left: 10px; text-decoration: none; display: inline-block; box-shadow: 0 2px 4px rgba(255,152,0,0.3); }
+        .btn-shop { background: var(--shop); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; text-decoration: none; box-shadow: 0 2px 4px rgba(255,152,0,0.3); }
+        .btn-ai-shop { background: var(--ai-shop); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(103,58,183,0.3); display: flex; align-items: center; gap: 5px;}
  
         .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px var(--shadow); display: flex; align-items: center; cursor: pointer; transition: 0.2s; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; border: 3px solid transparent; }
         .card img { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; margin-right: 15px; border: 1px solid var(--border); pointer-events: none; }
@@ -94,10 +95,9 @@
         
         #detail-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 2000; overflow-y: auto; padding-bottom: 30px; }
         
-        /* OPRAVA: Křížek už není absolute, je fixed, nezmizí při scrollování! */
         .btn-close { position: fixed; top: 15px; left: 15px; background: rgba(0,0,0,0.5); color: white; border: none; width: 40px; height: 40px; border-radius: 50%; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); z-index: 2500; transition: background 0.2s;}
         
-        .gallery-wrapper { padding: 15px 15px 0 15px; margin-top: 40px; } /* Posunuto dolů kvůli fixed křížku */
+        .gallery-wrapper { padding: 15px 15px 0 15px; margin-top: 40px; }
         .gallery-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; }
         .gallery-item { flex: 0 0 85%; scroll-snap-align: center; position: relative; }
         .gallery-item img { width: 100%; height: 220px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 10px var(--shadow); border: 1px solid var(--border); }
@@ -180,7 +180,7 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 26.3 (Nákupní rozšíření a Fix křížku)</span>
+    <span class="version-tag">Verze 26.4 (Nákupy seznamem a AI Asistent)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openHelp()">❓</button>
         <button class="btn-header" onclick="openSettings()">⚙️</button>
@@ -262,12 +262,12 @@
         <ul>
            <li><strong>Nová rostlina (+):</strong> Klikněte na zelené tlačítko dole. Po vyfocení AI automaticky určí druh, zálivku a doporučí i případná hnojiva.</li>
            <li><strong>Hromadná správa:</strong> Podržte prst déle na jakékoliv rostlině v seznamu. Aktivuje se režim výběru.</li>
-           <li><strong>Deník a Úkoly:</strong> Odškrtávejte úkoly, propíší se do historie. U vybraných úkolů najdete rovnou tlačítko pro nákup přípravku na Heurece.</li>
+           <li><strong>Deník a Úkoly:</strong> Odškrtávejte úkoly, propíší se do historie. U vybraných úkolů najdete rovnou tlačítka pro nákup konkrétních přípravků na Heurece.</li>
         </ul>
  
         <h3>2. Nákupy a Videonávody</h3>
         <ul>
-           <li><strong>Hledání přípravků:</strong> U každé rostliny nyní najdete tlačítko pro rychlý nákup potřebných hnojiv nebo postřiků přes Heureku.</li>
+           <li><strong>Chytré nákupy:</strong> U starších úkolů se zeptejte AI (fialové tlačítko), jaké přípravky použít. Vygeneruje vám seznam na míru.</li>
            <li><strong>YouTube Sdílení:</strong> Pošlete video z YouTube přímo do aplikace (Sdílet -> PlantMaster).</li>
         </ul>
     </div>
@@ -321,7 +321,6 @@
         </div>
         
         <button class="btn-doctor btn-youtube" id="btn-open-yt" onclick="openYTSearchUI()"><span style="font-size:1.2em">🎥</span> Hledat návody na YouTube</button>
-        
         <button class="btn-doctor btn-shop-main" id="btn-open-shop" onclick="openShopUI()"><span style="font-size:1.2em">🛒</span> Hledat přípravky v e-shopech</button>
         
         <div id="yt-search-ui">
@@ -341,15 +340,15 @@
         </div>
         
         <div id="shop-search-ui">
-           <h4>Co potřebujete nakoupit?</h4>
+           <h4>Rychlé nákupy</h4>
             <div class="yt-cat-btns">
-               <button onclick="searchHeureka(document.getElementById('det-name').innerText + ' hnojivo')">💩 Hnojiva</button>
-               <button onclick="searchHeureka('postřik ' + document.getElementById('det-name').innerText + ' škůdci')">🐛 Proti škůdcům</button>
-               <button onclick="searchHeureka(document.getElementById('det-name').innerText + ' substrát')">🌱 Substrát</button>
+               <button onclick="searchHeureka('hnojivo na ' + document.getElementById('det-name').innerText, event)">💩 Hnojiva</button>
+               <button onclick="searchHeureka('postřik na ' + document.getElementById('det-name').innerText, event)">🐛 Postřiky</button>
+               <button onclick="searchHeureka('substrát pro ' + document.getElementById('det-name').innerText, event)">🌱 Substrát</button>
            </div>
             <div class="yt-custom-search" style="margin-top:10px;">
-               <input type="text" id="shop-custom-query" placeholder="Zadejte název přípravku...">
-               <button style="background:var(--shop);" onclick="searchHeureka(document.getElementById('shop-custom-query').value)">Hledat</button>
+               <input type="text" id="shop-custom-query" placeholder="Zadejte přesný název přípravku...">
+               <button style="background:var(--shop);" onclick="searchHeureka(document.getElementById('shop-custom-query').value, event)">Hledat</button>
            </div>
         </div>
         
@@ -522,7 +521,63 @@ function openShopUI() {
     const ui = document.getElementById('shop-search-ui'); const btn = document.getElementById('btn-open-shop'); document.getElementById('yt-search-ui').style.display = 'none'; document.getElementById('btn-open-yt').innerHTML = '<span style="font-size:1.2em">🎥</span> Hledat návody na YouTube';
     if (ui.style.display === 'block') { ui.style.display = 'none'; btn.innerHTML = '<span style="font-size:1.2em">🛒</span> Hledat přípravky v e-shopech'; } else { ui.style.display = 'block'; btn.innerHTML = 'Zavřít obchod ✕'; }
 }
-function searchHeureka(query) { if(!query) return; window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent(query), '_blank'); }
+function searchHeureka(query, event) { if(event) event.stopPropagation(); if(!query) return; window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent(query), '_blank'); }
+
+// NOVÁ FUNKCE: AI Nákupní asistent pro staré úkoly
+async function askAIProducts(plantId, taskAction, event) {
+    if (event) event.stopPropagation();
+    const key = localStorage.getItem('G_KEY'); if (!key) return alert("Chybí klíč!");
+    const tx = db.transaction("plants", "readwrite");
+    const store = tx.objectStore("plants");
+    
+    store.get(plantId).onsuccess = async (e) => {
+        let plant = e.target.result;
+        if(!plant) return;
+        
+        document.getElementById('loader').style.display = 'flex'; 
+        document.getElementById('loader-text').innerText = "Hledám přípravky...";
+        
+        try {
+            const prompt = `Doporuč 3 až 5 konkrétních komerčních přípravků (značková hnojiva nebo postřiky běžně dostupné v ČR, např. Mospilan, Kristalon) pro rostlinu '${plant.name}' na úkol '${taskAction}'. Odpověz POUZE jako JSON pole stringů, nic víc. Příklad: ["Název 1", "Název 2", "Název 3"]`;
+            
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+                method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [ { text: prompt } ]}], generationConfig: { response_mime_type: "application/json" } })
+            });
+            const data = await resp.json(); if (!resp.ok) throw new Error(data.error?.message);
+            
+            let productsArr = JSON.parse(data.candidates[0].content.parts[0].text);
+            if(!Array.isArray(productsArr)) productsArr = [productsArr]; 
+            
+            let taskUpdated = false;
+            if(plant.tasks) {
+                plant.tasks.forEach(t => {
+                    if(t.action === taskAction) {
+                        t.products = productsArr;
+                        taskUpdated = true;
+                    }
+                });
+            }
+            
+            if(taskUpdated) {
+                const putTx = db.transaction("plants", "readwrite").objectStore("plants");
+                putTx.put(plant).onsuccess = () => {
+                    document.getElementById('loader').style.display = 'none';
+                    render().then(() => {
+                        if(openPlantId === plant.id) {
+                            const idx = currentPlants.findIndex(p => p.id === openPlantId);
+                            if(idx !== -1) openDetail(idx);
+                        }
+                    });
+                };
+            } else {
+                document.getElementById('loader').style.display = 'none';
+            }
+        } catch (err) {
+            handleAPIError(err, "Hledání přípravků");
+        }
+    };
+}
  
 async function runYTSearch(queryModifier, loadMore = false) {
     if (!queryModifier || queryModifier.trim() === '') return;
@@ -593,10 +648,13 @@ function updateCalendar(plantsArray) {
                        tasksFound = true; const detailsHTML = task.details ? task.details : 'Bez dalších podrobností.';
                        
                        let productHTML = '';
-                       if (task.product) {
-                           productHTML = `<div class="task-product">🧪 <strong>Doporučeno:</strong> ${task.product} <a href="https://www.heureka.cz/?h[fraze]=${encodeURIComponent(task.product)}" target="_blank" class="btn-shop" onclick="event.stopPropagation()">🛒 Najít</a></div>`;
-                       } else if (/(hnoj|postřik|škůdc|chorob|nemoc)/i.test(task.action)) {
-                           productHTML = `<div class="task-product" style="background:transparent; border-style:dashed; border-color:var(--border); color:var(--text);">🔎 <a href="https://www.heureka.cz/?h[fraze]=${encodeURIComponent(p.name + ' ' + task.action)}" target="_blank" style="color:var(--shop); font-weight:bold; text-decoration:none;" onclick="event.stopPropagation()">Hledat přípravky na: ${task.action}</a></div>`;
+                       if (task.products && Array.isArray(task.products) && task.products.length > 0) {
+                           let btns = task.products.map(prod => `<button class="btn-shop" onclick="searchHeureka('${prod.replace(/'/g, "\\'")}', event)">🛒 ${prod}</button>`).join(' ');
+                           productHTML = `<div class="task-product">🧪 <strong>Doporučeno (vyberte si):</strong><div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">${btns}</div></div>`;
+                       } else if (task.product) {
+                           productHTML = `<div class="task-product">🧪 <strong>Doporučeno:</strong><div style="margin-top:8px;"><button class="btn-shop" onclick="searchHeureka('${task.product.replace(/'/g, "\\'")}', event)">🛒 ${task.product}</button></div></div>`;
+                       } else if (/(hnoj|postřik|škůdc|chorob|nemoc|výživ)/i.test(task.action)) {
+                           productHTML = `<div class="task-product" style="background:transparent; border:none; padding:0;"><button class="btn-ai-shop" onclick="askAIProducts(${p.id}, '${task.action.replace(/'/g, "\\'")}', event)">💡 Zeptat se AI na vhodné přípravky</button></div>`;
                        }
                        
                        calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><div><strong>${p.name}:</strong> ${task.action}</div><div class="task-arrow">▼</div></div><div class="task-details">${detailsHTML}${productHTML}</div></div>`;
@@ -652,16 +710,18 @@ function openDetail(index) {
                const isDone = (p.history || []).some(h => h.type === 'task' && h.action.startsWith(`Splněn úkol: ${task.action}`) && new Date(h.date).getFullYear() === currentYear && (new Date(h.date).getMonth() + 1) === currentMonthNum);
                if(!isDone) {
                    hasPendingTasks = true;
-                   let prodArg = task.product ? task.product.replace(/'/g, "\\'") : '';
                    
                    let productHTML = '';
-                   if (task.product) {
-                       productHTML = `<div class="task-product">🧪 <strong>Doporučeno:</strong> ${task.product} <a href="https://www.heureka.cz/?h[fraze]=${encodeURIComponent(task.product)}" target="_blank" class="btn-shop">🛒 Koupit</a></div>`;
-                   } else if (/(hnoj|postřik|škůdc|chorob|nemoc)/i.test(task.action)) {
-                       productHTML = `<div class="task-product" style="background:transparent; border-style:dashed; border-color:var(--border); color:var(--text);">🔎 <a href="https://www.heureka.cz/?h[fraze]=${encodeURIComponent(p.name + ' ' + task.action)}" target="_blank" style="color:var(--shop); font-weight:bold; text-decoration:none;">Hledat přípravky na: ${task.action}</a></div>`;
+                   if (task.products && Array.isArray(task.products) && task.products.length > 0) {
+                       let btns = task.products.map(prod => `<button class="btn-shop" onclick="completeTask('${task.action.replace(/'/g, "\\'")}', '${prod.replace(/'/g, "\\'")}')">✓ Koupit a Splnit: ${prod}</button>`).join(' ');
+                       productHTML = `<div class="task-product">🧪 <strong>Doporučeno (vyberte přípravek):</strong><div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:8px;">${btns}</div></div>`;
+                   } else if (task.product) {
+                       productHTML = `<div class="task-product">🧪 <strong>Doporučeno:</strong><div style="margin-top:8px;"><button class="btn-shop" onclick="completeTask('${task.action.replace(/'/g, "\\'")}', '${task.product.replace(/'/g, "\\'")}')">✓ Koupit a Splnit: ${task.product}</button></div></div>`;
+                   } else if (/(hnoj|postřik|škůdc|chorob|nemoc|výživ)/i.test(task.action)) {
+                       productHTML = `<div class="task-product" style="background:transparent; border:none; padding:0;"><button class="btn-ai-shop" onclick="askAIProducts(${p.id}, '${task.action.replace(/'/g, "\\'")}', event)">💡 Zeptat se AI na vhodné přípravky</button></div>`;
                    }
                    
-                   tasksList.innerHTML += `<div class="task-action-item"><div class="task-action-header"><div><strong>${task.action}</strong><br><span style="font-size:0.85em; color:var(--text-muted);">${task.details || ''}</span></div><button class="btn-done" onclick="completeTask('${task.action}', '${prodArg}')">✓ Hotovo</button></div>${productHTML}</div>`;
+                   tasksList.innerHTML += `<div class="task-action-item"><div class="task-action-header"><div><strong>${task.action}</strong><br><span style="font-size:0.85em; color:var(--text-muted);">${task.details || ''}</span></div><button class="btn-done" onclick="completeTask('${task.action}', '')">✓ Splnit bez přípravku</button></div>${productHTML}</div>`;
                }
            }
        });
@@ -742,7 +802,8 @@ document.getElementById('camera-new').onchange = async (e) => {
    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Analyzuji...";
     try {
         const resizedBase64 = await resizeImage(file); const b64Data = resizedBase64.split(',')[1];
-        const aiPrompt = `Jsi expert botanik. Odpověz POUZE ve formátu JSON: {"name": "Český název", "category": "Kategorie (vyber jednu z: Pokojová rostlina, Keř, Strom, Bylina, Sukulent / Kaktus, Ostatní)", "usage": "Využití (vyber jednu z: Zelenina, Ovoce, Bylinka / Koření, Okrasná, Ostatní)", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol (např. Hnojení, Řez)", "details": "Detaily", "product": "Konkrétní komerční název hnojiva/postřiku dostupný v ČR (např. Kristalon, Mospilan), pokud se to hodí, jinak nech prázdné"}]}`;
+        // ZMĚNA V PROMPTU: product -> products jako pole []
+        const aiPrompt = `Jsi expert botanik. Odpověz POUZE ve formátu JSON: {"name": "Český název", "category": "Kategorie (vyber jednu z: Pokojová rostlina, Keř, Strom, Bylina, Sukulent / Kaktus, Ostatní)", "usage": "Využití (vyber jednu z: Zelenina, Ovoce, Bylinka / Koření, Okrasná, Ostatní)", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol (např. Hnojení, Řez)", "details": "Detaily", "products": ["Název přípravku 1", "Název 2"]}]}`;
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [ { text: aiPrompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } } ]}], generationConfig: { response_mime_type: "application/json" } })
         });
@@ -796,7 +857,7 @@ async function runAIDetective() {
 async function updatePlantProfile(exactName) {
     const key = localStorage.getItem('G_KEY'); if (!key) return; const plant = currentPlants.find(p => p.id === openPlantId); document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Aktualizuji...";
     try {
-        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [ { text: `Vygeneruj nová data pro odrůdu: ${exactName}. Použij tento JSON formát s detaily o produktech: {"name": "${exactName}", "category": "Kategorie", "usage": "Využití", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol", "details": "Detaily", "product": "Konkrétní název hnojiva/postřiku (nebo prázdné)"}]}` }, { inline_data: { mime_type: "image/jpeg", data: plant.images[plant.images.length - 1].data.split(',')[1] } } ]}], generationConfig: { response_mime_type: "application/json" } }) });
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, { method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [ { text: `Vygeneruj nová data pro odrůdu: ${exactName}. Použij tento JSON formát s detaily o produktech: {"name": "${exactName}", "category": "Kategorie", "usage": "Využití", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol", "details": "Detaily", "products": ["Název přípravku 1", "Název 2"]}]}` }, { inline_data: { mime_type: "image/jpeg", data: plant.images[plant.images.length - 1].data.split(',')[1] } } ]}], generationConfig: { response_mime_type: "application/json" } }) });
         const data = await resp.json(); if (!resp.ok) throw new Error(data.error?.message); let res = JSON.parse(data.candidates[0].content.parts[0].text); const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
         plant.name = res.name || exactName; plant.category = res.category || "Ostatní"; plant.usage = res.usage || "Ostatní"; plant.water = res.water || plant.water; plant.light = res.light || plant.light; plant.toxicity = res.toxicity || plant.toxicity; plant.tasks = res.tasks || plant.tasks;
        store.put(plant).onsuccess = () => { document.getElementById('loader').style.display = 'none'; alert(`Aktualizováno!`); render().then(() => { openDetail(currentPlants.findIndex(p => p.id === openPlantId)); }); };
