@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v19.0</title>
+    <title>PlantMaster AI v20.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -68,9 +68,15 @@
         .gallery-wrapper { padding: 15px 15px 0 15px; }
         .gallery-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; scroll-snap-type: x mandatory; }
         .gallery-item { flex: 0 0 85%; scroll-snap-align: center; position: relative; }
-        .gallery-item img { width: 100%; height: 220px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ddd; }
-        .gallery-date { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; }
+        .gallery-item img { width: 100%; height: 220px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ddd; transition: 0.2s; }
+        .gallery-date { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; pointer-events: none; }
         
+        /* Lightbox stylizace pro celoobrazovkový režim fotek */
+        #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; cursor: pointer; }
+        #lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); cursor: default; }
+        .btn-lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); z-index: 3010; transition: 0.3s; }
+        .btn-lightbox-close:hover { background: rgba(255,255,255,0.4); }
+
         .btn-add-photo { background: white; color: var(--p); border: 2px dashed var(--p); padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
         
         .btn-doctor { background: var(--doc); color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 0.95rem; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(25,118,210,0.3); display: none; }
@@ -132,7 +138,7 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 19.0 (Hlasové zadávání & Zabezpečení)</span>
+    <span class="version-tag">Verze 20.0 (Celoobrazovková galerie)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openHelp()">❓</button>
         <button class="btn-header" onclick="openSettings()">⚙️</button>
@@ -190,7 +196,8 @@
         <h3>1. Přidání a správa rostlin</h3>
         <ul>
            <li><strong>Nová rostlina (+):</strong> Klikněte na zelené tlačítko dole. Po vyfocení AI automaticky určí druh, využití (zelenina/ovoce), zálivku a toxicitu.</li>
-           <li><strong>Filtry:</strong> Pomocí roletek nahoře můžete seznam kytiček řadit nebo filtrovat (např. zobrazit jen zeleninu).</li>
+           <li><strong>Detail fotky:</strong> Kliknutím na fotku v detailu rostliny ji zvětšíte na celou obrazovku. Pro zavření klikněte kamkoliv do černého pozadí nebo na křížek.</li>
+           <li><strong>Filtry:</strong> Pomocí roletek nahoře můžete seznam kytiček řadit nebo filtrovat.</li>
         </ul>
  
         <h3>2. Videonávody (YouTube)</h3>
@@ -215,7 +222,7 @@
            <li><strong>📂 Obnovit:</strong> Umožňuje nahrát soubor .plantbak zpět do telefonu. Aplikace sama zrekonstruuje celou zahradu.</li>
         </ul>
         
-        <p style="margin-top: 30px; font-size: 0.8rem; text-align: center; opacity: 0.6;">Verze aplikace 19.0</p>
+        <p style="margin-top: 30px; font-size: 0.8rem; text-align: center; opacity: 0.6;">Verze aplikace 20.0</p>
     </div>
 </div>
  
@@ -299,6 +306,11 @@
         </div>
         <button class="btn-delete" id="det-delete-btn">🗑️ Smazat rostlinu</button>
     </div>
+</div>
+
+<div id="lightbox" onclick="closeLightbox(event)">
+    <button class="btn-lightbox-close" onclick="closeLightbox(event)">✕</button>
+    <img id="lightbox-img" src="" alt="Detail fotky" onclick="event.stopPropagation()">
 </div>
  
 <div id="loader">
@@ -601,6 +613,23 @@ function removeSavedVideo(plantId, videoIdx) {
         };
     }
 }
+
+// Funkce pro Lightbox (zvětšení fotek)
+function openLightbox(src, event) {
+    if (event) event.stopPropagation();
+    const lb = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    img.src = src;
+    lb.style.display = 'flex';
+}
+
+function closeLightbox(event) {
+    if (event) event.stopPropagation();
+    const lb = document.getElementById('lightbox');
+    const img = document.getElementById('lightbox-img');
+    lb.style.display = 'none';
+    img.src = '';
+}
  
 // OTEVÍRÁNÍ A ZAVÍRÁNÍ MODÁLNÍCH OKEN
 function openSettings() { document.getElementById('settings-view').style.display = 'flex'; }
@@ -756,7 +785,11 @@ function openDetail(index) {
     const p = currentPlants[index]; openPlantId = p.id;
     const galBox = document.getElementById('det-gallery'); galBox.innerHTML = '';
     const imagesToRender = p.images || [{data: p.img, date: p.dateAdded}];
-   imagesToRender.forEach(imgObj => { galBox.innerHTML += `<div class="gallery-item"><img src="${imgObj.data}"><div class="gallery-date">${imgObj.date}</div></div>`; });
+    
+    // Zde je úprava: Po kliknutí na obrázek voláme openLightbox()
+   imagesToRender.forEach(imgObj => { 
+       galBox.innerHTML += `<div class="gallery-item"><img src="${imgObj.data}" onclick="openLightbox('${imgObj.data}', event)" style="cursor:zoom-in;"><div class="gallery-date">${imgObj.date}</div></div>`; 
+   });
  
     const docBtn = document.getElementById('btn-ai-doctor'); 
    document.getElementById('doctor-output').style.display = 'none'; 
