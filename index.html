@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v26.6</title>
+    <title>PlantMaster AI v26.7</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -64,8 +64,8 @@
         .task-product { margin-top: 10px; font-size: 0.85rem; background: #e3f2fd; color: #1565c0; padding: 10px; border-radius: 8px; display: block; border: 1px solid #bbdefb; }
         [data-theme="dark"] .task-product { background: rgba(33,150,243,0.1); color: #64b5f6; border-color: rgba(33,150,243,0.3); }
         
-        .btn-shop { background: var(--shop); color: white; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-decoration: none; box-shadow: 0 2px 4px rgba(255,152,0,0.2); display: inline-block;}
-        .btn-agro { background: var(--agro); color: white; border: none; padding: 6px 10px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.75rem; text-decoration: none; box-shadow: 0 2px 4px rgba(46,125,50,0.2); display: inline-block;}
+        .btn-shop { background: var(--shop); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; text-decoration: none; box-shadow: 0 2px 4px rgba(255,152,0,0.3); display: inline-block;}
+        .btn-agro { background: var(--agro); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; text-decoration: none; box-shadow: 0 2px 4px rgba(46,125,50,0.3); display: inline-block;}
         .btn-ai-shop { background: var(--ai-shop); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; box-shadow: 0 2px 4px rgba(103,58,183,0.3); display: flex; align-items: center; gap: 5px;}
  
         .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px var(--shadow); display: flex; align-items: center; cursor: pointer; transition: 0.2s; user-select: none; border: 3px solid transparent; }
@@ -73,7 +73,6 @@
         .card-info h3 { margin: 0 0 5px 0; font-size: 1.1rem; color: var(--p); }
         .card-info p { margin: 0; font-size: 0.85rem; color: var(--text-muted); }
         .cat-badge-small { display: inline-block; font-size: 0.7rem; background: rgba(0,150,136,0.1); color: #00897b; padding: 2px 6px; border-radius: 4px; margin-bottom: 5px; font-weight: bold; margin-right: 4px;}
-        .use-badge-small { display: inline-block; font-size: 0.7rem; background: rgba(255,152,0,0.1); color: #fb8c00; padding: 2px 6px; border-radius: 4px; margin-bottom: 5px; font-weight: bold; }
         .water-badge-small { display: inline-block; font-size: 0.7rem; background: rgba(33,150,243,0.1); color: #1e88e5; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-top: 5px; display: block; width: fit-content; }
         
         .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--p); color: var(--header-text); border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 6px 16px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 150; }
@@ -100,7 +99,7 @@
         .gallery-date { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; pointer-events: none; }
         
         #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; overflow: hidden; touch-action: none; }
-        #lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transition: transform 0.1s ease-out; }
+        #lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); transform-origin: center center; transition: transform 0.1s ease-out; }
         
         .btn-add-photo { background: var(--card); color: var(--p); border: 2px dashed var(--p); padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; cursor: pointer; margin-top: 10px; }
         .btn-water-now { background: #2196f3; color: white; border: none; padding: 15px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 1rem; cursor: pointer; margin-top: 15px; box-shadow: 0 4px 10px rgba(33,150,243,0.3); }
@@ -129,7 +128,6 @@
         .tox-danger { background: rgba(211,47,47,0.1); color: var(--warn); border: 1px solid rgba(211,47,47,0.3); }
         .tox-safe { background: rgba(56,142,60,0.1); color: var(--safe); border: 1px solid rgba(56,142,60,0.3); }
         .cat-badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; margin-bottom: 15px; margin-right: 5px; background: rgba(0,150,136,0.1); color: #00897b; border: 1px solid rgba(0,150,136,0.3); }
-        .use-badge { display: inline-block; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.85rem; margin-bottom: 15px; background: rgba(255,152,0,0.1); color: #fb8c00; border: 1px solid rgba(255,152,0,0.3); }
         
         .info-box { background: var(--card); padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px var(--shadow); border: 1px solid var(--border); }
         .info-box h4 { margin: 0 0 10px 0; color: var(--text); font-size: 0.95rem; opacity: 0.8; border-bottom: 1px solid var(--border); padding-bottom: 5px;}
@@ -156,7 +154,7 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 26.6 (Agromanuál Integrace)</span>
+    <span class="version-tag">Verze 26.7 (Kompletní a ověřená)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openHelp()">❓</button>
         <button class="btn-header" onclick="openSettings()">⚙️</button>
@@ -168,19 +166,23 @@
  
     <div id="inbox-section">
         <h3>📥 Nová videa ze sdílení (<span id="inbox-count">0</span>)</h3>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top:0;">Přiřaďte tato videa k vašim rostlinám:</p>
         <div id="inbox-list"></div>
     </div>
  
     <div class="sticky-controls" id="search-container">
-        <input type="text" id="search-box" placeholder="🔍 Hledat rostlinu..." onkeyup="filterPlants()">
+        <input type="text" id="search-box" placeholder="🔍 Hledat podle názvu..." onkeyup="filterPlants()">
         <div class="filter-controls">
             <select id="sort-select" class="filter-select" onchange="filterPlants()">
                 <option value="newest">Od nejnovější</option>
                 <option value="az">Abecedně A-Z</option>
+                <option value="za">Abecedně Z-A</option>
            </select>
             <select id="filter-select" class="filter-select" onchange="filterPlants()">
                 <option value="all">Všechno</option>
                 <option value="Pokojová rostlina">Pokojovky</option>
+                <option value="Keř">Keře</option>
+                <option value="Strom">Stromy</option>
                 <option value="other">Ostatní</option>
            </select>
         </div>
@@ -195,16 +197,18 @@
 </div>
 
 <div id="multi-select-bar">
-    <span style="font-weight: bold;">Vybráno: <span id="sel-count">0</span></span>
-    <button class="btn-cancel-sel" onclick="cancelSelection()">Zrušit</button>
-    <button class="btn-del-sel" onclick="deleteSelected()">🗑️ Smazat</button>
+    <span style="font-size: 1.1rem; color: var(--p); font-weight: bold;">Vybráno: <span id="sel-count">0</span></span>
+    <div style="display:flex; gap:10px;">
+        <button class="btn-cancel-sel" onclick="cancelSelection()">Zrušit</button>
+        <button class="btn-del-sel" onclick="deleteSelected()">🗑️ Smazat</button>
+    </div>
 </div>
  
 <div id="help-view">
     <div class="help-box">
         <button class="btn-modal-close" onclick="closeHelp()">✕</button>
         <h2>📖 Uživatelský manuál</h2>
-        <p>Vítejte v PlantMaster AI! V této verzi jsme propojili umělou inteligenci s odborným portálem <strong>Agromanual.cz</strong>. U doporučených přípravků nyní najdete přímé odkazy na jejich etikety a návody k aplikaci.</p>
+        <p>Vítejte v PlantMaster AI! Vše je nyní propojeno s odborným portálem Agromanual.cz pro maximální jistotu při aplikaci postřiků a hnojiv.</p>
     </div>
 </div>
  
@@ -229,17 +233,13 @@
     <button class="btn-close" onclick="closeDetail()">✕</button>
     <div class="gallery-wrapper">
         <div class="gallery-scroll" id="det-gallery"></div>
-        <button class="btn-add-photo" onclick="document.getElementById('camera-add').click()">📸 Přidat fotku</button>
+        <button class="btn-add-photo" onclick="document.getElementById('camera-add').click()">📸 Přidat aktuální fotku</button>
         <div style="display: flex; gap: 10px;">
             <button class="btn-doctor" id="btn-ai-doctor" onclick="runAIDoctor()">🩺 Zdraví</button>
-            <button class="btn-doctor btn-detective" id="btn-ai-detective" onclick="runAIDetective()">🔎 Zjistit odrůdu</button>
+            <button class="btn-doctor btn-detective" id="btn-ai-detective" onclick="runAIDetective()" style="display:block;">🔎 Zjistit odrůdu</button>
         </div>
         <button class="btn-doctor btn-youtube" id="btn-open-yt" onclick="openYTSearchUI()">🎥 Hledat na YouTube</button>
         <div id="yt-search-ui">
-            <div class="yt-custom-search">
-                <input type="text" id="yt-custom-query" placeholder="Co hledáte?">
-                <button onclick="runYTSearch(document.getElementById('yt-custom-query').value)">Hledat</button>
-            </div>
             <div id="yt-results-list"></div>
         </div>
         <div class="doctor-result" id="doctor-output"></div>
@@ -250,36 +250,36 @@
         <h2 id="det-name">Název</h2>
         <div style="margin-bottom: 15px;">
             <div id="det-category" class="cat-badge">Druh</div>
-            <div id="det-usage" class="use-badge">Využití</div>
             <div id="det-toxicity" class="tox-badge">Toxicita</div>
         </div>
         <button class="btn-water-now" onclick="waterPlantNow()">💧 ZALÍT DNES</button>
         <p id="det-last-watered" style="text-align:center; font-size:0.85rem; color:var(--text-muted);"></p>
         
-        <div class="info-box" id="det-tasks-box" style="display:none;">
-            <h4>🎯 Úkoly</h4>
+        <div class="info-box" id="det-tasks-box" style="display:none; border-color: var(--p);">
+            <h4 style="color: var(--p);">🎯 Úkoly na tento měsíc</h4>
             <div id="det-tasks-list"></div>
         </div>
 
-        <div class="info-box"><h4>💧 Zálivka</h4><p id="det-water"></p></div>
+        <div class="info-box"><h4>💧 Jak zalévat</h4><p id="det-water"></p></div>
         <div class="info-box"><h4>☀️ Světlo</h4><p id="det-light"></p></div>
         <div class="info-box">
             <h4>📝 Poznámky</h4>
             <div style="position: relative;">
-                <textarea id="det-notes" class="notes-input"></textarea>
+                <textarea id="det-notes" class="notes-input" placeholder="Zadejte poznámku..."></textarea>
                 <button id="btn-mic" class="mic-btn" onclick="toggleVoiceRecognition()">🎤</button>
             </div>
-            <button class="btn-save-notes" onclick="saveNotes()">💾 Uložit</button>
+            <button class="btn-save-notes" onclick="saveNotes()">💾 Uložit poznámku</button>
         </div>
         <div class="info-box" id="det-history-box" style="display:none;">
             <h4>📜 Historie</h4>
             <div class="history-timeline" id="det-history-list"></div>
         </div>
-        <button class="btn-delete" id="det-delete-btn" onclick="deletePlant()">🗑️ Smazat rostlinu</button>
+        <button class="btn-delete" id="det-delete-btn" style="background:rgba(211,47,47,0.1); color:var(--warn); border:1px solid var(--warn); padding:15px; border-radius:12px; width:100%; font-weight:bold; margin-top:10px;">🗑️ Smazat rostlinu</button>
     </div>
 </div>
 
-<div id="lightbox" onclick="this.style.display='none'">
+<div id="lightbox">
+    <button class="btn-lightbox-close" style="position:absolute; top:20px; right:20px; background:rgba(255,255,255,0.2); color:white; border:none; border-radius:50%; width:45px; height:45px; font-size:24px; cursor:pointer;" onclick="closeLightbox()">✕</button>
     <img id="lightbox-img" src="">
 </div>
  
@@ -290,9 +290,47 @@
  
 <script>
 let db; let currentPlants = []; let openPlantId = null; 
+let isSelectMode = false; let selectedPlants = new Set(); let pressTimer; let cardStartY = 0; let didLongPress = false;
+
+// SPEECH RECOGNITION
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition; let isRecording = false;
+if (SpeechRecognition) {
+    recognition = new SpeechRecognition(); recognition.lang = 'cs-CZ';
+    recognition.onresult = (e) => {
+        const t = e.results[0][0].transcript;
+        const field = document.getElementById('det-notes');
+        field.value = field.value.trim() ? field.value + "\n- " + t : "- " + t;
+        stopVoiceRecognition();
+    };
+    recognition.onend = stopVoiceRecognition;
+}
+function toggleVoiceRecognition() {
+    if (!SpeechRecognition) return alert("Nepodporováno.");
+    if (isRecording) { recognition.stop(); } 
+    else { document.getElementById('btn-mic').classList.add('recording'); isRecording = true; recognition.start(); }
+}
+function stopVoiceRecognition() { document.getElementById('btn-mic').classList.remove('recording'); isRecording = false; }
+
+// DB SETUP
 const req = indexedDB.open("PlantDB", 6);
 req.onupgradeneeded = (e) => { db = e.target.result; if (!db.objectStoreNames.contains("plants")) db.createObjectStore("plants", { keyPath: "id", autoIncrement: true }); };
-req.onsuccess = (e) => { db = e.target.result; render(); };
+req.onsuccess = (e) => { db = e.target.result; checkSharedUrl(); render(); };
+
+function checkSharedUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const sharedUrl = params.get('url') || params.get('text');
+    if (sharedUrl && (sharedUrl.includes('youtu.be') || sharedUrl.includes('youtube.com'))) {
+        let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+        if(!inbox.some(v => v.url === sharedUrl)) {
+            inbox.push({ url: sharedUrl, date: new Date().toLocaleDateString('cs-CZ') });
+            localStorage.setItem('pm_video_inbox', JSON.stringify(inbox));
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
+    }
+}
+
+function getYTId(url) { let m = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/); return m ? m[1] : null; }
 
 async function render() {
     const tx = db.transaction("plants", "readonly");
@@ -302,28 +340,107 @@ async function render() {
         return p;
     }).reverse();
     filterPlants();
+    renderInbox();
+}
+
+function renderInbox() {
+    let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+    const sec = document.getElementById('inbox-section');
+    if(inbox.length === 0) { sec.style.display = 'none'; return; }
+    sec.style.display = 'block'; document.getElementById('inbox-count').innerText = inbox.length;
+    const list = document.getElementById('inbox-list'); list.innerHTML = '';
+    let opts = '<option value="">-- Vyberte rostlinu --</option>';
+    currentPlants.forEach(p => opts += `<option value="${p.id}">${p.name}</option>`);
+    inbox.forEach((v, idx) => {
+        list.innerHTML += `<div style="background:var(--bg); padding:10px; border-radius:8px; margin-bottom:10px;">
+            <p style="font-size:0.8rem; margin:0 0 5px 0;">${v.url}</p>
+            <select id="inbox-sel-${idx}" style="width:100%; padding:8px; border-radius:5px;">${opts}</select>
+            <div style="display:flex; gap:5px; margin-top:5px;">
+                <button onclick="assignVideo(${idx})" style="flex:1; background:var(--p); color:white; border:none; padding:8px; border-radius:5px;">Přiřadit</button>
+                <button onclick="deleteInboxVideo(${idx})" style="background:var(--warn); color:white; border:none; padding:8px; border-radius:5px;">Smazat</button>
+            </div>
+        </div>`;
+    });
+}
+function assignVideo(idx) {
+    let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+    const pId = document.getElementById(`inbox-sel-${idx}`).value;
+    if(!pId) return;
+    const tx = db.transaction("plants", "readwrite");
+    const store = tx.objectStore("plants");
+    store.get(parseInt(pId)).onsuccess = (e) => {
+        let p = e.target.result; if(!p.videos) p.videos = [];
+        p.videos.push(inbox[idx]);
+        store.put(p).onsuccess = () => { inbox.splice(idx, 1); localStorage.setItem('pm_video_inbox', JSON.stringify(inbox)); render(); };
+    };
+}
+function deleteInboxVideo(idx) {
+    let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+    inbox.splice(idx, 1); localStorage.setItem('pm_video_inbox', JSON.stringify(inbox)); renderInbox();
 }
 
 function filterPlants() {
     const query = document.getElementById('search-box').value.toLowerCase();
     const filterVal = document.getElementById('filter-select').value;
-    const filtered = currentPlants.filter(p => {
+    const sortVal = document.getElementById('sort-select').value;
+    let filtered = currentPlants.filter(p => {
         const matchesText = p.name.toLowerCase().includes(query);
         const matchesFilter = filterVal === "all" || p.category === filterVal;
         return matchesText && matchesFilter;
     });
+    if(sortVal === "az") filtered.sort((a,b) => a.name.localeCompare(b.name, 'cs'));
+    if(sortVal === "za") filtered.sort((a,b) => b.name.localeCompare(a.name, 'cs'));
     const list = document.getElementById('plant-list'); list.innerHTML = '';
     filtered.forEach((p) => {
         const originalIndex = currentPlants.indexOf(p);
         const latestImg = p.images[p.images.length - 1].data;
-        list.innerHTML += `<div class="card" onclick="openDetail(${originalIndex})">
-            <img src="${latestImg}"><div class="card-info"><h3>${p.name}</h3><div class="cat-badge-small">${p.category || 'Ostatní'}</div></div></div>`;
+        const isSelected = selectedPlants.has(p.id);
+        const style = isSelected ? 'border-color:var(--p); background:rgba(76,175,80,0.1);' : '';
+        const badge = p.lastWatered ? `<div class="water-badge-small">💧 ${getWateringText(p.lastWatered)}</div>` : '';
+        list.innerHTML += `<div class="card" style="${style}" 
+            onmousedown="startPress(event, ${p.id})" ontouchstart="startPress(event, ${p.id})" 
+            onmousemove="cancelPress(event)" ontouchmove="cancelPress(event)" 
+            onmouseup="cancelPress(event)" ontouchend="cancelPress(event)" 
+            onclick="handleCardClick(event, ${p.id}, ${originalIndex})">
+            <img src="${latestImg}"><div class="card-info"><h3>${p.name}</h3><div class="cat-badge-small">${p.category || 'Ostatní'}</div>${badge}</div></div>`;
     });
     updateCalendar(filtered);
 }
 
+function startPress(e, id) {
+    didLongPress = false; cardStartY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+    pressTimer = setTimeout(() => {
+        didLongPress = true; 
+        if(!isSelectMode) { isSelectMode = true; selectedPlants.add(id); updateSelectModeUI(); filterPlants(); }
+    }, 600);
+}
+function cancelPress(e) { clearTimeout(pressTimer); }
+function handleCardClick(e, id, idx) {
+    if (didLongPress) return;
+    if (isSelectMode) {
+        if (selectedPlants.has(id)) selectedPlants.delete(id); else selectedPlants.add(id);
+        if (selectedPlants.size === 0) isSelectMode = false;
+        updateSelectModeUI(); filterPlants();
+    } else { openDetail(idx); }
+}
+function updateSelectModeUI() {
+    document.getElementById('multi-select-bar').style.display = isSelectMode ? 'flex' : 'none';
+    document.getElementById('sel-count').innerText = selectedPlants.size;
+    document.getElementById('main-fab').style.display = isSelectMode ? 'none' : 'flex';
+}
+function cancelSelection() { isSelectMode = false; selectedPlants.clear(); updateSelectModeUI(); filterPlants(); }
+function deleteSelected() {
+    if(!confirm("Smazat vybrané?")) return;
+    const tx = db.transaction("plants", "readwrite");
+    const store = tx.objectStore("plants");
+    selectedPlants.forEach(id => store.delete(id));
+    tx.oncomplete = () => { cancelSelection(); render(); };
+}
+
 function updateCalendar(plantsArray) {
+    const months = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
     const curMonth = new Date().getMonth() + 1;
+    document.getElementById('calendar-title').innerText = `📅 Úkoly na ${months[curMonth-1]}`;
     const calBox = document.getElementById('calendar-tasks'); calBox.innerHTML = '';
     let found = false;
     plantsArray.forEach(p => {
@@ -331,56 +448,67 @@ function updateCalendar(plantsArray) {
             if(task.month === curMonth) {
                 found = true;
                 let productBtns = '';
-                if(task.products) task.products.forEach(prod => {
-                    productBtns += `<div style="display:flex; gap:5px; margin-top:5px;">
-                        <button class="btn-shop" onclick="searchHeureka('${prod}', event)">🛒 ${prod}</button>
-                        <button class="btn-agro" onclick="searchAgromanual('${prod}', event)">📖 Návod</button>
-                    </div>`;
-                });
-                calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><strong>${p.name}:</strong> ${task.action}</div><div class="task-details">${task.details || ''}${productBtns}</div></div>`;
+                if(task.products) {
+                    task.products.forEach(prod => {
+                        productBtns += `<div style="display:flex; gap:8px; margin-top:8px;">
+                            <button class="btn-shop" onclick="searchHeureka('${prod}', event)">🛒 ${prod}</button>
+                            <button class="btn-agro" onclick="searchAgromanual('${prod}', event)">📖 Návod</button>
+                        </div>`;
+                    });
+                } else if (/(hnoj|postř|škůd|nemoc)/i.test(task.action)) {
+                    productBtns = `<button class="btn-ai-shop" style="margin-top:8px;" onclick="askAIProducts(${p.id}, '${task.action.replace(/'/g, "\\'")}', event)">💡 Navrhnout přípravky</button>`;
+                }
+                calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><div><strong>${p.name}:</strong> ${task.action}</div><div class="task-arrow">▼</div></div><div class="task-details">${task.details || ''}${productBtns}</div></div>`;
             }
         });
     });
     if(!found) calBox.innerHTML = '<i>Tento měsíc bez úkolů.</i>';
 }
-
 function toggleTask(el) { const det = el.nextElementSibling; det.style.display = det.style.display === 'block' ? 'none' : 'block'; }
+function getWateringText(iso) { let d = Math.floor(Math.abs(new Date() - new Date(iso)) / (1000 * 60 * 60 * 24)); return d === 0 ? "Dnes" : (d === 1 ? "Včera" : `Před ${d} dny`); }
+
 function searchHeureka(q, e) { if(e) e.stopPropagation(); window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent(q), '_blank'); }
 function searchAgromanual(q, e) { if(e) e.stopPropagation(); window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent(q), '_blank'); }
 
 async function askAIProducts(pId, taskAction, event) {
     if (event) event.stopPropagation();
     const key = localStorage.getItem('G_KEY'); if (!key) return alert("Chybí klíč!");
+    document.getElementById('loader').style.display = 'flex';
     const tx = db.transaction("plants", "readwrite");
-    const store = tx.objectStore("plants");
-    store.get(pId).onsuccess = async (e) => {
+    tx.objectStore("plants").get(pId).onsuccess = async (e) => {
         let plant = e.target.result;
-        document.getElementById('loader').style.display = 'flex';
         try {
-            const prompt = `Doporuč 3 konkrétní komerční přípravky dostupné v ČR pro '${plant.name}' na úkol '${taskAction}'. Odpověz POUZE jako JSON pole stringů. Příklad: ["Mospilan 20 SP", "Champion 50 WG"]`;
+            const prompt = `Doporuč 3 konkrétní přípravky v ČR pro '${plant.name}' na úkol '${taskAction}'. Odpověz POUZE JSON polem stringů.`;
             const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
                 method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { response_mime_type: "application/json" } })
             });
             const data = await resp.json();
             const productsArr = JSON.parse(data.candidates[0].content.parts[0].text);
             plant.tasks.forEach(t => { if(t.action === taskAction) t.products = productsArr; });
-            store.put(plant).onsuccess = () => { document.getElementById('loader').style.display = 'none'; render().then(() => { if(openPlantId === pId) openDetail(currentPlants.findIndex(x => x.id === pId)); }); };
-        } catch (err) { alert("Chyba AI: " + err.message); document.getElementById('loader').style.display = 'none'; }
+            db.transaction("plants", "readwrite").objectStore("plants").put(plant).onsuccess = () => {
+                document.getElementById('loader').style.display = 'none';
+                render().then(() => { if(openPlantId === pId) openDetail(currentPlants.findIndex(x => x.id === pId)); });
+            };
+        } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
     };
 }
 
 function openDetail(index) {
     const p = currentPlants[index]; openPlantId = p.id;
     const gal = document.getElementById('det-gallery'); gal.innerHTML = '';
-    p.images.forEach(img => { gal.innerHTML += `<div class="gallery-item"><img src="${img.data}" onclick="openLightbox('${img.data}')"><div class="gallery-date">${img.date}</div></div>`; });
+    p.images.forEach(img => gal.innerHTML += `<div class="gallery-item"><img src="${img.data}" onclick="openLightbox('${img.data}')"><div class="gallery-date">${img.date}</div></div>`);
     
     document.getElementById('det-name').innerText = p.name;
-    document.getElementById('det-water').innerText = p.water || "Neuvedeno";
-    document.getElementById('det-light').innerText = p.light || "Neuvedeno";
+    document.getElementById('det-water').innerText = p.water || "Neznámé";
+    document.getElementById('det-light').innerText = p.light || "Neznámé";
     document.getElementById('det-notes').value = p.notes || "";
     document.getElementById('det-category').innerText = p.category || "Ostatní";
-    document.getElementById('det-last-watered').innerText = p.lastWatered ? "Poslední zálivka: " + new Date(p.lastWatered).toLocaleDateString('cs-CZ') : "Nezalito";
+    document.getElementById('det-last-watered').innerText = p.lastWatered ? `Poslední zálivka: ${new Date(p.lastWatered).toLocaleDateString('cs-CZ')} (${getWateringText(p.lastWatered)})` : "Nezalito";
     
+    const toxBox = document.getElementById('det-toxicity');
+    if(p.toxicity && p.toxicity.toLowerCase().includes("ne")) { toxBox.className="tox-badge tox-safe"; toxBox.innerText="✅ " + p.toxicity; }
+    else { toxBox.className="tox-badge tox-danger"; toxBox.innerText="⚠️ " + (p.toxicity || "Jedovatost neznámá"); }
+
     const tasksList = document.getElementById('det-tasks-list'); tasksList.innerHTML = '';
     const curMonth = new Date().getMonth() + 1;
     let hasTasks = false;
@@ -390,24 +518,55 @@ function openDetail(index) {
             let btns = '';
             if(t.products) {
                 t.products.forEach(prod => {
-                    btns += `<div style="display:flex; gap:5px; margin-top:5px;">
-                        <button class="btn-shop" onclick="searchHeureka('${prod}', event)">🛒 ${prod}</button>
+                    btns += `<div style="display:flex; gap:8px; margin-top:10px;">
+                        <button class="btn-shop" onclick="searchHeureka('${prod}', event)">🛒 Koupit: ${prod}</button>
                         <button class="btn-agro" onclick="searchAgromanual('${prod}', event)">📖 Návod</button>
                     </div>`;
                 });
             } else if (/(hnoj|postř|škůd|nemoc)/i.test(t.action)) {
-                btns = `<button class="btn-ai-shop" onclick="askAIProducts(${p.id}, '${t.action}', event)">💡 Navrhnout přípravky</button>`;
+                btns = `<button class="btn-ai-shop" style="margin-top:10px;" onclick="askAIProducts(${p.id}, '${t.action.replace(/'/g, "\\'")}', event)">💡 Navrhnout přípravky</button>`;
             }
-            tasksList.innerHTML += `<div class="task-action-item"><strong>${t.action}</strong><p>${t.details || ''}</p>${btns}<button class="btn-done" style="margin-top:5px;" onclick="completeTask('${t.action}')">✓ Splněno</button></div>`;
+            tasksList.innerHTML += `<div class="task-action-item">
+                <div class="task-action-header"><div><strong>${t.action}</strong></div><button class="btn-done" onclick="completeTask('${t.action.replace(/'/g, "\\'")}')">✓ Splnit</button></div>
+                <p style="font-size:0.85rem; margin:5px 0;">${t.details || ''}</p>${btns}</div>`;
         }
     });
     document.getElementById('det-tasks-box').style.display = hasTasks ? 'block' : 'none';
+
+    const histList = document.getElementById('det-history-list'); histList.innerHTML = '';
+    if(p.history) {
+        document.getElementById('det-history-box').style.display = 'block';
+        [...p.history].reverse().forEach(h => histList.innerHTML += `<div class="history-entry"><span style="font-weight:bold; color:var(--p); font-size:0.8rem;">${new Date(h.date).toLocaleDateString('cs-CZ')}:</span> ${h.action}</div>`);
+    } else document.getElementById('det-history-box').style.display = 'none';
+
+    document.getElementById('det-delete-btn').onclick = () => deletePlant(p.id);
     document.getElementById('detail-view').style.display = 'block';
 }
 
-function closeDetail() { document.getElementById('detail-view').style.display = 'none'; openPlantId = null; }
+function closeDetail() { document.getElementById('detail-view').style.display = 'none'; openPlantId = null; stopVoiceRecognition(); }
 
-function openLightbox(src) { document.getElementById('lightbox-img').src = src; document.getElementById('lightbox').style.display = 'flex'; }
+// LIGHTBOX ZOOM LOGIC
+let curScale = 1; let curX = 0; let curY = 0; let startX = 0; let startY = 0; let startDist = 0; let startScale = 1;
+const lb = document.getElementById('lightbox'); const lbImg = document.getElementById('lightbox-img');
+
+function openLightbox(src) { lbImg.src = src; curScale = 1; curX = 0; curY = 0; updateLB(); lb.style.display = 'flex'; }
+function closeLightbox() { lb.style.display = 'none'; }
+function updateLB() { lbImg.style.transform = `translate(${curX}px, ${curY}px) scale(${curScale})`; }
+
+lb.addEventListener('touchstart', e => {
+    if(e.touches.length === 2) { startDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); startScale = curScale; }
+    else { startX = e.touches[0].clientX - curX; startY = e.touches[0].clientY - curY; }
+});
+lb.addEventListener('touchmove', e => {
+    e.preventDefault();
+    if(e.touches.length === 2) {
+        let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+        curScale = Math.max(1, Math.min(startScale * (dist / startDist), 5));
+    } else {
+        curX = e.touches[0].clientX - startX; curY = e.touches[0].clientY - startY;
+    }
+    updateLB();
+}, {passive:false});
 
 async function runAIDoctor() {
     const key = localStorage.getItem('G_KEY'); if (!key) return alert("Chybí klíč!");
@@ -415,14 +574,61 @@ async function runAIDoctor() {
     document.getElementById('loader').style.display = 'flex';
     try {
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-            method: 'POST', body: JSON.stringify({ contents: [{ parts: [ { text: "Analyzuj zdraví rostliny. Stručně česky." }, { inline_data: { mime_type: "image/jpeg", data: plant.images[plant.images.length-1].data.split(',')[1] } } ]}] })
+            method: 'POST', body: JSON.stringify({ contents: [{ parts: [ { text: "Analyzuj zdraví rostliny z fotky. Česky." }, { inline_data: { mime_type: "image/jpeg", data: plant.images[plant.images.length-1].data.split(',')[1] } } ]}] })
         });
         const data = await resp.json(); document.getElementById('loader').style.display = 'none';
         const diag = data.candidates[0].content.parts[0].text;
         const out = document.getElementById('doctor-output');
-        out.innerHTML = `<strong>🩺 Verdikt AI:</strong><br>${diag}<br><button class="btn-agro" style="width:100%; margin-top:10px;" onclick="searchAgromanual('${diag.substring(0,30)}', event)">🔍 Ověřit na Agromanual.cz</button>`;
+        out.innerHTML = `<strong>🩺 AI Doktor:</strong><br>${diag}<br><button class="btn-agro" style="width:100%; margin-top:10px;" onclick="searchAgromanual('${diag.substring(0,30)}', event)">🔍 Ověřit na Agromanual.cz</button>`;
         out.style.display = 'block';
     } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
+}
+
+async function runAIDetective() {
+    const key = localStorage.getItem('G_KEY'); if (!key) return alert("Chybí klíč!");
+    const plant = currentPlants.find(p => p.id === openPlantId);
+    document.getElementById('loader').style.display = 'flex';
+    try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+            method: 'POST', body: JSON.stringify({ contents: [{ parts: [ { text: "Urči přesnou odrůdu. JSON: {\"exactName\": \"Název\"}" }, { inline_data: { mime_type: "image/jpeg", data: plant.images[plant.images.length-1].data.split(',')[1] } } ]}], generationConfig: { response_mime_type: "application/json" } })
+        });
+        const data = await resp.json(); let res = JSON.parse(data.candidates[0].content.parts[0].text);
+        document.getElementById('loader').style.display = 'none';
+        const out = document.getElementById('detective-output');
+        out.innerHTML = `<strong>🔎 Detektiv:</strong> Pravděpodobně jde o ${res.exactName}. <button class="btn-update" onclick="updatePlantProfile('${res.exactName}')">Aktualizovat kartu</button>`;
+        out.style.display = 'block';
+    } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
+}
+
+async function updatePlantProfile(name) {
+    const key = localStorage.getItem('G_KEY'); document.getElementById('loader').style.display = 'flex';
+    const plant = currentPlants.find(p => p.id === openPlantId);
+    try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+            method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: `Vygeneruj data pro '${name}' jako JSON: {"water": "...", "light": "...", "toxicity": "...", "tasks": [{"month": 3, "action": "...", "details": "..."}]}` }] }], generationConfig: { response_mime_type: "application/json" } })
+        });
+        const data = await resp.json(); let res = JSON.parse(data.candidates[0].content.parts[0].text);
+        plant.name = name; plant.water = res.water; plant.light = res.light; plant.toxicity = res.toxicity; plant.tasks = res.tasks;
+        db.transaction("plants", "readwrite").objectStore("plants").put(plant).onsuccess = () => { document.getElementById('loader').style.display = 'none'; render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
+    } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
+}
+
+function openYTSearchUI() {
+    const ui = document.getElementById('yt-search-ui'); const plant = currentPlants.find(p => p.id === openPlantId);
+    if(ui.style.display === 'block') { ui.style.display = 'none'; return; }
+    ui.style.display = 'block'; document.getElementById('yt-results-list').innerHTML = 'Hledám...';
+    runYTSearch(plant.name + " pěstování");
+}
+async function runYTSearch(q) {
+    const key = localStorage.getItem('G_KEY');
+    try {
+        const resp = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=3&q=${encodeURIComponent(q)}&type=video&key=${key}`);
+        const data = await resp.json();
+        const list = document.getElementById('yt-results-list'); list.innerHTML = '';
+        data.items.forEach(v => {
+            list.innerHTML += `<div style="margin-top:10px;"><img src="${v.snippet.thumbnails.default.url}" style="width:100%; border-radius:8px;" onclick="window.open('https://youtube.com/watch?v=${v.id.videoId}')"><p style="font-size:0.8rem;">${v.snippet.title}</p></div>`;
+        });
+    } catch(err) { alert("YouTube API chyba."); }
 }
 
 function waterPlantNow() {
@@ -430,11 +636,10 @@ function waterPlantNow() {
     const store = tx.objectStore("plants");
     store.get(openPlantId).onsuccess = (e) => {
         let p = e.target.result; p.lastWatered = new Date().toISOString();
-        if(!p.history) p.history = []; p.history.push({ date: new Date().toISOString(), action: "Zalito" });
+        if(!p.history) p.history = []; p.history.push({ date: new Date().toISOString(), action: "Rostlina byla zalita" });
         store.put(p).onsuccess = () => { render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
     };
 }
-
 function completeTask(action) {
     const tx = db.transaction("plants", "readwrite");
     const store = tx.objectStore("plants");
@@ -444,7 +649,6 @@ function completeTask(action) {
         store.put(p).onsuccess = () => { render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
     };
 }
-
 function saveNotes() {
     const tx = db.transaction("plants", "readwrite");
     const store = tx.objectStore("plants");
@@ -453,6 +657,7 @@ function saveNotes() {
         store.put(p).onsuccess = () => alert("Uloženo");
     };
 }
+function deletePlant(id) { if(confirm("Opravdu smazat?")) { db.transaction("plants", "readwrite").objectStore("plants").delete(id).onsuccess = () => { closeDetail(); render(); }; } }
 
 document.getElementById('camera-new').onchange = async (e) => {
     const file = e.target.files[0]; const key = localStorage.getItem('G_KEY'); if(!file || !key) return;
@@ -461,25 +666,53 @@ document.getElementById('camera-new').onchange = async (e) => {
     reader.onload = async (ev) => {
         const b64 = ev.target.result.split(',')[1];
         try {
-            const prompt = `Jsi expert. JSON: {"name": "Název", "category": "Kategorie (Pokojová rostlina/Ostatní)", "light": "Světlo", "water": "Zálivka", "tasks": [{"month": 3, "action": "Hnojení", "details": "Návod"}]}`;
+            const prompt = `Jsi expert. JSON: {"name": "Název", "category": "Kategorie (Pokojová rostlina/Keř/Strom/other)", "water": "...", "light": "...", "toxicity": "...", "tasks": [{"month": 3, "action": "...", "details": "..."}]}`;
             const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
                 method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64 } }] }], generationConfig: { response_mime_type: "application/json" } })
             });
-            const data = await resp.json();
-            const res = JSON.parse(data.candidates[0].content.parts[0].text);
+            const data = await resp.json(); let res = JSON.parse(data.candidates[0].content.parts[0].text);
             const tx = db.transaction("plants", "readwrite");
-            tx.objectStore("plants").add({ ...res, images: [{ data: ev.target.result, date: new Date().toLocaleDateString('cs-CZ') }], dateAdded: new Date().toLocaleDateString('cs-CZ') });
+            tx.objectStore("plants").add({ ...res, images: [{ data: ev.target.result, date: new Date().toLocaleDateString('cs-CZ') }], dateAdded: new Date().toLocaleDateString('cs-CZ'), history: [] });
             tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
         } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
     };
 };
+document.getElementById('camera-add').onchange = async (e) => {
+    const file = e.target.files[0]; if(!file || !openPlantId) return;
+    document.getElementById('loader').style.display = 'flex';
+    const reader = new FileReader(); reader.readAsDataURL(file);
+    reader.onload = (ev) => {
+        const tx = db.transaction("plants", "readwrite");
+        const store = tx.objectStore("plants");
+        store.get(openPlantId).onsuccess = (ev2) => {
+            let p = ev2.target.result; p.images.push({ data: ev.target.result, date: new Date().toLocaleDateString('cs-CZ') });
+            store.put(p).onsuccess = () => { document.getElementById('loader').style.display = 'none'; render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
+        };
+    };
+};
 
-function deletePlant() { if(confirm("Smazat?")) { const tx = db.transaction("plants", "readwrite"); tx.objectStore("plants").delete(openPlantId); tx.oncomplete = () => { closeDetail(); render(); }; } }
+function exportData() {
+    document.getElementById('loader').style.display = 'flex';
+    const zip = new JSZip(); zip.file("databaze.json", JSON.stringify(currentPlants));
+    zip.generateAsync({type:"blob"}).then(c => {
+        const l = document.createElement('a'); l.href = URL.createObjectURL(c); l.download = "PlantMaster_Zaloha.plantbak"; l.click();
+        document.getElementById('loader').style.display = 'none';
+    });
+}
+document.getElementById('import-file').onchange = async (e) => {
+    const zip = new JSZip(); const contents = await zip.loadAsync(e.target.files[0]);
+    const data = JSON.parse(await contents.file("databaze.json").async("string"));
+    const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
+    store.clear(); data.forEach(p => { delete p.id; store.add(p); });
+    tx.oncomplete = () => { alert("Importováno!"); render(); };
+};
+function deleteAllData() { if(confirm("Smazat vše?")) { db.transaction("plants", "readwrite").objectStore("plants").clear().onsuccess = render; } }
+function setKey() { let k = prompt("API klíč:"); if(k) localStorage.setItem('G_KEY', k.trim()); }
 function openSettings() { document.getElementById('settings-view').style.display = 'flex'; }
 function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
 function openHelp() { document.getElementById('help-view').style.display = 'flex'; }
 function closeHelp() { document.getElementById('help-view').style.display = 'none'; }
-function setKey() { const k = prompt("Vložte API klíč:"); if(k) localStorage.setItem('G_KEY', k.trim()); }
+function requestNotifications() { Notification.requestPermission(); }
 </script>
 </body>
 </html>
