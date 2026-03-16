@@ -2,8 +2,8 @@
 <html lang="cs">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v20.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PlantMaster AI v21.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -43,8 +43,9 @@
         .task-arrow { font-size: 0.8rem; color: #888; transition: transform 0.2s; }
         .task-details { padding: 12px; background: #fafafa; border-top: 1px dashed #eee; font-size: 0.9rem; line-height: 1.5; color: #555; display: none; }
  
-        .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
-        .card img { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; margin-right: 15px; border: 1px solid #eee; }
+        /* Přidána ochrana proti textové selekci při dlouhém podržení karet */
+        .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; cursor: pointer; transition: 0.2s; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+        .card img { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; margin-right: 15px; border: 1px solid #eee; pointer-events: none; }
         .card-info h3 { margin: 0 0 5px 0; font-size: 1.1rem; color: var(--p); }
         .card-info p { margin: 0; font-size: 0.85rem; color: #666; }
         .cat-badge-small { display: inline-block; font-size: 0.7rem; background: #e0f2f1; color: #00695c; padding: 2px 6px; border-radius: 4px; margin-bottom: 5px; font-weight: bold; margin-right: 4px;}
@@ -52,6 +53,10 @@
         
         .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--p); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 6px 16px rgba(46,125,50,0.4); border: none; cursor: pointer; z-index: 100; }
         
+        #multi-select-bar { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: white; padding: 15px 20px; box-shadow: 0 -4px 15px rgba(0,0,0,0.15); z-index: 150; justify-content: space-between; align-items: center; border-radius: 20px 20px 0 0; }
+        .btn-cancel-sel { padding: 10px 20px; border-radius: 8px; border: 1px solid #ccc; background: white; font-weight: bold; font-size: 0.95rem; cursor: pointer; }
+        .btn-del-sel { padding: 10px 20px; border-radius: 8px; border: none; background: var(--warn); color: white; font-weight: bold; font-size: 0.95rem; cursor: pointer; }
+
         #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; text-align: center; padding: 20px;}
         .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
         
@@ -71,7 +76,6 @@
         .gallery-item img { width: 100%; height: 220px; object-fit: cover; border-radius: 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); border: 1px solid #ddd; transition: 0.2s; }
         .gallery-date { position: absolute; bottom: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; font-size: 0.75rem; padding: 4px 8px; border-radius: 8px; pointer-events: none; }
         
-        /* Lightbox stylizace pro celoobrazovkový režim fotek */
         #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; justify-content: center; align-items: center; flex-direction: column; cursor: pointer; }
         #lightbox img { max-width: 95vw; max-height: 90vh; object-fit: contain; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.5); cursor: default; }
         .btn-lightbox-close { position: absolute; top: 20px; right: 20px; background: rgba(255,255,255,0.2); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; backdrop-filter: blur(5px); z-index: 3010; transition: 0.3s; }
@@ -118,7 +122,6 @@
         textarea.notes-input { width: 100%; height: 80px; padding: 10px; padding-right: 45px; border: 1px solid #ccc; border-radius: 8px; font-family: inherit; margin-bottom: 10px; box-sizing: border-box; }
         .btn-save-notes { background: var(--p); color: white; border: none; padding: 10px; border-radius: 8px; width: 100%; font-weight: bold; cursor: pointer; }
         
-        /* Tlačítko pro mikrofon */
         .mic-btn { position: absolute; top: 10px; right: 10px; background: var(--p); color: white; border: none; border-radius: 50%; width: 35px; height: 35px; display: flex; justify-content: center; align-items: center; font-size: 16px; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: 0.3s; }
         .mic-btn.recording { background: var(--warn); animation: pulse 1s infinite; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -133,12 +136,19 @@
         
         @keyframes spin { to { transform: rotate(360deg); } }
     </style>
+    <script>
+        // Inicializace velikosti textu ještě před načtením těla, aby to neblikalo
+        const savedTextSize = localStorage.getItem('pm_text_size');
+        if (savedTextSize) {
+            document.documentElement.style.fontSize = savedTextSize;
+        }
+    </script>
 </head>
 <body>
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 20.0 (Celoobrazovková galerie)</span>
+    <span class="version-tag">Verze 21.0 (Hromadná správa & Přístupnost)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openHelp()">❓</button>
         <button class="btn-header" onclick="openSettings()">⚙️</button>
@@ -185,6 +195,14 @@
  
     <div id="plant-list"></div>
 </div>
+
+<div id="multi-select-bar">
+    <span style="font-size: 1.1rem; color: var(--p);">Vybráno: <strong id="sel-count">0</strong></span>
+    <div style="display:flex; gap:10px;">
+        <button class="btn-cancel-sel" onclick="cancelSelection()">Zrušit</button>
+        <button class="btn-del-sel" onclick="deleteSelected()">Smazat</button>
+    </div>
+</div>
  
 <div id="help-view">
     <div class="help-box">
@@ -196,8 +214,9 @@
         <h3>1. Přidání a správa rostlin</h3>
         <ul>
            <li><strong>Nová rostlina (+):</strong> Klikněte na zelené tlačítko dole. Po vyfocení AI automaticky určí druh, využití (zelenina/ovoce), zálivku a toxicitu.</li>
-           <li><strong>Detail fotky:</strong> Kliknutím na fotku v detailu rostliny ji zvětšíte na celou obrazovku. Pro zavření klikněte kamkoliv do černého pozadí nebo na křížek.</li>
-           <li><strong>Filtry:</strong> Pomocí roletek nahoře můžete seznam kytiček řadit nebo filtrovat.</li>
+           <li><strong>Hromadné mazání:</strong> Podržte prst déle na jakékoliv rostlině v seznamu. Aktivuje se režim výběru. Můžete naklikat více rostlin a dole je hromadně smazat.</li>
+           <li><strong>Smazání fotky:</strong> V detailu rostliny můžete smazat fotku kliknutím na červený koš (pokud má rostlina více než jednu fotku).</li>
+           <li><strong>Zvětšení (Zoom):</strong> Můžete používat gesto roztažení dvěma prsty kdekoliv v aplikaci, například pro zvětšení fotky v galerii nebo přečtení menšího textu.</li>
         </ul>
  
         <h3>2. Videonávody (YouTube)</h3>
@@ -212,17 +231,8 @@
            <li><strong>🩺 AI Doktor:</strong> Máte-li v albu kytky aspoň 2 fotky v čase, doktor porovná její vývoj a poradí, jak zlepšit její zdraví.</li>
            <li><strong>🔎 AI Detektiv:</strong> Pomůže vám s jistotou určit přesnou odrůdu (např. u jabloní) a následně aktualizovat celý profil rostliny podle přesných dat.</li>
         </ul>
- 
-        <h3>4. Kalendář a úkoly</h3>
-        <p>Na hlavní obrazovce vidíte automatický kalendář. Ten čerpá data ze všech vašich rostlin a upozorní vás, co je v aktuálním měsíci potřeba udělat (např. řez v březnu).</p>
- 
-        <h3>5. Zálohování (Export)</h3>
-        <ul>
-           <li><strong>💾 Zálohovat:</strong> Vytvoří soubor <strong>.plantbak</strong>. Tento formát je odlehčený, aby šel poslat Gmailem. Obsahuje vše: fotky, poznámky i odkazy na videa.</li>
-           <li><strong>📂 Obnovit:</strong> Umožňuje nahrát soubor .plantbak zpět do telefonu. Aplikace sama zrekonstruuje celou zahradu.</li>
-        </ul>
         
-        <p style="margin-top: 30px; font-size: 0.8rem; text-align: center; opacity: 0.6;">Verze aplikace 20.0</p>
+        <p style="margin-top: 30px; font-size: 0.8rem; text-align: center; opacity: 0.6;">Verze aplikace 21.0</p>
     </div>
 </div>
  
@@ -230,6 +240,17 @@
     <div class="settings-box">
         <button class="btn-modal-close" onclick="closeSettings()">✕</button>
         <h3>⚙️ Nastavení</h3>
+        
+        <div style="margin: 20px 0; background: #f9f9f9; padding: 15px; border-radius: 12px;">
+            <h4 style="margin: 0 0 10px 0; color: var(--p);">🔍 Velikost textu</h4>
+            <div style="display:flex; gap:10px; justify-content:center; align-items:flex-end;">
+                <button onclick="setTextSize('100%')" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; background:white; cursor:pointer;">A</button>
+                <button onclick="setTextSize('115%')" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; background:white; font-size:1.15em; cursor:pointer;">A</button>
+                <button onclick="setTextSize('130%')" style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; background:white; font-size:1.3em; cursor:pointer;">A</button>
+            </div>
+            <p style="font-size:0.8rem; color:#666; margin:8px 0 0 0;">(Lze také roztáhnout prsty na obrazovce)</p>
+        </div>
+
         <button class="btn-menu btn-backup" onclick="exportData()">💾 ZÁLOHOVAT DATA A FOTKY</button>
         <button class="btn-menu btn-restore" onclick="document.getElementById('import-file').click()">📂 OBNOVIT ZE ZÁLOHY</button>
         <button class="btn-menu btn-settings" onclick="closeSettings(); setKey()">🔑 Změnit API klíč</button>
@@ -240,7 +261,7 @@
  
 <input type="file" id="import-file" accept=".zip,.plantbak" style="display:none">
  
-<button class="fab" onclick="document.getElementById('camera-new').click()">+</button>
+<button class="fab" id="main-fab" onclick="document.getElementById('camera-new').click()">+</button>
 <input type="file" id="camera-new" accept="image/*" capture="environment" style="display:none">
 <input type="file" id="camera-add" accept="image/*" capture="environment" style="display:none">
  
@@ -324,6 +345,82 @@ if ('serviceWorker' in navigator) {
     .then(() => console.log('Service Worker běží'))
     .catch(err => console.error('Chyba SW:', err));
 }
+
+// Logika hromadného výběru
+let isSelectMode = false;
+let selectedPlants = new Set();
+let pressTimer;
+let preventClick = false;
+
+function startPress(plantId, originalIdx) {
+    preventClick = false;
+    pressTimer = setTimeout(() => {
+        preventClick = true;
+        if(!isSelectMode) {
+            isSelectMode = true;
+            selectedPlants.add(plantId);
+            updateSelectModeUI();
+            filterPlants();
+            if(navigator.vibrate) navigator.vibrate(50); // Mírná haptická odezva
+        }
+    }, 600);
+}
+
+function cancelPress() {
+    clearTimeout(pressTimer);
+}
+
+function endPress(plantId, originalIdx) {
+    clearTimeout(pressTimer);
+    if(preventClick) return; // Klik byl už zpracován dlouhým podržením
+    
+    if(isSelectMode) {
+        if(selectedPlants.has(plantId)) {
+            selectedPlants.delete(plantId);
+        } else {
+            selectedPlants.add(plantId);
+        }
+        if(selectedPlants.size === 0) {
+            isSelectMode = false;
+        }
+        updateSelectModeUI();
+        filterPlants();
+    } else {
+        openDetail(originalIdx);
+    }
+}
+
+function updateSelectModeUI() {
+    const bar = document.getElementById('multi-select-bar');
+    const fab = document.getElementById('main-fab');
+    if(isSelectMode) {
+        bar.style.display = 'flex';
+        document.getElementById('sel-count').innerText = selectedPlants.size;
+        fab.style.display = 'none';
+    } else {
+        bar.style.display = 'none';
+        fab.style.display = 'flex';
+    }
+}
+
+function cancelSelection() {
+    isSelectMode = false;
+    selectedPlants.clear();
+    updateSelectModeUI();
+    filterPlants();
+}
+
+function deleteSelected() {
+    if(confirm(`Opravdu si přejete trvale smazat ${selectedPlants.size} vybraných rostlin?`)) {
+        const tx = db.transaction("plants", "readwrite");
+        const store = tx.objectStore("plants");
+        selectedPlants.forEach(id => store.delete(id));
+        tx.oncomplete = () => {
+            cancelSelection();
+            render();
+        };
+    }
+}
  
 let db;
 let currentPlants = []; 
@@ -332,7 +429,7 @@ let openPlantId = null;
 let currentYTSearchQuery = '';
 let currentYTPageToken = '';
 
-// Hlasové zadávání API (podpora Chrome, Edge, Safari atd.)
+// Hlasové zadávání API
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition;
 let isRecording = false;
@@ -614,6 +711,25 @@ function removeSavedVideo(plantId, videoIdx) {
     }
 }
 
+// Funkce pro mazání jednotlivé fotky
+function deletePhoto(plantId, photoIdx, event) {
+    if(event) event.stopPropagation();
+    if(confirm("Opravdu chcete smazat tuto konkrétní fotku?")) {
+        const tx = db.transaction("plants", "readwrite");
+        const store = tx.objectStore("plants");
+        store.get(plantId).onsuccess = (e) => {
+            let plant = e.target.result;
+            plant.images.splice(photoIdx, 1);
+            store.put(plant).onsuccess = () => {
+                render().then(() => {
+                    const idx = currentPlants.findIndex(p => p.id === plantId);
+                    if(idx !== -1) openDetail(idx);
+                });
+            };
+        };
+    }
+}
+
 // Funkce pro Lightbox (zvětšení fotek)
 function openLightbox(src, event) {
     if (event) event.stopPropagation();
@@ -630,6 +746,12 @@ function closeLightbox(event) {
     lb.style.display = 'none';
     img.src = '';
 }
+
+// Změna velikosti textu v Nastavení
+function setTextSize(size) {
+    document.documentElement.style.fontSize = size;
+    localStorage.setItem('pm_text_size', size);
+}
  
 // OTEVÍRÁNÍ A ZAVÍRÁNÍ MODÁLNÍCH OKEN
 function openSettings() { document.getElementById('settings-view').style.display = 'flex'; }
@@ -642,7 +764,6 @@ function setKey() {
     if (k) { localStorage.setItem('G_KEY', k.trim()); alert("Klíč uložen."); }
 }
 
-// Funkce na kompletní smazání DB
 function deleteAllData() {
     if(confirm("Pozor! Opravdu chcete nevratně smazat celou databázi rostlin i s fotkami?")) {
         const check = prompt("Pro potvrzení smazání napište slovo SMAZAT");
@@ -745,7 +866,19 @@ function filterPlants() {
             const catBadge = p.category && p.category !== "Ostatní" ? `<div class="cat-badge-small">${p.category}</div>` : '';
             const useBadge = p.usage && p.usage !== "Ostatní" && p.usage !== "Okrasná" ? `<div class="use-badge-small">${p.usage}</div>` : '';
             
-           list.innerHTML += `<div class="card" onclick="openDetail(${originalIndex})"><img src="${latestImg}"><div class="card-info"><h3>${p.name}</h3><div>${catBadge}${useBadge}</div><p>💧 ${p.water ? p.water.substring(0, 30) + '...' : 'Otevři pro detaily'}</p></div></div>`;
+            const isSelected = selectedPlants.has(p.id);
+            const selStyle = isSelected ? 'border: 3px solid var(--p); transform: scale(0.98); background: #e8f5e9;' : '';
+            const checkMark = isSelected ? '<div style="position:absolute; top:10px; right:10px; background:var(--p); color:white; border-radius:50%; width:25px; height:25px; display:flex; justify-content:center; align-items:center; font-weight:bold;">✓</div>' : '';
+
+           list.innerHTML += `<div class="card" style="position:relative; ${selStyle}" 
+               onmousedown="startPress(${p.id}, ${originalIndex})" 
+               onmouseup="endPress(${p.id}, ${originalIndex})" 
+               onmouseleave="cancelPress()" 
+               ontouchstart="startPress(${p.id}, ${originalIndex})" 
+               ontouchend="endPress(${p.id}, ${originalIndex})" 
+               ontouchmove="cancelPress()">
+               ${checkMark}
+               <img src="${latestImg}"><div class="card-info"><h3>${p.name}</h3><div>${catBadge}${useBadge}</div><p>💧 ${p.water ? p.water.substring(0, 30) + '...' : 'Otevři pro detaily'}</p></div></div>`;
         });
     }
  
@@ -786,9 +919,13 @@ function openDetail(index) {
     const galBox = document.getElementById('det-gallery'); galBox.innerHTML = '';
     const imagesToRender = p.images || [{data: p.img, date: p.dateAdded}];
     
-    // Zde je úprava: Po kliknutí na obrázek voláme openLightbox()
-   imagesToRender.forEach(imgObj => { 
-       galBox.innerHTML += `<div class="gallery-item"><img src="${imgObj.data}" onclick="openLightbox('${imgObj.data}', event)" style="cursor:zoom-in;"><div class="gallery-date">${imgObj.date}</div></div>`; 
+   imagesToRender.forEach((imgObj, iIndex) => { 
+       let delBtn = '';
+       // Zobrazíme ikonu koše jen pokud je fotek více než jedna
+       if (imagesToRender.length > 1) {
+           delBtn = `<button onclick="deletePhoto(${p.id}, ${iIndex}, event)" style="position:absolute; top:5px; left:5px; background:rgba(244,67,54,0.9); color:white; border:none; border-radius:50%; width:30px; height:30px; display:flex; justify-content:center; align-items:center; z-index:10; box-shadow: 0 2px 5px rgba(0,0,0,0.3); cursor:pointer;">🗑️</button>`;
+       }
+       galBox.innerHTML += `<div class="gallery-item">${delBtn}<img src="${imgObj.data}" onclick="openLightbox('${imgObj.data}', event)" style="cursor:zoom-in;"><div class="gallery-date">${imgObj.date}</div></div>`; 
    });
  
     const docBtn = document.getElementById('btn-ai-doctor'); 
@@ -847,7 +984,6 @@ function openDetail(index) {
 }
  
 function closeDetail() {
-    // Pro jistotu vypneme diktování, pokud bylo zapnuté při zavření okna
     if (isRecording) {
         stopVoiceRecognition();
         if (recognition) recognition.stop();
