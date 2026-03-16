@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v26.0</title>
+    <title>PlantMaster AI v26.1</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -60,7 +60,6 @@
         .task-header strong { color: var(--p); margin-right: 5px; }
         .task-details { padding: 12px; background: var(--input-bg); border-top: 1px dashed var(--border); font-size: 0.9rem; line-height: 1.5; color: var(--text-muted); display: none; }
         
-        /* NOVINKA: Styly pro produkty u úkolů */
         .task-product { margin-top: 10px; font-size: 0.85rem; background: #e3f2fd; color: #1565c0; padding: 8px 10px; border-radius: 6px; display: block; border: 1px solid #bbdefb; }
         [data-theme="dark"] .task-product { background: rgba(33,150,243,0.1); color: #64b5f6; border-color: rgba(33,150,243,0.3); }
         .btn-shop { background: #ff9800; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; margin-left: 10px; text-decoration: none; display: inline-block; box-shadow: 0 2px 4px rgba(255,152,0,0.3); }
@@ -173,7 +172,7 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 26.0 (Chytré nákupy a přípravky)</span>
+    <span class="version-tag">Verze 26.1 (Kritická oprava databáze)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openHelp()">❓</button>
         <button class="btn-header" onclick="openSettings()">⚙️</button>
@@ -655,9 +654,6 @@ function filterPlants() {
    updateCalendar(filtered);
 }
 
-// ---------------------------------------------------------
-// SYSTÉM ÚKOLŮ S PRODUKTY
-// ---------------------------------------------------------
 function updateCalendar(plantsArray) {
     const months = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
     const currentMonthNum = new Date().getMonth() + 1; 
@@ -673,14 +669,12 @@ function updateCalendar(plantsArray) {
                    const isDone = (p.history || []).some(h => {
                        if (h.type !== 'task') return false;
                        const d = new Date(h.date);
-                       // Kontrola, jestli název úkolu v historii začíná "Splněn úkol: [Název]"
                        return h.action.startsWith(`Splněn úkol: ${task.action}`) && d.getFullYear() === currentYear && (d.getMonth() + 1) === currentMonthNum;
                    });
                    
                    if (!isDone) {
                        tasksFound = true; 
                        const detailsHTML = task.details ? task.details : 'Bez dalších podrobností.';
-                       // NOVINKA: Zobrazení doporučeného přípravku s odkazem
                        const productHTML = task.product ? `<div class="task-product">🧪 <strong>Doporučeno:</strong> ${task.product} <a href="https://www.heureka.cz/?h[fraze]=${encodeURIComponent(task.product)}" target="_blank" class="btn-shop" onclick="event.stopPropagation()">🛒 Najít</a></div>` : '';
                        
                        calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><div><strong>${p.name}:</strong> ${task.action}</div><div class="task-arrow">▼</div></div><div class="task-details">${detailsHTML}${productHTML}</div></div>`;
@@ -708,7 +702,6 @@ function waterPlantNow() {
     };
 }
 
-// NOVINKA: Zápis úkolu včetně jména použitého přípravku
 function completeTask(taskAction, productName) {
     if(!openPlantId) return;
     const tx = db.transaction("plants", "readwrite");
@@ -770,7 +763,6 @@ function openDetail(index) {
     const useBox = document.getElementById('det-usage'); if(p.usage && p.usage !== "Ostatní" && p.usage !== "Okrasná") { useBox.style.display = "inline-block"; useBox.innerText = p.usage; } else useBox.style.display = "none";
     const toxBox = document.getElementById('det-toxicity'); if(p.toxicity && p.toxicity.toLowerCase().includes("ne")) { toxBox.className = "tox-badge tox-safe"; toxBox.innerText = "✅ " + p.toxicity; } else { toxBox.className = "tox-badge tox-danger"; toxBox.innerText = "⚠️ " + (p.toxicity || "Může být jedovatá"); }
  
-   // ÚKOLY A PRODUKTY V DETAILU ROSTLINY
    const tasksBox = document.getElementById('det-tasks-box'); const tasksList = document.getElementById('det-tasks-list');
    const currentMonthNum = new Date().getMonth() + 1; const currentYear = new Date().getFullYear();
    tasksList.innerHTML = ''; let hasPendingTasks = false;
@@ -781,11 +773,7 @@ function openDetail(index) {
                const isDone = (p.history || []).some(h => h.type === 'task' && h.action.startsWith(`Splněn úkol: ${task.action}`) && new Date(h.date).getFullYear() === currentYear && (new Date(h.date).getMonth() + 1) === currentMonthNum);
                if(!isDone) {
                    hasPendingTasks = true;
-                   
-                   // Bezpečné ošetření uvozovek v názvu produktu pro vložení do funkce
                    let prodArg = task.product ? task.product.replace(/'/g, "\\'") : '';
-                   
-                   // NOVINKA: Tlačítko na nákup
                    const productHTML = task.product ? `<div class="task-product">🧪 <strong>Doporučeno:</strong> ${task.product} <a href="https://www.heureka.cz/?h[fraze]=${encodeURIComponent(task.product)}" target="_blank" class="btn-shop">🛒 Koupit</a></div>` : '';
                    
                    tasksList.innerHTML += `
@@ -802,7 +790,6 @@ function openDetail(index) {
    }
    tasksBox.style.display = hasPendingTasks ? 'block' : 'none';
 
-   // VYKRESLENÍ HISTORIE / DENÍKU
    const histBox = document.getElementById('det-history-box'); const histList = document.getElementById('det-history-list'); histList.innerHTML = '';
    if (p.history && p.history.length > 0) {
        histBox.style.display = 'block'; let sortedHistory = [...p.history].sort((a, b) => new Date(b.date) - new Date(a.date));
@@ -883,15 +870,11 @@ document.getElementById('import-file').onchange = async (e) => {
     } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba importu: " + err.message); e.target.value = ""; }
 };
 
-// ---------------------------------------------------------
-// AKTUALIZOVANÝ PROMPT PRO NOVOU ROSTLINU (Produkty v JSON)
-// ---------------------------------------------------------
 document.getElementById('camera-new').onchange = async (e) => {
     const file = e.target.files[0]; const key = localStorage.getItem('G_KEY'); if (!file || !key) return alert("Chybí fotka nebo klíč!");
    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Analyzuji...";
     try {
         const resizedBase64 = await resizeImage(file); const b64Data = resizedBase64.split(',')[1];
-        // NOVÝ PROMPT - POLE PRODUCT
         const aiPrompt = `Jsi expert botanik. Odpověz POUZE ve formátu JSON: {"name": "Český název", "category": "Kategorie (vyber jednu z: Pokojová rostlina, Keř, Strom, Bylina, Sukulent / Kaktus, Ostatní)", "usage": "Využití (vyber jednu z: Zelenina, Ovoce, Bylinka / Koření, Okrasná, Ostatní)", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol (např. Hnojení, Řez)", "details": "Detaily", "product": "Konkrétní komerční název hnojiva/postřiku dostupný v ČR (např. Kristalon, Mospilan), pokud se to hodí, jinak nech prázdné"}]}`;
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
@@ -918,9 +901,6 @@ document.getElementById('camera-add').onchange = async (e) => {
     } catch (err) { document.getElementById('loader').style.display = 'none'; alert("Chyba: " + err.message); }
 };
 
-// ---------------------------------------------------------
-// CHYTRÝ ZOOM FOTKY (Gesta)
-// ---------------------------------------------------------
 let currentScale = 1; let currentTranslateX = 0; let currentTranslateY = 0;
 let startX = 0; let zoomStartY = 0; let startScale = 1; let startDistance = 0;
 let isPanning = false; let lastTap = 0;
@@ -1014,7 +994,6 @@ async function updatePlantProfile(exactName) {
     const key = localStorage.getItem('G_KEY'); if (!key) return; const plant = currentPlants.find(p => p.id === openPlantId);
    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Aktualizuji...";
     try {
-        // NOVÝ PROMPT - POLE PRODUCT I PRO AKTUALIZACI
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
             method: 'POST', cache: 'no-store', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ contents: [{ parts: [ { text: `Vygeneruj nová data pro odrůdu: ${exactName}. Použij tento JSON formát s detaily o produktech: {"name": "${exactName}", "category": "Kategorie", "usage": "Využití", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol", "details": "Detaily", "product": "Konkrétní název hnojiva/postřiku (nebo prázdné)"}]}` }, { inline_data: { mime_type: "image/jpeg", data: plant.images[plant.images.length - 1].data.split(',')[1] } } ]}], generationConfig: { response_mime_type: "application/json" } })
