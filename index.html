@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI - Fáze 2 (Péče & Import Fix)</title>
+    <title>PlantMaster AI - Fáze 3 (AI & Média)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     
@@ -13,7 +13,9 @@
         :root { 
             --p: #2e7d32; --bg: #f4f7f6; --text: #333; --text-muted: #666;
             --card: #ffffff; --border: #eee; --input-bg: #ffffff;
-            --warn: #d32f2f; --safe: #388e3c; --header-text: white;
+            --warn: #d32f2f; --safe: #388e3c; --doc: #1976d2; --det: #8e24aa; --yt: #f44336;
+            --shop: #ff9800; --ai-shop: #673ab7; --agro: #2e7d32;
+            --header-text: white;
         }
         
         body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 0; padding-bottom: 90px; }
@@ -28,6 +30,9 @@
         .container { padding: 0 15px; }
         .sticky-controls { position: sticky; top: 0; background: var(--bg); z-index: 100; padding: 10px 0; }
         
+        #inbox-section { display:none; background: var(--card); border-left: 5px solid #ff9800; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        #inbox-section h3 { margin: 0 0 10px 0; color: #ff9800; font-size: 1.1rem; }
+
         #search-box { width: 100%; padding: 12px; border: 2px solid var(--border); border-radius: 12px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; outline: none; }
         .filter-controls { display: flex; gap: 10px; }
         .filter-select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); }
@@ -36,8 +41,13 @@
         .calendar-section h3 { margin: 0 0 10px 0; color: var(--p); font-size: 1.1rem; }
         
         #calendar-tasks { max-height: 250px; overflow-y: auto; padding-right: 5px; }
-        .task-item { background: var(--bg); border-radius: 8px; margin-bottom: 8px; padding: 12px; border: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;}
+        .task-item { background: var(--bg); border-radius: 8px; margin-bottom: 8px; padding: 12px; border: 1px solid var(--border); }
+        .task-header { display: flex; justify-content: space-between; align-items: center; width: 100%; margin-bottom: 5px;}
         .task-item strong { color: var(--p); margin-right: 5px; }
+        
+        .btn-shop { background: var(--shop); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; text-decoration: none; display: inline-block; margin-top:5px;}
+        .btn-agro { background: var(--agro); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; text-decoration: none; display: inline-block; margin-top:5px;}
+        .btn-ai-shop { background: var(--ai-shop); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; margin-top: 8px;}
         .btn-done { background: var(--safe); color: white; border: none; padding: 8px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; white-space: nowrap; margin-left: 10px;}
         
         .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; cursor: pointer; }
@@ -56,6 +66,20 @@
         .gallery-item { flex: 0 0 85%; scroll-snap-align: center; position: relative; }
         .gallery-item img { width: 100%; height: 220px; object-fit: cover; border-radius: 16px; border: 1px solid var(--border); }
         
+        .btn-doctor { background: var(--doc); color: white; border: none; padding: 12px; border-radius: 12px; width: 100%; font-weight: bold; font-size: 0.95rem; cursor: pointer; margin-top: 10px; flex:1;}
+        .btn-detective { background: var(--det); }
+        .btn-youtube { background: var(--yt); margin-top: 10px; width: 100%; }
+        
+        .doctor-result, .detective-result { padding: 15px; border-radius: 8px; margin-top: 10px; font-size: 0.95rem; line-height: 1.5; display: none; background: var(--card); border: 1px solid var(--border); }
+        .doctor-result { border-left: 5px solid var(--doc); }
+        .detective-result { border-left: 5px solid var(--det); }
+
+        #yt-search-ui { display: none; background: var(--card); padding: 15px; border-radius: 12px; margin-top: 10px; border: 2px solid var(--yt); }
+        .yt-quick-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+        .yt-custom-search { display: flex; gap: 8px; }
+        .yt-custom-search input { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid var(--border); }
+        .yt-custom-search button { background: var(--yt); color: white; border: none; padding: 10px; border-radius: 8px; font-weight: bold; cursor: pointer; }
+
         .detail-content { padding: 0 20px 20px 20px; }
         .detail-content h2 { margin: 15px 0 5px 0; color: var(--p); font-size: 1.6rem; }
         
@@ -94,13 +118,20 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Fáze 2 (S opraveným importem)</span>
+    <span class="version-tag">Fáze 3 (AI Paměť & YouTube)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openSettings()">⚙️</button>
     </div>
 </header>
  
 <div class="container">
+    
+    <div id="inbox-section">
+        <h3>📥 Nová videa ze sdílení (<span id="inbox-count">0</span>)</h3>
+        <p style="font-size: 0.85rem; margin-top:0;">Přiřaďte tato videa k vašim rostlinám:</p>
+        <div id="inbox-list"></div>
+    </div>
+
     <div class="sticky-controls" id="search-container">
         <input type="text" id="search-box" placeholder="🔍 Hledat podle názvu..." onkeyup="filterPlants()">
         <div class="filter-controls">
@@ -135,6 +166,25 @@
     <button class="btn-close" onclick="closeDetail()">✕</button>
     <div class="gallery-wrapper">
         <div class="gallery-scroll" id="det-gallery"></div>
+        
+        <div style="display: flex; gap: 10px;">
+            <button class="btn-doctor" id="btn-ai-doctor" onclick="runAIDoctor()">🩺 Zdraví</button>
+            <button class="btn-doctor btn-detective" id="btn-ai-detective" onclick="runAIDetective()">🔎 Určit</button>
+        </div>
+        <div class="doctor-result" id="doctor-output"></div>
+        <div class="detective-result" id="detective-output"></div>
+        
+        <button class="btn-doctor btn-youtube" onclick="toggleYT()">🎥 Videa a Návody</button>
+        <div id="yt-search-ui">
+            <p style="margin-top:0; font-size:0.9rem; font-weight:bold;">Rychlé hledání:</p>
+            <div class="yt-quick-tags" id="yt-quick-tags"></div>
+            <p style="margin:10px 0 5px 0; font-size:0.85rem;">Nebo zadejte vlastní dotaz:</p>
+            <div class="yt-custom-search">
+                <input type="text" id="yt-custom-query" placeholder="Co hledáte?">
+                <button onclick="runYTSearch(document.getElementById('yt-custom-query').value)">Hledat</button>
+            </div>
+            <div id="yt-results-list" style="margin-top:10px;"></div>
+        </div>
     </div>
     
     <div class="detail-content">
@@ -204,114 +254,168 @@
 </div>
  
 <script>
-let db; 
-let currentPlants = []; 
-let openPlantId = null; 
-let tempImportData = []; // Zde si schováme data, než uživatel vybere možnost
+let db; let currentPlants = []; let openPlantId = null; let tempImportData = []; 
 
-// SPEECH RECOGNITION
+// HLAS
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 let recognition; let isRecording = false;
 if (SpeechRecognition) {
     recognition = new SpeechRecognition(); recognition.lang = 'cs-CZ';
     recognition.onresult = (e) => {
-        const t = e.results[0][0].transcript;
         const field = document.getElementById('det-notes');
-        field.value = field.value.trim() ? field.value + "\n- " + t : "- " + t;
+        field.value = field.value.trim() ? field.value + "\n- " + e.results[0][0].transcript : "- " + e.results[0][0].transcript;
         stopVoiceRecognition();
     };
     recognition.onend = stopVoiceRecognition;
 }
 function toggleVoiceRecognition() {
-    if (!SpeechRecognition) return alert("Hlasové zadávání není podporováno v tomto prohlížeči.");
-    if (isRecording) { recognition.stop(); } 
-    else { document.getElementById('btn-mic').classList.add('recording'); isRecording = true; recognition.start(); }
+    if (!SpeechRecognition) return alert("Nepodporováno v prohlížeči.");
+    if (isRecording) { recognition.stop(); } else { document.getElementById('btn-mic').classList.add('recording'); isRecording = true; recognition.start(); }
 }
 function stopVoiceRecognition() { document.getElementById('btn-mic').classList.remove('recording'); isRecording = false; }
 
-// ZALOŽENÍ DATABÁZE
+// DATABÁZE A START
 const req = indexedDB.open("PlantDB", 6);
-req.onupgradeneeded = (e) => { 
-    db = e.target.result; 
-    if (!db.objectStoreNames.contains("plants")) {
-        db.createObjectStore("plants", { keyPath: "id", autoIncrement: true }); 
+req.onupgradeneeded = (e) => { db = e.target.result; if (!db.objectStoreNames.contains("plants")) db.createObjectStore("plants", { keyPath: "id", autoIncrement: true }); };
+req.onsuccess = (e) => { db = e.target.result; checkSharedUrl(); render(); };
+
+// INBOX PRO YOUTUBE
+function checkSharedUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const sharedUrl = params.get('url') || params.get('text');
+    if (sharedUrl && (sharedUrl.includes('youtu.be') || sharedUrl.includes('youtube.com'))) {
+        let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+        if(!inbox.some(v => v.url === sharedUrl)) {
+            inbox.push({ url: sharedUrl, date: new Date().toLocaleDateString('cs-CZ') });
+            localStorage.setItem('pm_video_inbox', JSON.stringify(inbox));
+        }
+        window.history.replaceState({}, document.title, window.location.pathname);
     }
-};
-req.onsuccess = (e) => { 
-    db = e.target.result; 
-    render(); 
-};
+}
+
+function renderInbox() {
+    let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+    const sec = document.getElementById('inbox-section');
+    if(inbox.length === 0) { sec.style.display = 'none'; return; }
+    
+    sec.style.display = 'block'; document.getElementById('inbox-count').innerText = inbox.length;
+    const list = document.getElementById('inbox-list'); list.innerHTML = '';
+    
+    let opts = '<option value="">-- Vyberte rostlinu --</option>';
+    currentPlants.forEach(p => opts += `<option value="${p.id}">${p.name}</option>`);
+    
+    inbox.forEach((v, idx) => {
+        list.innerHTML += `<div style="background:var(--bg); padding:10px; border-radius:8px; margin-bottom:10px; border:1px solid var(--border);">
+            <p style="font-size:0.8rem; margin:0 0 5px 0;">${v.url}</p>
+            <select id="inbox-sel-${idx}" style="width:100%; padding:8px; border-radius:5px;">${opts}</select>
+            <div style="display:flex; gap:5px; margin-top:5px;">
+                <button onclick="assignVideo(${idx})" style="flex:1; background:var(--safe); color:white; border:none; padding:8px; border-radius:5px; font-weight:bold;">Přidat k rostlině</button>
+                <button onclick="deleteInboxVideo(${idx})" style="background:var(--warn); color:white; border:none; padding:8px; border-radius:5px;">Smazat</button>
+            </div>
+        </div>`;
+    });
+}
+function assignVideo(idx) {
+    let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+    const pId = document.getElementById(`inbox-sel-${idx}`).value;
+    if(!pId) return;
+    const tx = db.transaction("plants", "readwrite");
+    const store = tx.objectStore("plants");
+    store.get(parseInt(pId)).onsuccess = (e) => {
+        let p = e.target.result; if(!p.videos) p.videos = [];
+        p.videos.push(inbox[idx]);
+        store.put(p).onsuccess = () => { inbox.splice(idx, 1); localStorage.setItem('pm_video_inbox', JSON.stringify(inbox)); render(); };
+    };
+}
+function deleteInboxVideo(idx) {
+    let inbox = JSON.parse(localStorage.getItem('pm_video_inbox') || '[]');
+    inbox.splice(idx, 1); localStorage.setItem('pm_video_inbox', JSON.stringify(inbox)); renderInbox();
+}
 
 async function render() {
     const tx = db.transaction("plants", "readonly");
-    const plants = await new Promise(res => {
-        tx.objectStore("plants").getAll().onsuccess = (e) => res(e.target.result);
-    });
-    
-    currentPlants = plants.map(p => {
-        if(!p.images || !Array.isArray(p.images) || p.images.length === 0) {
-            p.images = [{ data: p.img || '', date: p.dateAdded || "Neznámo" }];
-        }
-        return p;
-    }).reverse();
-    
-    filterPlants();
+    const plants = await new Promise(res => { tx.objectStore("plants").getAll().onsuccess = (e) => res(e.target.result); });
+    currentPlants = plants.map(p => { if(!p.images || !Array.isArray(p.images) || p.images.length === 0) { p.images = [{ data: p.img || '', date: p.dateAdded || "Neznámo" }]; } return p; }).reverse();
+    filterPlants(); renderInbox();
 }
 
 function filterPlants() {
     const query = document.getElementById('search-box').value.toLowerCase();
     const filterVal = document.getElementById('filter-select').value;
     const sortVal = document.getElementById('sort-select').value;
-    
     let filtered = currentPlants.filter(p => {
         const matchesText = p.name ? p.name.toLowerCase().includes(query) : false;
         let matchesFilter = filterVal === "all" || p.category === filterVal;
         if(filterVal === "other" && p.category !== "Pokojová rostlina" && p.category !== "Keř" && p.category !== "Strom") matchesFilter = true;
         return matchesText && matchesFilter;
     });
-    
     if(sortVal === "az") filtered.sort((a,b) => (a.name||"").localeCompare(b.name||"", 'cs'));
     if(sortVal === "za") filtered.sort((a,b) => (b.name||"").localeCompare(a.name||"", 'cs'));
     
-    const list = document.getElementById('plant-list'); 
-    list.innerHTML = '';
-    
+    const list = document.getElementById('plant-list'); list.innerHTML = '';
     filtered.forEach((p) => {
-        const originalIndex = currentPlants.indexOf(p);
         const latestImg = p.images[p.images.length - 1].data;
         const badge = p.lastWatered ? `<div class="water-badge-small">💧 ${getWateringText(p.lastWatered)}</div>` : '';
-        
-        list.innerHTML += `
-        <div class="card" onclick="openDetail(${originalIndex})">
-            <img src="${latestImg}">
-            <div class="card-info">
-                <h3>${p.name}</h3>
-                <div class="cat-badge-small">${p.category || 'Ostatní'}</div>
-                ${badge}
-            </div>
-        </div>`;
+        list.innerHTML += `<div class="card" onclick="openDetail(${currentPlants.indexOf(p)})"><img src="${latestImg}"><div class="card-info"><h3>${p.name}</h3><div class="cat-badge-small">${p.category || 'Ostatní'}</div>${badge}</div></div>`;
     });
-    
     updateCalendar(filtered);
+}
+
+// 5 AI PRODUKTŮ
+async function askAIProducts(pId, taskAction, event) {
+    if (event) event.stopPropagation();
+    const key = localStorage.getItem('G_KEY'); if (!key) return alert("Chybí klíč!");
+    document.getElementById('loader').style.display = 'flex';
+    const tx = db.transaction("plants", "readwrite");
+    tx.objectStore("plants").get(pId).onsuccess = async (e) => {
+        let plant = e.target.result;
+        try {
+            // ZMĚNA: Chceme 5 produktů
+            const prompt = `Doporuč 5 konkrétních přípravků nebo hnojiv dostupných v ČR pro rostlinu '${plant.name}' na úkol '${taskAction}'. Odpověz POUZE formátem JSON pole stringů (např. ["Mospilan", "Careo", ...]).`;
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+                method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { response_mime_type: "application/json" } })
+            });
+            const data = await resp.json();
+            const productsArr = JSON.parse(data.candidates[0].content.parts[0].text);
+            plant.tasks.forEach(t => { if(t.action === taskAction) t.products = productsArr; });
+            db.transaction("plants", "readwrite").objectStore("plants").put(plant).onsuccess = () => {
+                document.getElementById('loader').style.display = 'none';
+                render().then(() => { if(openPlantId === pId) openDetail(currentPlants.findIndex(x => x.id === pId)); });
+            };
+        } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
+    };
 }
 
 function updateCalendar(plantsArray) {
     const months = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
     const curMonth = new Date().getMonth() + 1;
     document.getElementById('calendar-title').innerText = `📅 Úkoly na ${months[curMonth-1]}`;
-    
-    const calBox = document.getElementById('calendar-tasks'); 
-    calBox.innerHTML = '';
+    const calBox = document.getElementById('calendar-tasks'); calBox.innerHTML = '';
     let found = false;
     
     plantsArray.forEach(p => {
         if(p.tasks) p.tasks.forEach(task => {
             if(task.month === curMonth) {
                 found = true;
+                let productBtns = '';
+                if(task.products) {
+                    task.products.forEach(prod => {
+                        productBtns += `<div style="display:flex; gap:8px;">
+                            <button class="btn-shop" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank'); event.stopPropagation();">🛒 ${prod}</button>
+                            <button class="btn-agro" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank'); event.stopPropagation();">📖 Návod</button>
+                        </div>`;
+                    });
+                } else if (/(hnoj|postř|škůd|nemoc|řez)/i.test(task.action)) {
+                    productBtns = `<button class="btn-ai-shop" onclick="askAIProducts(${p.id}, '${task.action.replace(/'/g, "\\'")}', event)">💡 AI: Navrhnout 5 přípravků</button>`;
+                }
+
                 calBox.innerHTML += `
                 <div class="task-item">
-                    <div><strong>${p.name}:</strong> ${task.action}</div>
-                    <button class="btn-done" onclick="completeTaskWithDetails(${p.id}, '${task.action.replace(/'/g, "\\'")}', ${JSON.stringify(task.products || []).replace(/"/g, '&quot;')}, event)">✓ Splnit</button>
+                    <div class="task-header">
+                        <div><strong>${p.name}:</strong> ${task.action}</div>
+                        <button class="btn-done" onclick="completeTaskWithDetails(${p.id}, '${task.action.replace(/'/g, "\\'")}', ${JSON.stringify(task.products || []).replace(/"/g, '&quot;')}, event)">✓ Splnit</button>
+                    </div>
+                    ${productBtns}
                 </div>`;
             }
         });
@@ -319,20 +423,12 @@ function updateCalendar(plantsArray) {
     if(!found) calBox.innerHTML = '<i>Tento měsíc nejsou žádné úkoly.</i>';
 }
 
-function getWateringText(iso) { 
-    let d = Math.floor(Math.abs(new Date() - new Date(iso)) / (1000 * 60 * 60 * 24)); 
-    return d === 0 ? "Dnes" : (d === 1 ? "Včera" : `Před ${d} dny`); 
-}
+function getWateringText(iso) { let d = Math.floor(Math.abs(new Date() - new Date(iso)) / (1000 * 60 * 60 * 24)); return d === 0 ? "Dnes" : (d === 1 ? "Včera" : `Před ${d} dny`); }
 
 function openDetail(index) {
-    const p = currentPlants[index]; 
-    openPlantId = p.id;
-    
-    const gal = document.getElementById('det-gallery'); 
-    gal.innerHTML = '';
-    p.images.forEach(img => {
-        gal.innerHTML += `<div class="gallery-item"><img src="${img.data}" onclick="openLightbox('${img.data}', event)"></div>`;
-    });
+    const p = currentPlants[index]; openPlantId = p.id;
+    const gal = document.getElementById('det-gallery'); gal.innerHTML = '';
+    p.images.forEach(img => { gal.innerHTML += `<div class="gallery-item"><img src="${img.data}" onclick="openLightbox('${img.data}', event)"></div>`; });
     
     document.getElementById('det-name').innerText = p.name || "Neznámá rostlina";
     document.getElementById('det-category').innerText = p.category || "Ostatní";
@@ -341,272 +437,219 @@ function openDetail(index) {
     document.getElementById('det-notes').value = p.notes || "";
     document.getElementById('det-last-watered').innerText = p.lastWatered ? `Poslední zálivka: ${new Date(p.lastWatered).toLocaleDateString('cs-CZ')} (${getWateringText(p.lastWatered)})` : "Zatím nezalito";
     
-    // Úkoly v detailu
-    const tasksList = document.getElementById('det-tasks-list'); 
-    tasksList.innerHTML = '';
-    const curMonth = new Date().getMonth() + 1;
-    let hasTasks = false;
+    // AI Paměť
+    const docOut = document.getElementById('doctor-output');
+    if (p.aiDiagnosis) {
+        docOut.innerHTML = `<strong>🩺 AI Doktor:</strong><br>${p.aiDiagnosis}<br>
+            <button class="btn-agro" style="width:100%; margin-top:10px;" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${p.aiDiagnosis.substring(0,30).replace(/'/g, "")}'), '_blank')">🔍 Ověřit na Agromanual.cz</button>
+            <button style="width:100%; margin-top:5px; background:transparent; border:1px solid var(--warn); color:var(--warn); padding:8px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="deleteDiagnosis(${p.id})">🗑️ Smazat diagnózu</button>`;
+        docOut.style.display = 'block';
+    } else { docOut.style.display = 'none'; }
+
+    const detOut = document.getElementById('detective-output');
+    if (p.aiDetection) {
+        detOut.innerHTML = `<strong>🔎 Detektiv:</strong> Tip na odrůdu: ${p.aiDetection}.<br>
+            <button style="width:100%; margin-top:10px; background:#fbc02d; border:none; padding:10px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="updatePlantProfile('${p.aiDetection}')">Aktualizovat kartu na tuto odrůdu</button>
+            <button style="width:100%; margin-top:5px; background:transparent; border:1px solid var(--warn); color:var(--warn); padding:8px; border-radius:8px; font-weight:bold; cursor:pointer;" onclick="deleteDetection(${p.id})">🗑️ Smazat tip</button>`;
+        detOut.style.display = 'block';
+    } else { detOut.style.display = 'none'; }
+
+    // YouTube Rychlé štítky
+    const ytTags = document.getElementById('yt-quick-tags');
+    ytTags.innerHTML = `
+        <button onclick="runYTSearch('${p.name} jarní řez')" class="btn-shop" style="background:var(--yt);">✂️ Řez a tvarování</button>
+        <button onclick="runYTSearch('${p.name} hnojení')" class="btn-shop" style="background:var(--yt);">🌱 Hnojení</button>
+        <button onclick="runYTSearch('${p.name} škůdci a postřiky')" class="btn-shop" style="background:var(--yt);">🐛 Škůdci / Postřiky</button>
+        <button onclick="runYTSearch('${p.name} přesazování')" class="btn-shop" style="background:var(--yt);">🪴 Přesazování</button>
+    `;
+    document.getElementById('yt-search-ui').style.display = 'none';
+    document.getElementById('yt-results-list').innerHTML = '';
+
+    // Úkoly
+    const tasksList = document.getElementById('det-tasks-list'); tasksList.innerHTML = '';
+    const curMonth = new Date().getMonth() + 1; let hasTasks = false;
     if(p.tasks) p.tasks.forEach(t => {
         if(t.month === curMonth) {
             hasTasks = true;
-            tasksList.innerHTML += `
-            <div class="task-item" style="background:var(--bg); border-color:var(--border);">
-                <div><strong>${t.action}</strong></div>
-                <button class="btn-done" onclick="completeTaskWithDetails(${p.id}, '${t.action.replace(/'/g, "\\'")}', ${JSON.stringify(t.products || []).replace(/"/g, '&quot;')}, event)">✓ Splnit</button>
-            </div>`;
+            let productBtns = '';
+            if(t.products) {
+                t.products.forEach(prod => {
+                    productBtns += `<div style="display:flex; gap:8px; margin-top:8px;">
+                        <button class="btn-shop" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank'); event.stopPropagation();">🛒 ${prod}</button>
+                        <button class="btn-agro" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank'); event.stopPropagation();">📖 Návod</button>
+                    </div>`;
+                });
+            } else if (/(hnoj|postř|škůd|nemoc|řez)/i.test(t.action)) {
+                productBtns = `<button class="btn-ai-shop" onclick="askAIProducts(${p.id}, '${t.action.replace(/'/g, "\\'")}', event)">💡 AI: Navrhnout 5 přípravků</button>`;
+            }
+            tasksList.innerHTML += `<div class="task-item" style="background:var(--bg); border-color:var(--border);">
+                <div class="task-header"><div><strong>${t.action}</strong></div><button class="btn-done" onclick="completeTaskWithDetails(${p.id}, '${t.action.replace(/'/g, "\\'")}', ${JSON.stringify(t.products || []).replace(/"/g, '&quot;')}, event)">✓ Splnit</button></div>
+                ${productBtns}</div>`;
         }
     });
     document.getElementById('det-tasks-box').style.display = hasTasks ? 'block' : 'none';
 
-    // Historie v detailu
-    const histList = document.getElementById('det-history-list'); 
-    histList.innerHTML = '';
+    // Historie
+    const histList = document.getElementById('det-history-list'); histList.innerHTML = '';
     if(p.history && p.history.length > 0) {
         document.getElementById('det-history-box').style.display = 'block';
-        [...p.history].reverse().forEach(h => {
-            histList.innerHTML += `<div class="history-entry"><span style="font-weight:bold; color:var(--p); font-size:0.8rem;">${new Date(h.date).toLocaleDateString('cs-CZ')}:</span> ${h.action}</div>`;
-        });
-    } else {
-        document.getElementById('det-history-box').style.display = 'none';
-    }
+        [...p.history].reverse().forEach(h => { histList.innerHTML += `<div class="history-entry"><span style="font-weight:bold; color:var(--p); font-size:0.8rem;">${new Date(h.date).toLocaleDateString('cs-CZ')}:</span> ${h.action}</div>`; });
+    } else { document.getElementById('det-history-box').style.display = 'none'; }
     
     document.getElementById('detail-view').style.display = 'block';
 }
+function closeDetail() { document.getElementById('detail-view').style.display = 'none'; openPlantId = null; stopVoiceRecognition(); }
 
-function closeDetail() { 
-    document.getElementById('detail-view').style.display = 'none'; 
-    openPlantId = null; 
-    stopVoiceRecognition();
-}
-
-// PINCH-TO-ZOOM LIGHTBOX
+// PINCH ZOOM
 let curScale = 1; let curX = 0; let curY = 0; let startX = 0; let startY = 0; let startDist = 0; let startScale = 1;
-const lb = document.getElementById('lightbox'); 
-const lbImg = document.getElementById('lightbox-img');
-
-function openLightbox(src, e) { 
-    if(e) e.stopPropagation();
-    lbImg.src = src; 
-    curScale = 1; curX = 0; curY = 0; 
-    updateLB(); 
-    lb.style.display = 'flex'; 
-}
+const lb = document.getElementById('lightbox'); const lbImg = document.getElementById('lightbox-img');
+function openLightbox(src, e) { if(e) e.stopPropagation(); lbImg.src = src; curScale = 1; curX = 0; curY = 0; updateLB(); lb.style.display = 'flex'; }
 function closeLightbox() { lb.style.display = 'none'; }
 function updateLB() { lbImg.style.transform = `translate(${curX}px, ${curY}px) scale(${curScale})`; }
+lb.addEventListener('touchstart', e => { if(e.touches.length === 2) { startDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); startScale = curScale; } else { startX = e.touches[0].clientX - curX; startY = e.touches[0].clientY - curY; }});
+lb.addEventListener('touchmove', e => { e.preventDefault(); if(e.touches.length === 2) { let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); curScale = Math.max(1, Math.min(startScale * (dist / startDist), 5)); } else { curX = e.touches[0].clientX - startX; curY = e.touches[0].clientY - startY; } updateLB(); }, {passive:false});
 
-lb.addEventListener('touchstart', e => {
-    if(e.touches.length === 2) { 
-        startDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY); 
-        startScale = curScale; 
-    }
-    else { 
-        startX = e.touches[0].clientX - curX; 
-        startY = e.touches[0].clientY - curY; 
-    }
-});
-lb.addEventListener('touchmove', e => {
-    e.preventDefault();
-    if(e.touches.length === 2) {
-        let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-        curScale = Math.max(1, Math.min(startScale * (dist / startDist), 5));
-    } else {
-        curX = e.touches[0].clientX - startX; curY = e.touches[0].clientY - startY;
-    }
-    updateLB();
-}, {passive:false});
-
-// FUNKCE PRO PÉČI
-function waterPlantNow() {
-    const tx = db.transaction("plants", "readwrite");
-    const store = tx.objectStore("plants");
-    store.get(openPlantId).onsuccess = (e) => {
-        let p = e.target.result; 
-        p.lastWatered = new Date().toISOString();
-        if(!p.history) p.history = []; 
-        p.history.push({ date: new Date().toISOString(), action: "Rostlina byla zalita" });
-        store.put(p).onsuccess = () => { render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
-    };
+// YOUTUBE
+function toggleYT() {
+    const ui = document.getElementById('yt-search-ui');
+    ui.style.display = ui.style.display === 'block' ? 'none' : 'block';
+}
+async function runYTSearch(q) {
+    const key = localStorage.getItem('G_KEY');
+    document.getElementById('yt-results-list').innerHTML = 'Hledám...';
+    try {
+        const resp = await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=3&q=${encodeURIComponent(q)}&type=video&key=${key}`);
+        const data = await resp.json();
+        const list = document.getElementById('yt-results-list'); list.innerHTML = '';
+        data.items.forEach(v => {
+            list.innerHTML += `<div style="margin-top:10px; background:var(--bg); padding:10px; border-radius:8px; border:1px solid var(--border);"><img src="${v.snippet.thumbnails.default.url}" style="width:100%; border-radius:8px;" onclick="window.open('https://youtube.com/watch?v=${v.id.videoId}', '_blank')"><p style="font-size:0.85rem; margin:5px 0 0 0; font-weight:bold;">${v.snippet.title}</p></div>`;
+        });
+    } catch(err) { alert("Chyba při hledání. Zkontrolujte API klíč."); }
 }
 
-function saveNotes() {
-    const tx = db.transaction("plants", "readwrite");
-    const store = tx.objectStore("plants");
-    store.get(openPlantId).onsuccess = (e) => {
-        let p = e.target.result; 
-        p.notes = document.getElementById('det-notes').value;
-        store.put(p).onsuccess = () => alert("Poznámka uložena.");
-    };
-}
-
-async function completeTaskWithDetails(pId, action, suggested, event) {
-    if(event) event.stopPropagation();
-    let product = "";
-    
-    if(suggested && suggested.length > 0) {
-        let msg = `Úkol: ${action}\nJaký přípravek jste použili?\n\n`;
-        suggested.forEach((p, i) => msg += `${i+1}) ${p}\n`);
-        msg += "\nZadejte číslo nebo vlastní název (nechte prázdné, pokud nic):";
-        let choice = prompt(msg);
-        if(choice) {
-            let idx = parseInt(choice) - 1;
-            product = (!isNaN(idx) && suggested[idx]) ? suggested[idx] : choice;
-        }
-    } else {
-        let choice = prompt(`Splněn úkol: ${action}\nPoužili jste nějaký přípravek nebo substrát?\n(pokud ne, nechte pole prázdné a dejte OK):`);
-        if(choice) product = choice;
-    }
-
-    let ratio = "";
-    if(product) {
-        ratio = prompt(`V jakém poměru nebo množství jste přípravek/substrát '${product}' aplikovali?\n(např. 2ml/1l vody, nebo 1 odměrka):`);
-    }
-
-    const tx = db.transaction("plants", "readwrite");
-    const store = tx.objectStore("plants");
-    store.get(pId).onsuccess = (e) => {
-        let p = e.target.result; 
-        if(!p.history) p.history = [];
-        
-        let hMsg = `Splněn úkol: ${action}`;
-        if(product) { hMsg += ` [Přípravek: ${product}${ratio ? ', Poměr: ' + ratio : ''}]`; }
-        
-        p.history.push({ date: new Date().toISOString(), action: hMsg });
-        store.put(p).onsuccess = () => { 
-            render().then(() => { if(openPlantId === pId) openDetail(currentPlants.findIndex(x => x.id === pId)); }); 
-        };
-    };
-}
-
-function deletePlant() { 
-    if(confirm("Opravdu smazat tuto rostlinu?")) { 
-        db.transaction("plants", "readwrite").objectStore("plants").delete(openPlantId).onsuccess = () => { 
-            closeDetail(); 
-            render(); 
-        }; 
-    } 
-}
-
-// EXPORT A VYLEPŠENÝ IMPORT DO .ZIP
-function exportData() {
-    document.getElementById('loader').style.display = 'flex';
-    const zip = new JSZip(); 
-    zip.file("databaze.json", JSON.stringify(currentPlants));
-    
-    const settings = { key: localStorage.getItem('G_KEY') || '' };
-    zip.file("nastaveni.json", JSON.stringify(settings));
-
-    zip.generateAsync({type:"blob"}).then(c => {
-        const l = document.createElement('a'); 
-        l.href = URL.createObjectURL(c); 
-        l.download = "PlantMaster_Zaloha.zip";
-        l.click();
-        document.getElementById('loader').style.display = 'none';
-    });
-}
-
-document.getElementById('import-file').onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+// AI DOKTOR & DETEKTIV
+async function runAIDoctor() {
+    const key = localStorage.getItem('G_KEY'); if (!key) return alert("Chybí klíč!");
+    const plant = currentPlants.find(p => p.id === openPlantId);
     document.getElementById('loader').style.display = 'flex';
     try {
-        const zip = new JSZip(); 
-        const contents = await zip.loadAsync(file);
-        
-        const dataStr = await contents.file("databaze.json").async("string");
-        tempImportData = JSON.parse(dataStr);
-        
-        if (contents.file("nastaveni.json")) {
-            const setStr = await contents.file("nastaveni.json").async("string");
-            const settings = JSON.parse(setStr);
-            if (settings.key) localStorage.setItem('G_KEY', settings.key);
-        }
-
-        // Místo okamžitého přepisu ukážeme vyskakovací okno
-        document.getElementById('loader').style.display = 'none';
-        closeSettings(); // Zavřeme panel nastavení, ať nezavazí
-        document.getElementById('import-modal').style.display = 'flex';
-        e.target.value = ''; // Reset inputu, aby šel nahrát stejný soubor znova
-
-    } catch (err) {
-        alert("Chyba při čtení zálohy: Ujistěte se, že jde o správný .zip soubor z PlantMasteru.");
-        document.getElementById('loader').style.display = 'none';
-    }
-};
-
-function cancelImport() {
-    document.getElementById('import-modal').style.display = 'none';
-    tempImportData = [];
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+            method: 'POST', body: JSON.stringify({ contents: [{ parts: [ { text: "Analyzuj zdraví rostliny z fotky. Česky." }, { inline_data: { mime_type: "image/jpeg", data: plant.images[plant.images.length-1].data.split(',')[1] } } ]}] })
+        });
+        const data = await resp.json(); const diag = data.candidates[0].content.parts[0].text;
+        const tx = db.transaction("plants", "readwrite");
+        tx.objectStore("plants").get(openPlantId).onsuccess = (e) => {
+            let p = e.target.result; p.aiDiagnosis = diag;
+            tx.objectStore("plants").put(p).onsuccess = () => { document.getElementById('loader').style.display = 'none'; render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
+        };
+    } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
 }
 
-function executeImport(mode) {
-    document.getElementById('import-modal').style.display = 'none';
+async function runAIDetective() {
+    const key = localStorage.getItem('G_KEY'); if (!key) return alert("Chybí klíč!");
+    const plant = currentPlants.find(p => p.id === openPlantId);
     document.getElementById('loader').style.display = 'flex';
-    
-    const tx = db.transaction("plants", "readwrite"); 
-    const store = tx.objectStore("plants");
-    
-    // Pokud chce uživatel přepsat vše, vymažeme nejdřív databázi
-    if (mode === 'replace') {
-        store.clear();
+    try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+            method: 'POST', body: JSON.stringify({ contents: [{ parts: [ { text: "Urči přesnou odrůdu. Odpověz POUZE JSON: {\"exactName\": \"Název\"}" }, { inline_data: { mime_type: "image/jpeg", data: plant.images[plant.images.length-1].data.split(',')[1] } } ]}], generationConfig: { response_mime_type: "application/json" } })
+        });
+        const data = await resp.json(); let res = JSON.parse(data.candidates[0].content.parts[0].text);
+        const tx = db.transaction("plants", "readwrite");
+        tx.objectStore("plants").get(openPlantId).onsuccess = (e) => {
+            let p = e.target.result; p.aiDetection = res.exactName;
+            tx.objectStore("plants").put(p).onsuccess = () => { document.getElementById('loader').style.display = 'none'; render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
+        };
+    } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
+}
+
+function deleteDiagnosis(id) {
+    if(!confirm("Smazat uloženou diagnózu?")) return;
+    const tx = db.transaction("plants", "readwrite");
+    tx.objectStore("plants").get(id).onsuccess = (e) => { let p = e.target.result; delete p.aiDiagnosis; tx.objectStore("plants").put(p).onsuccess = () => { render().then(() => openDetail(currentPlants.findIndex(x => x.id === id))); }; };
+}
+function deleteDetection(id) {
+    if(!confirm("Smazat tip detektiva?")) return;
+    const tx = db.transaction("plants", "readwrite");
+    tx.objectStore("plants").get(id).onsuccess = (e) => { let p = e.target.result; delete p.aiDetection; tx.objectStore("plants").put(p).onsuccess = () => { render().then(() => openDetail(currentPlants.findIndex(x => x.id === id))); }; };
+}
+
+async function updatePlantProfile(name) {
+    const key = localStorage.getItem('G_KEY'); document.getElementById('loader').style.display = 'flex';
+    const plant = currentPlants.find(p => p.id === openPlantId);
+    try {
+        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+            method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: `Vygeneruj data pro '${name}' jako JSON: {"water": "...", "light": "...", "tasks": [{"month": 3, "action": "...", "details": "..."}]}` }] }], generationConfig: { response_mime_type: "application/json" } })
+        });
+        const data = await resp.json(); let res = JSON.parse(data.candidates[0].content.parts[0].text);
+        plant.name = name; plant.water = res.water; plant.light = res.light; plant.tasks = res.tasks; delete plant.aiDetection; 
+        db.transaction("plants", "readwrite").objectStore("plants").put(plant).onsuccess = () => { document.getElementById('loader').style.display = 'none'; render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
+    } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
+}
+
+// PÉČE A ÚKOLY
+function waterPlantNow() {
+    const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
+    store.get(openPlantId).onsuccess = (e) => { let p = e.target.result; p.lastWatered = new Date().toISOString(); if(!p.history) p.history = []; p.history.push({ date: new Date().toISOString(), action: "Rostlina byla zalita" }); store.put(p).onsuccess = () => { render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); }; };
+}
+function saveNotes() {
+    const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
+    store.get(openPlantId).onsuccess = (e) => { let p = e.target.result; p.notes = document.getElementById('det-notes').value; store.put(p).onsuccess = () => alert("Poznámka uložena."); };
+}
+async function completeTaskWithDetails(pId, action, suggested, event) {
+    if(event) event.stopPropagation(); let product = "";
+    if(suggested && suggested.length > 0) {
+        let msg = `Úkol: ${action}\nJaký přípravek jste použili?\n\n`; suggested.forEach((p, i) => msg += `${i+1}) ${p}\n`); msg += "\nZadejte číslo nebo vlastní název (nechte prázdné, pokud nic):";
+        let choice = prompt(msg); if(choice) { let idx = parseInt(choice) - 1; product = (!isNaN(idx) && suggested[idx]) ? suggested[idx] : choice; }
+    } else {
+        let choice = prompt(`Splněn úkol: ${action}\nPoužili jste nějaký přípravek nebo substrát?\n(pokud ne, nechte pole prázdné a dejte OK):`); if(choice) product = choice;
     }
-    
-    // Načteme data ze zálohy
-    tempImportData.forEach(p => { 
-        delete p.id; // Smažeme staré ID, ať databáze vygeneruje nové a nebijí se nám to u "Přidání"
-        store.add(p); 
-    });
-    
-    tx.oncomplete = () => { 
-        alert("Záloha úspěšně načtena! Aplikace se nyní restartuje.");
-        location.reload(); 
-    };
+    let ratio = ""; if(product) { ratio = prompt(`V jakém poměru nebo množství jste přípravek/substrát '${product}' aplikovali?\n(např. 2ml/1l vody, nebo 1 odměrka):`); }
+    const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
+    store.get(pId).onsuccess = (e) => { let p = e.target.result; if(!p.history) p.history = []; let hMsg = `Splněn úkol: ${action}`; if(product) { hMsg += ` [Přípravek: ${product}${ratio ? ', Poměr: ' + ratio : ''}]`; } p.history.push({ date: new Date().toISOString(), action: hMsg }); store.put(p).onsuccess = () => { render().then(() => { if(openPlantId === pId) openDetail(currentPlants.findIndex(x => x.id === pId)); }); }; };
+}
+function deletePlant() { if(confirm("Opravdu smazat tuto rostlinu?")) { db.transaction("plants", "readwrite").objectStore("plants").delete(openPlantId).onsuccess = () => { closeDetail(); render(); }; } }
+
+// EXPORT A IMPORT
+function exportData() {
+    document.getElementById('loader').style.display = 'flex'; const zip = new JSZip(); zip.file("databaze.json", JSON.stringify(currentPlants)); const settings = { key: localStorage.getItem('G_KEY') || '' }; zip.file("nastaveni.json", JSON.stringify(settings));
+    zip.generateAsync({type:"blob"}).then(c => { const l = document.createElement('a'); l.href = URL.createObjectURL(c); l.download = "PlantMaster_Zaloha.zip"; l.click(); document.getElementById('loader').style.display = 'none'; });
+}
+document.getElementById('import-file').onchange = async (e) => {
+    const file = e.target.files[0]; if (!file) return; document.getElementById('loader').style.display = 'flex';
+    try {
+        const zip = new JSZip(); const contents = await zip.loadAsync(file);
+        const dataStr = await contents.file("databaze.json").async("string"); tempImportData = JSON.parse(dataStr);
+        if (contents.file("nastaveni.json")) { const setStr = await contents.file("nastaveni.json").async("string"); const settings = JSON.parse(setStr); if (settings.key) localStorage.setItem('G_KEY', settings.key); }
+        document.getElementById('loader').style.display = 'none'; closeSettings(); document.getElementById('import-modal').style.display = 'flex'; e.target.value = '';
+    } catch (err) { alert("Chyba při čtení zálohy."); document.getElementById('loader').style.display = 'none'; }
+};
+function cancelImport() { document.getElementById('import-modal').style.display = 'none'; tempImportData = []; }
+function executeImport(mode) {
+    document.getElementById('import-modal').style.display = 'none'; document.getElementById('loader').style.display = 'flex';
+    const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
+    if (mode === 'replace') { store.clear(); }
+    tempImportData.forEach(p => { delete p.id; store.add(p); });
+    tx.oncomplete = () => { alert("Záloha úspěšně načtena! Aplikace se nyní restartuje."); location.reload(); };
 }
 
 // KAMERA A GEMINI
 document.getElementById('camera-new').onchange = async (e) => {
-    const file = e.target.files[0]; 
-    const key = localStorage.getItem('G_KEY'); 
-    if(!file) return;
-    if(!key) return alert("Chybí API klíč! Nastavte ho přes ozubené kolečko (⚙️).");
-    
-    document.getElementById('loader').style.display = 'flex';
-    const reader = new FileReader(); 
-    reader.readAsDataURL(file);
+    const file = e.target.files[0]; const key = localStorage.getItem('G_KEY'); if(!file) return; if(!key) return alert("Chybí API klíč! Nastavte ho přes ozubené kolečko (⚙️).");
+    document.getElementById('loader').style.display = 'flex'; const reader = new FileReader(); reader.readAsDataURL(file);
     reader.onload = async (ev) => {
         const b64 = ev.target.result.split(',')[1];
         try {
             const prompt = `Jsi expert. JSON: {"name": "Název", "category": "Kategorie (Pokojová rostlina/Keř/Strom/other)", "water": "Stručný návod...", "light": "Stručný návod..."}`;
-            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-                method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64 } }] }], generationConfig: { response_mime_type: "application/json" } })
-            });
-            const data = await resp.json(); 
-            let res = JSON.parse(data.candidates[0].content.parts[0].text);
-            
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, { method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64 } }] }], generationConfig: { response_mime_type: "application/json" } }) });
+            const data = await resp.json(); let res = JSON.parse(data.candidates[0].content.parts[0].text);
             const tx = db.transaction("plants", "readwrite");
-            tx.objectStore("plants").add({ 
-                ...res, 
-                images: [{ data: ev.target.result, date: new Date().toLocaleDateString('cs-CZ') }], 
-                dateAdded: new Date().toLocaleDateString('cs-CZ')
-            });
-            tx.oncomplete = () => { 
-                document.getElementById('loader').style.display = 'none'; 
-                render(); 
-            };
-        } catch (err) { 
-            alert("Chyba při analýze: " + err.message); 
-            document.getElementById('loader').style.display = 'none'; 
-        }
+            tx.objectStore("plants").add({ ...res, images: [{ data: ev.target.result, date: new Date().toLocaleDateString('cs-CZ') }], dateAdded: new Date().toLocaleDateString('cs-CZ') });
+            tx.oncomplete = () => { document.getElementById('loader').style.display = 'none'; render(); };
+        } catch (err) { alert("Chyba při analýze: " + err.message); document.getElementById('loader').style.display = 'none'; }
     };
 };
 
-function setKey() { 
-    let k = prompt("Zadejte svůj API klíč pro Gemini:"); 
-    if(k) {
-        localStorage.setItem('G_KEY', k.trim()); 
-        closeSettings();
-        alert("Klíč byl uložen.");
-    }
-}
+function setKey() { let k = prompt("Zadejte svůj API klíč pro Gemini:"); if(k) { localStorage.setItem('G_KEY', k.trim()); closeSettings(); alert("Klíč byl uložen."); } }
 function openSettings() { document.getElementById('settings-view').style.display = 'flex'; }
 function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
 </script>
