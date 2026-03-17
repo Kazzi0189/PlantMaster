@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v26.5-Agro (Oprava 1)</title>
+    <title>PlantMaster AI v26.5-Agro (Bod 2)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -149,7 +149,7 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 26.5-Agro (Oprava 1)</span>
+    <span class="version-tag">Verze 26.5-Agro (Bod 2)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openHelp()">❓</button>
         <button class="btn-header" onclick="openSettings()">⚙️</button>
@@ -453,7 +453,7 @@ function updateCalendar(plantsArray) {
                 } else if (/(hnoj|postř|škůd|nemoc)/i.test(task.action)) {
                     productBtns = `<button class="btn-ai-shop" style="margin-top:8px;" onclick="askAIProducts(${p.id}, '${task.action.replace(/'/g, "\\'")}', event)">💡 Navrhnout přípravky</button>`;
                 }
-                calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><div><strong>${p.name}:</strong> ${task.action}</div><button class="btn-done" onclick="completeTask('${task.action.replace(/'/g, "\\'")}', event)">✓ Splnit</button></div><div class="task-details">${task.details || ''}${productBtns}</div></div>`;
+                calBox.innerHTML += `<div class="task-item"><div class="task-header" onclick="toggleTask(this)"><div><strong>${p.name}:</strong> ${task.action}</div><button class="btn-done" onclick="completeTaskWithDetails(${p.id}, '${task.action.replace(/'/g, "\\'")}', ${JSON.stringify(task.products || []).replace(/"/g, '&quot;')}, event)">✓ Splnit</button></div><div class="task-details">${task.details || ''}${productBtns}</div></div>`;
             }
         });
     });
@@ -485,6 +485,48 @@ async function askAIProducts(pId, taskAction, event) {
                 render().then(() => { if(openPlantId === pId) openDetail(currentPlants.findIndex(x => x.id === pId)); });
             };
         } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
+    };
+}
+
+// BOD 2: Interaktivní deník úkolů (Doptání se na produkt a poměr)
+async function completeTaskWithDetails(pId, action, suggested, event) {
+    if(event) event.stopPropagation();
+    let product = "";
+    
+    if(suggested && suggested.length > 0) {
+        let msg = `Úkol: ${action}\nJaký přípravek jste použili?\n\n`;
+        suggested.forEach((p, i) => msg += `${i+1}) ${p}\n`);
+        msg += "\nZadejte číslo nebo vlastní název (nechte prázdné, pokud nic):";
+        let choice = prompt(msg);
+        if(choice) {
+            let idx = parseInt(choice) - 1;
+            product = (!isNaN(idx) && suggested[idx]) ? suggested[idx] : choice;
+        }
+    } else {
+        let choice = prompt(`Splněn úkol: ${action}\nPoužili jste nějaký přípravek nebo substrát?\n(pokud ne, nechte pole prázdné a dejte OK):`);
+        if(choice) product = choice;
+    }
+
+    let ratio = "";
+    if(product) {
+        ratio = prompt(`V jakém poměru nebo množství jste přípravek/substrát '${product}' aplikovali?\n(např. 2ml/1l vody, nebo 1 odměrka):`);
+    }
+
+    const tx = db.transaction("plants", "readwrite");
+    const store = tx.objectStore("plants");
+    store.get(pId).onsuccess = (e) => {
+        let p = e.target.result; 
+        if(!p.history) p.history = [];
+        
+        let hMsg = `Splněn úkol: ${action}`;
+        if(product) {
+            hMsg += ` [Přípravek: ${product}${ratio ? ', Poměr: ' + ratio : ''}]`;
+        }
+        
+        p.history.push({ date: new Date().toISOString(), action: hMsg });
+        store.put(p).onsuccess = () => { 
+            render().then(() => { if(openPlantId === pId) openDetail(currentPlants.findIndex(x => x.id === pId)); }); 
+        };
     };
 }
 
@@ -522,7 +564,7 @@ function openDetail(index) {
                 btns = `<button class="btn-ai-shop" style="margin-top:10px;" onclick="askAIProducts(${p.id}, '${t.action.replace(/'/g, "\\'")}', event)">💡 Navrhnout přípravky</button>`;
             }
             tasksList.innerHTML += `<div class="task-action-item">
-                <div class="task-action-header"><div><strong>${t.action}</strong></div><button class="btn-done" onclick="completeTask('${t.action.replace(/'/g, "\\'")}', event)">✓ Splnit</button></div>
+                <div class="task-action-header"><div><strong>${t.action}</strong></div><button class="btn-done" onclick="completeTaskWithDetails(${p.id}, '${t.action.replace(/'/g, "\\'")}', ${JSON.stringify(t.products || []).replace(/"/g, '&quot;')}, event)">✓ Splnit</button></div>
                 <p style="font-size:0.85rem; margin:5px 0;">${t.details || ''}</p>${btns}</div>`;
         }
     });
@@ -534,7 +576,6 @@ function openDetail(index) {
         [...p.history].reverse().forEach(h => histList.innerHTML += `<div class="history-entry"><span style="font-weight:bold; color:var(--p); font-size:0.8rem;">${new Date(h.date).toLocaleDateString('cs-CZ')}:</span> ${h.action}</div>`);
     } else document.getElementById('det-history-box').style.display = 'none';
 
-    // OPRAVA 2: Uložené výsledky AI
     const docOut = document.getElementById('doctor-output');
     if (p.aiDiagnosis) {
         docOut.innerHTML = `<strong>🩺 AI Doktor:</strong><br>${p.aiDiagnosis}<br>
@@ -660,7 +701,7 @@ async function updatePlantProfile(name) {
         });
         const data = await resp.json(); let res = JSON.parse(data.candidates[0].content.parts[0].text);
         plant.name = name; plant.water = res.water; plant.light = res.light; plant.toxicity = res.toxicity; plant.tasks = res.tasks;
-        delete plant.aiDetection; // Smažeme tip, protože jsme ho právě aplikovali
+        delete plant.aiDetection; 
         db.transaction("plants", "readwrite").objectStore("plants").put(plant).onsuccess = () => { document.getElementById('loader').style.display = 'none'; render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
     } catch (err) { alert(err.message); document.getElementById('loader').style.display = 'none'; }
 }
@@ -689,16 +730,6 @@ function waterPlantNow() {
     store.get(openPlantId).onsuccess = (e) => {
         let p = e.target.result; p.lastWatered = new Date().toISOString();
         if(!p.history) p.history = []; p.history.push({ date: new Date().toISOString(), action: "Rostlina byla zalita" });
-        store.put(p).onsuccess = () => { render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
-    };
-}
-function completeTask(action, event) {
-    if (event) event.stopPropagation();
-    const tx = db.transaction("plants", "readwrite");
-    const store = tx.objectStore("plants");
-    store.get(openPlantId).onsuccess = (e) => {
-        let p = e.target.result; if(!p.history) p.history = [];
-        p.history.push({ date: new Date().toISOString(), action: "Splněn úkol: " + action });
         store.put(p).onsuccess = () => { render().then(() => openDetail(currentPlants.findIndex(x => x.id === openPlantId))); };
     };
 }
