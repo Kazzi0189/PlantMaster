@@ -3,10 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI - Fáze 1 (Základ)</title>
+    <title>PlantMaster AI - Fáze 1 (Základ + Import)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
     <style>
         :root { 
             --p: #2e7d32; --bg: #f4f7f6; --text: #333; --text-muted: #666;
@@ -70,7 +72,7 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Fáze 1 (Čistý základ)</span>
+    <span class="version-tag">Fáze 1 (Základ + Import)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openSettings()">⚙️</button>
     </div>
@@ -98,6 +100,7 @@
     <div id="plant-list"></div>
 </div>
 
+<input type="file" id="import-file" accept=".zip,.plantbak" style="display:none">
 <button class="fab" onclick="document.getElementById('camera-new').click()">+</button>
 <input type="file" id="camera-new" accept="image/*" capture="environment" style="display:none">
  
@@ -128,7 +131,7 @@
     <div class="settings-box">
         <button class="btn-modal-close" onclick="closeSettings()">✕</button>
         <h3>⚙️ Nastavení</h3>
-        <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">Zálohy a vzhled budou přidány v další fázi.</p>
+        <button style="width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:none; background:var(--p); color:white; font-weight:bold; cursor:pointer;" onclick="document.getElementById('import-file').click()">📂 OBNOVIT ZE ZÁLOHY</button>
         <button style="width:100%; padding:10px; border-radius:8px; border:1px solid #ccc; background:#fff; cursor:pointer;" onclick="setKey()">🔑 Zadat API klíč (Gemini)</button>
     </div>
 </div>
@@ -287,6 +290,32 @@ document.getElementById('camera-new').onchange = async (e) => {
             document.getElementById('loader').style.display = 'none'; 
         }
     };
+};
+
+// 8. IMPORT ZÁLOHY
+document.getElementById('import-file').onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('loader').style.display = 'flex';
+    try {
+        const zip = new JSZip(); 
+        const contents = await zip.loadAsync(file);
+        
+        const dataStr = await contents.file("databaze.json").async("string");
+        const data = JSON.parse(dataStr);
+
+        const tx = db.transaction("plants", "readwrite"); 
+        const store = tx.objectStore("plants");
+        store.clear(); 
+        data.forEach(p => { delete p.id; store.add(p); });
+        tx.oncomplete = () => { 
+            alert("Záloha úspěšně obnovena!");
+            location.reload(); 
+        };
+    } catch (err) {
+        alert("Chyba při čtení zálohy: " + err.message);
+        document.getElementById('loader').style.display = 'none';
+    }
 };
 
 function setKey() { 
