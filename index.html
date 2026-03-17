@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v26.5-Agro (Bod 2)</title>
+    <title>PlantMaster AI v26.5-Agro (Zálohy & Fixy)</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -149,7 +149,7 @@
  
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 26.5-Agro (Bod 2)</span>
+    <span class="version-tag">Verze 26.5-Agro (Zálohy a Fixy)</span>
     <div class="header-btns">
         <button class="btn-header" onclick="openHelp()">❓</button>
         <button class="btn-header" onclick="openSettings()">⚙️</button>
@@ -282,12 +282,13 @@
  
 <div id="loader">
     <div class="spinner"></div>
-    <p id="loader-text">AI pracuje...</p>
+    <p id="loader-text">Pracuji...</p>
 </div>
  
 <script>
 let db; let currentPlants = []; let openPlantId = null; 
-let isSelectMode = false; let selectedPlants = new Set(); let pressTimer; let cardStartY = 0; let didLongPress = false;
+let isSelectMode = false; let selectedPlants = new Set(); 
+let pressTimer; let touchStartX = 0; let touchStartY = 0; let didLongPress = false;
 
 // SPEECH RECOGNITION
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -395,21 +396,37 @@ function filterPlants() {
         list.innerHTML += `<div class="card" style="${style}" 
             onmousedown="startPress(event, ${p.id})" ontouchstart="startPress(event, ${p.id})" 
             onmousemove="cancelPress(event)" ontouchmove="cancelPress(event)" 
-            onmouseup="cancelPress(event)" ontouchend="cancelPress(event)" 
+            onmouseup="cancelPress(event)" ontouchend="cancelPress(event)" onmouseleave="cancelPress(event)"
             onclick="handleCardClick(event, ${p.id}, ${originalIndex})">
             <img src="${latestImg}"><div class="card-info"><h3>${p.name}</h3><div class="cat-badge-small">${p.category || 'Ostatní'}</div>${badge}</div></div>`;
     });
     updateCalendar(filtered);
 }
 
+// OPRAVA HROMADNÉHO VÝBĚRU (Tolerantnější touch)
 function startPress(e, id) {
-    didLongPress = false; cardStartY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+    didLongPress = false; 
+    let clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+    let clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+    touchStartX = clientX;
+    touchStartY = clientY;
+    
     pressTimer = setTimeout(() => {
         didLongPress = true; 
         if(!isSelectMode) { isSelectMode = true; selectedPlants.add(id); updateSelectModeUI(); filterPlants(); }
     }, 600);
 }
-function cancelPress(e) { clearTimeout(pressTimer); }
+function cancelPress(e) { 
+    if (!pressTimer) return;
+    if (e.type === 'touchmove' || e.type === 'mousemove') {
+        let clientX = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+        let clientY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+        let dist = Math.hypot(clientX - touchStartX, clientY - touchStartY);
+        if (dist < 15) return; // Ignoruje jemné zavrtění prstem
+    }
+    clearTimeout(pressTimer); 
+    pressTimer = null;
+}
 function handleCardClick(e, id, idx) {
     if (didLongPress) return;
     if (isSelectMode) {
@@ -425,7 +442,7 @@ function updateSelectModeUI() {
 }
 function cancelSelection() { isSelectMode = false; selectedPlants.clear(); updateSelectModeUI(); filterPlants(); }
 function deleteSelected() {
-    if(!confirm("Smazat vybrané?")) return;
+    if(!confirm("Opravdu smazat vybrané rostliny?")) return;
     const tx = db.transaction("plants", "readwrite");
     const store = tx.objectStore("plants");
     selectedPlants.forEach(id => store.delete(id));
@@ -488,7 +505,6 @@ async function askAIProducts(pId, taskAction, event) {
     };
 }
 
-// BOD 2: Interaktivní deník úkolů (Doptání se na produkt a poměr)
 async function completeTaskWithDetails(pId, action, suggested, event) {
     if(event) event.stopPropagation();
     let product = "";
@@ -775,22 +791,70 @@ document.getElementById('camera-add').onchange = async (e) => {
     };
 };
 
+// EXPORT A IMPORT 2.0
 function exportData() {
     document.getElementById('loader').style.display = 'flex';
-    const zip = new JSZip(); zip.file("databaze.json", JSON.stringify(currentPlants));
+    const zip = new JSZip(); 
+    zip.file("databaze.json", JSON.stringify(currentPlants));
+    
+    const settings = {
+        key: localStorage.getItem('G_KEY') || '',
+        theme: localStorage.getItem('pm_theme') || 'light',
+        size: localStorage.getItem('pm_text_size') || '100%'
+    };
+    zip.file("nastaveni.json", JSON.stringify(settings));
+
     zip.generateAsync({type:"blob"}).then(c => {
         const l = document.createElement('a'); l.href = URL.createObjectURL(c); l.download = "PlantMaster_Zaloha.plantbak"; l.click();
         document.getElementById('loader').style.display = 'none';
     });
 }
+
 document.getElementById('import-file').onchange = async (e) => {
-    const zip = new JSZip(); const contents = await zip.loadAsync(e.target.files[0]);
-    const data = JSON.parse(await contents.file("databaze.json").async("string"));
-    const tx = db.transaction("plants", "readwrite"); const store = tx.objectStore("plants");
-    store.clear(); data.forEach(p => { delete p.id; store.add(p); });
-    tx.oncomplete = () => { alert("Importováno!"); render(); };
+    const file = e.target.files[0];
+    if (!file) return;
+    document.getElementById('loader').style.display = 'flex';
+    try {
+        const zip = new JSZip(); 
+        const contents = await zip.loadAsync(file);
+        
+        const dataStr = await contents.file("databaze.json").async("string");
+        const data = JSON.parse(dataStr);
+        
+        if (contents.file("nastaveni.json")) {
+            const setStr = await contents.file("nastaveni.json").async("string");
+            const settings = JSON.parse(setStr);
+            if (settings.key) localStorage.setItem('G_KEY', settings.key);
+            if (settings.theme) { localStorage.setItem('pm_theme', settings.theme); }
+            if (settings.size) { localStorage.setItem('pm_text_size', settings.size); }
+        }
+
+        const tx = db.transaction("plants", "readwrite"); 
+        const store = tx.objectStore("plants");
+        store.clear(); 
+        data.forEach(p => { delete p.id; store.add(p); });
+        tx.oncomplete = () => { 
+            alert("Záloha úspěšně obnovena! Aplikace se nyní restartuje.");
+            location.reload(); 
+        };
+    } catch (err) {
+        alert("Chyba při čtení zálohy: " + err.message);
+        document.getElementById('loader').style.display = 'none';
+    }
 };
-function deleteAllData() { if(confirm("Smazat vše?")) { db.transaction("plants", "readwrite").objectStore("plants").clear().onsuccess = render; } }
+
+function deleteAllData() { 
+    if(confirm("Opravdu chcete nenávratně smazat celou databázi i nastavení?")) { 
+        localStorage.removeItem('G_KEY');
+        localStorage.removeItem('pm_theme');
+        localStorage.removeItem('pm_text_size');
+        db.transaction("plants", "readwrite").objectStore("plants").clear().onsuccess = () => {
+            alert("Aplikace byla úspěšně vyčištěna.");
+            location.reload();
+        };
+    } 
+}
+
 function setKey() { let k = prompt("API klíč:"); if(k) localStorage.setItem('G_KEY', k.trim()); }
 function openSettings() { document.getElementById('settings-view').style.display = 'flex'; }
 function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
