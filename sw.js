@@ -7,17 +7,13 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (e) => {
-  console.log('[Service Worker] Instalován a ukládám do cache');
   e.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
   );
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (e) => {
-  console.log('[Service Worker] Aktivován a mažu starou cache');
   e.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
@@ -29,15 +25,14 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
+  // Striktní ignorování AI volání
+  if (e.request.url.includes('generativelanguage.googleapis.com')) return;
+
   e.respondWith(
     caches.match(e.request).then((response) => {
-      // Vrátí z cache, pokud existuje, jinak stáhne ze sítě
       return response || fetch(e.request);
     }).catch(() => {
-      return new Response('Aplikace je offline a data nejsou uložena v cache.', {
-        status: 503,
-        statusText: 'Service Unavailable'
-      });
+      return new Response('Aplikace je offline a data nejsou uložena v cache.', { status: 503 });
     })
   );
 });
