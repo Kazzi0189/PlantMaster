@@ -243,6 +243,251 @@
 
 <div id="loader"><div class="spinner"></div><span id="loader-text">Zpracovávám...</span></div>
 
+<script><!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PlantMaster AI v20.0</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2e7d32">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+        :root { 
+            --p: #2e7d32; 
+            --bg: #f4f7f6; 
+            --text: #333; 
+            --card: #ffffff; 
+            --warn: #d32f2f; 
+            --safe: #388e3c; 
+            --doc: #1976d2; 
+            --det: #8e24aa; 
+            --yt: #f44336; 
+            --ai-shop: #673ab7;
+        }
+        body { 
+            font-family: -apple-system, system-ui, sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 0; 
+            padding-bottom: 90px; 
+        }
+
+        header { 
+            background: var(--p); 
+            color: white; 
+            padding: 20px 15px; 
+            border-radius: 0 0 20px 20px; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1); 
+            text-align: center; 
+            margin-bottom: 20px; 
+            position: relative; 
+        }
+        header h1 { margin: 0; font-size: 1.5rem; }
+        .version-tag { font-size: 0.75rem; opacity: 0.8; margin-top: 5px; display: block; }
+        .header-btns { position: absolute; right: 15px; top: 20px; display: flex; gap: 10px; }
+        .btn-header { background: transparent; border: none; font-size: 1.4rem; cursor: pointer; color: white; padding: 5px; }
+
+        .container { padding: 0 15px; }
+
+        #inbox-section { display:none; background: #fff3e0; border-left: 5px solid #ff9800; padding: 15px; border-radius: 12px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+        #inbox-section h3 { margin: 0 0 10px 0; color: #e65100; font-size: 1.1rem; }
+        .inbox-controls { display: flex; gap: 10px; margin-top: 10px; }
+        .inbox-controls select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.9rem; }
+
+        #search-box { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 12px; font-size: 1rem; margin-bottom: 10px; box-sizing: border-box; outline: none; }
+        .filter-controls { display: flex; gap: 10px; margin-bottom: 20px; }
+        .filter-select { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.9rem; outline: none; background: white; color: #444; }
+
+        .calendar-section { background: #e8f5e9; border-radius: 16px; padding: 15px; margin-bottom: 20px; border-left: 5px solid var(--p); }
+        .calendar-section h3 { margin: 0 0 10px 0; color: var(--p); font-size: 1.1rem; }
+        #calendar-tasks { max-height: 250px; overflow-y: auto; padding-right: 5px; }
+        #calendar-tasks::-webkit-scrollbar { width: 6px; }
+        #calendar-tasks::-webkit-scrollbar-track { background: #e8f5e9; border-radius: 8px; }
+        #calendar-tasks::-webkit-scrollbar-thumb { background: #a5d6a7; border-radius: 8px; }
+
+        .task-item { background: white; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); overflow: hidden; padding: 12px; display: flex; justify-content: space-between; align-items: center; }
+        .task-item.completed { text-decoration: line-through; opacity: 0.6; }
+        .task-content { flex: 1; font-size: 0.95rem; }
+        .task-content strong { color: var(--p); margin-right: 5px; }
+        .btn-complete { background: var(--safe); color: white; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; }
+
+        .card { background: var(--card); border-radius: 16px; padding: 12px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; cursor: pointer; transition: 0.2s; }
+        .card img { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; margin-right: 15px; border: 1px solid #eee; }
+        .card-info h3 { margin: 0 0 5px 0; font-size: 1.1rem; color: var(--p); }
+        .card-info p { margin: 0; font-size: 0.85rem; color: #666; }
+        .cat-badge-small { display: inline-block; font-size: 0.7rem; background: #e0f2f1; color: #00695c; padding: 2px 6px; border-radius: 4px; margin-bottom: 5px; font-weight: bold; margin-right: 4px;}
+
+        .fab { position: fixed; bottom: 25px; right: 25px; width: 65px; height: 65px; background: var(--p); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 6px 16px rgba(46,125,50,0.4); border: none; cursor: pointer; z-index: 100; }
+
+        #loader { display: none; position: fixed; inset: 0; background: rgba(255,255,255,0.9); z-index: 4000; flex-direction: column; justify-content: center; align-items: center; color: var(--p); font-weight: bold; text-align: center; padding: 20px; }
+        .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top-color: var(--p); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 15px; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        #detail-view, #settings-view { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 500; overflow-y: auto; padding-bottom: 50px; }
+        .detail-header { position: sticky; top: 0; background: var(--p); color: white; padding: 15px; display: flex; align-items: center; z-index: 10; }
+        .detail-header button { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; margin-right: 15px; }
+        
+        .gallery-wrapper { display: flex; overflow-x: auto; gap: 10px; scroll-snap-type: x mandatory; margin-bottom: 15px; padding-bottom: 10px;}
+        .gallery-wrapper img { width: 85%; flex-shrink: 0; scroll-snap-align: center; border-radius: 12px; object-fit: cover; height: 250px; border: 1px solid #ccc; cursor: pointer; }
+        
+        #lightbox { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; align-items: center; justify-content: center; overflow: hidden; touch-action: none; }
+        #lightbox img { max-width: 100%; max-height: 100%; transition: transform 0.1s ease-out; transform-origin: center center; }
+        #lightbox-close { position: absolute; top: 20px; right: 20px; color: white; font-size: 35px; background: none; border: none; z-index: 3010; cursor: pointer; }
+
+        .btn-full { display: block; width: 100%; padding: 14px; background: var(--p); color: white; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; margin-bottom: 12px; cursor: pointer; }
+        .btn-danger { background: var(--warn); }
+        .btn-secondary { background: #757575; }
+        .btn-shop { background: #ff9800; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 0.8rem; text-decoration: none; display: inline-block; margin-top:5px; }
+
+        /* Paměť AI boxy */
+        .ai-mem-box { background: white; padding: 15px; border-radius: 12px; margin-bottom: 15px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); }
+        .btn-sm-action { background: transparent; border: 1px solid #ccc; padding: 8px; border-radius: 6px; font-weight: bold; cursor: pointer; width: 100%; margin-top: 8px; }
+
+        /* Historie péče */
+        .timeline { border-left: 3px solid var(--p); padding-left: 15px; margin-top: 15px; margin-bottom: 25px; }
+        .timeline-item { position: relative; margin-bottom: 12px; font-size: 0.95rem; background: white; padding: 10px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .timeline-item::before { content: ""; position: absolute; left: -24px; top: 12px; width: 12px; height: 12px; background: var(--p); border-radius: 50%; }
+
+        .settings-box { background: white; padding: 25px; border-radius: 16px; margin: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>PlantMaster AI</h1>
+    <span class="version-tag">Verze 20.0 (Stabilní finále)</span>
+    <div class="header-btns">
+        <button class="btn-header" onclick="openSettings()">⚙️</button>
+    </div>
+</header>
+
+<div class="container">
+    <div class="filter-controls">
+        <input type="text" id="search-box" placeholder="Hledat rostlinu..." oninput="renderPlants()">
+    </div>
+    <div class="filter-controls">
+        <select class="filter-select" id="filter-category" onchange="renderPlants()">
+            <option value="all">Všechny kategorie</option>
+            <option value="Pokojové">Pokojové</option>
+            <option value="Zelenina">Zelenina</option>
+            <option value="Ovoce">Ovoce</option>
+            <option value="Bylinky">Bylinky</option>
+            <option value="Stromy a keře">Stromy a keře</option>
+        </select>
+    </div>
+
+    <div id="inbox-section">
+        <h3>📥 Nové video ze sdílení</h3>
+        <p id="inbox-url-display" style="font-size: 0.85rem; word-break: break-all; color: #555;"></p>
+        <div class="inbox-controls">
+            <select id="inbox-plant-select"><option value="">Vyber rostlinu...</option></select>
+            <button class="btn-complete" onclick="saveInboxVideo()">Přiřadit</button>
+            <button class="btn-danger" style="color:white; border:none; border-radius:5px; padding:6px 12px; cursor:pointer;" onclick="clearInbox()">Zahodit</button>
+        </div>
+    </div>
+
+    <div class="calendar-section">
+        <h3>📅 Úkoly na tento měsíc</h3>
+        <div id="calendar-tasks"></div>
+    </div>
+
+    <div id="plant-list"></div>
+</div>
+
+<input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleNewPlantPhoto(event)">
+<button class="fab" onclick="document.getElementById('camera-input').click()">+</button>
+
+<div id="detail-view">
+    <div class="detail-header">
+        <button onclick="closeDetail()">←</button>
+        <h2 id="detail-title" style="margin:0; font-size:1.3rem;">Detail</h2>
+    </div>
+    <div style="padding: 15px;">
+        
+        <div class="gallery-wrapper" id="detail-gallery"></div>
+        <button class="btn-full btn-secondary" onclick="document.getElementById('add-photo-input').click()">📸 Přidat další fotku</button>
+        <input type="file" id="add-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="addPhotoToCurrentPlant(event)">
+        
+        <button class="btn-full" onclick="waterPlant()">💧 Zalít dnes <span id="water-status" style="font-weight:normal; font-size:0.9rem;"></span></button>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+            <input type="text" id="note-input" placeholder="Hlasová / textová poznámka..." style="flex:1; padding:12px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
+            <button id="btn-mic" onclick="startDictation()" style="background:var(--p); color:white; border:none; padding:0 20px; border-radius:8px; font-size:1.2rem; cursor:pointer;">🎤</button>
+            <button onclick="saveNote()" style="background:var(--safe); color:white; border:none; padding:0 20px; border-radius:8px; font-weight:bold; cursor:pointer;">Uložit</button>
+        </div>
+
+        <h3>🛠 Specifické úkoly</h3>
+        <div id="detail-tasks" style="margin-bottom: 15px;"></div>
+        <button class="btn-full" style="background:var(--ai-shop); margin-bottom: 25px;" onclick="callAI('products')">💡 AI: Navrhnout 5 přípravků</button>
+
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+            <button class="btn-full" style="background:var(--det); margin:0;" onclick="callAI('detective')">🔎 Určit odrůdu</button>
+            <button class="btn-full" style="background:var(--doc); margin:0;" onclick="callAI('doctor')">🩺 Zdraví</button>
+        </div>
+        
+        <div id="ai-mem-detective" class="ai-mem-box" style="display:none; border-left: 4px solid var(--det);"></div>
+        <div id="ai-mem-doctor" class="ai-mem-box" style="display:none; border-left: 4px solid var(--doc);"></div>
+        <div id="ai-mem-products" class="ai-mem-box" style="display:none; border-left: 4px solid var(--ai-shop);"></div>
+
+        <h3>📝 Historie péče</h3>
+        <div class="timeline" id="detail-timeline"></div>
+
+        <h3>🎥 Videa a Návody</h3>
+        <div id="yt-dynamic-tags" style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;"></div>
+        
+        <div style="display:flex; gap:8px; margin-bottom:20px;">
+            <input type="text" id="yt-custom-query" placeholder="Vlastní dotaz na YT..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc;">
+            <button onclick="searchYT(document.getElementById('yt-custom-query').value)" style="background:var(--yt); color:white; border:none; padding:0 15px; border-radius:8px; font-weight:bold;">Hledat</button>
+        </div>
+        <div id="saved-videos" style="margin-bottom: 30px;"></div>
+
+        <button class="btn-full btn-danger" style="margin-top:40px;" onclick="deleteCurrentPlant()">⚠️ Smazat rostlinu</button>
+    </div>
+</div>
+
+<div id="lightbox">
+    <button id="lightbox-close" onclick="closeLightbox()">✖</button>
+    <img id="lightbox-img" src="">
+</div>
+
+<div id="settings-view">
+    <div class="detail-header">
+        <button onclick="closeSettings()">←</button>
+        <h2 style="margin:0;">Nastavení</h2>
+    </div>
+    <div class="settings-box">
+        <label style="display:block; text-align:left; font-weight:bold; margin-bottom:8px;">Gemini API Klíč:</label>
+        <input type="text" id="api-key" style="width:100%; padding:12px; margin-bottom:20px; box-sizing:border-box; border-radius:8px; border:1px solid #ccc;">
+        <button class="btn-full" onclick="saveSettings()">Uložit nastavení</button>
+        
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        
+        <h3 style="text-align:left; color:var(--p); margin-top:0;">Zálohování do .zip</h3>
+        <button class="btn-full" style="background:#1976d2;" onclick="exportZip()">⬇️ Stáhnout Zálohu (.zip)</button>
+        <input type="file" id="import-file" accept=".zip" style="display:none;" onchange="handleImport(event)">
+        <button class="btn-full" style="background:#ff9800;" onclick="document.getElementById('import-file').click()">⬆️ Nahrát Zálohu</button>
+        
+        <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+        <button class="btn-full btn-danger" onclick="deleteAll()">⚠️ Smazat VŠE</button>
+    </div>
+</div>
+
+<div id="import-modal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:4000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:25px; border-radius:16px; width:85%; text-align:center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+        <h3 style="color:var(--p); margin-top:0;">📂 Způsob importu</h3>
+        <p style="font-size:0.9rem; color:#555; margin-bottom:20px;">Jak si přejete nahrát data ze zálohy?</p>
+        <button class="btn-full btn-danger" onclick="executeImport('overwrite')">⚠️ PŘEPSAT VŠE</button>
+        <button class="btn-full" style="background:var(--safe);" onclick="executeImport('merge')">➕ PŘIDAT K EXISTUJÍCÍM</button>
+        <button class="btn-full btn-secondary" onclick="document.getElementById('import-modal').style.display='none'">Zrušit</button>
+    </div>
+</div>
+
+<div id="loader"><div class="spinner"></div><span id="loader-text">Zpracovávám...</span></div>
+
 <script>
     if ('serviceWorker' in navigator) { navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW Chyba', err)); }
 
@@ -554,7 +799,7 @@
         tx.oncomplete = () => { hideLoader(); location.reload(); };
     }
 
-    // PŘIDÁVÁNÍ FOTEK
+    // PŘIDÁVÁNÍ FOTEK A START AI
     async function handleNewPlantPhoto(event) {
         const file = event.target.files[0]; if (!file) return; showLoader("Tvořím profil s AI...");
         const key = localStorage.getItem('G_KEY'); if (!key) return alert("Nastavte API klíč v ozubeném kolečku!");
@@ -585,6 +830,9 @@
     function showLoader(txt) { document.getElementById('loader-text').innerText = txt; document.getElementById('loader').style.display = 'flex'; }
     function hideLoader() { document.getElementById('loader').style.display = 'none'; }
     async function deleteAll() { if(confirm('Opravdu vymazat vše?')) { const db = await getDB(); const tx = db.transaction('plants', 'readwrite'); tx.objectStore('plants').clear(); tx.oncomplete = () => { closeSettings(); renderPlants(); }; } }
+</script>
+</body>
+</html>
 </script>
 </body>
 </html>
