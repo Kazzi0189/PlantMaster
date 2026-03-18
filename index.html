@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>PlantMaster AI v16.0</title>
+    <title>PlantMaster AI v15.0</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#2e7d32">
     <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
@@ -121,7 +121,7 @@
 
 <header>
     <h1>🌿 PlantMaster</h1>
-    <span class="version-tag">Verze 16.0 (Vlastní Exportní Formát)</span>
+    <span class="version-tag">Verze 15.0 (Dvojité štítkování)</span>
     <button class="btn-header-settings" onclick="openSettings()">⚙️</button>
 </header>
 
@@ -154,6 +154,7 @@
             <option value="Zelenina">Zelenina</option>
             <option value="Ovoce">Ovoce</option>
             <option value="Bylinka / Koření">Bylinky a koření</option>
+            
             <option value="other">Ostatní</option>
         </select>
     </div>
@@ -176,7 +177,7 @@
     </div>
 </div>
 
-<input type="file" id="import-file" accept=".zip,.plantbak" style="display:none">
+<input type="file" id="import-file" accept=".zip" style="display:none">
 
 <button class="fab" onclick="document.getElementById('camera-new').click()">+</button>
 <input type="file" id="camera-new" accept="image/*" capture="environment" style="display:none">
@@ -717,10 +718,9 @@ function resizeImage(file) {
     });
 }
 
-// OPRAVA EXPORTU: Změna koncovky na vlastní formát pro oklamání Androidu
 async function exportData() {
     if (currentPlants.length === 0) { closeSettings(); return alert("Zatím nemáte žádné kytky k zálohování."); }
-    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Vytvářím zálohu (.plantbak)...";
+    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Vytvářím zálohu (ZIP balíček)...";
     
     try {
         const zip = new JSZip(); zip.file("databaze.json", JSON.stringify(currentPlants));
@@ -744,13 +744,10 @@ async function exportData() {
         zip.file("Prehled_rostlin.csv", csvContent);
         const content = await zip.generateAsync({type:"blob"}); 
         
-        // Změna koncovky z .zip na .plantbak, Android nebude vědět, co s tím a prostě to stáhne
         const safeBlob = new Blob([content], { type: "application/octet-stream" });
         const link = document.createElement('a'); link.href = URL.createObjectURL(safeBlob);
         
-        const todayStr = new Date().toISOString().split('T')[0]; 
-        link.download = `PlantMaster_Zaloha_${todayStr}.plantbak`;
-        
+        const todayStr = new Date().toISOString().split('T')[0]; link.download = `PlantMaster_Zaloha_${todayStr}.zip`;
         document.body.appendChild(link); link.click(); 
         
         setTimeout(() => { 
@@ -763,10 +760,10 @@ async function exportData() {
 document.getElementById('import-file').onchange = async (e) => {
     const file = e.target.files[0]; if (!file) return;
     closeSettings();
-    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Čtu zálohu...";
+    document.getElementById('loader').style.display = 'flex'; document.getElementById('loader-text').innerText = "Čtu ZIP balíček...";
     try {
         const zip = new JSZip(); const contents = await zip.loadAsync(file);
-        if (!contents.file("databaze.json")) throw new Error("V tomto souboru chybí strojová data (databaze.json).");
+        if (!contents.file("databaze.json")) throw new Error("V tomto ZIP souboru chybí strojová data (databaze.json).");
         const jsonStr = await contents.file("databaze.json").async("string"); const importedPlants = JSON.parse(jsonStr);
         if (!Array.isArray(importedPlants) || importedPlants.length === 0) throw new Error("Záloha je prázdná.");
         
@@ -789,6 +786,7 @@ document.getElementById('camera-new').onchange = async (e) => {
     try {
         const resizedBase64 = await resizeImage(file); const b64Data = resizedBase64.split(',')[1];
         
+        // UPRAVENÝ PROMPT: Přidáno pole "usage" pro užitkové zařazení
         const aiPrompt = `Jsi expert botanik. Odpověz POUZE ve formátu JSON: {"name": "Český název", "category": "Kategorie (vyber jednu z: Pokojová rostlina, Keř, Strom, Bylina, Sukulent / Kaktus, Ostatní)", "usage": "Využití (vyber jednu z: Zelenina, Ovoce, Bylinka / Koření, Okrasná, Ostatní)", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol", "details": "Detaily"}]}`;
         
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
@@ -891,6 +889,7 @@ async function updatePlantProfile(exactName) {
     try {
         const latestImgBase64 = plant.images[plant.images.length - 1].data.split(',')[1];
         
+        // UPRAVENÝ PROMPT: I při aktualizaci odrůdy vyžádáme pole "usage"
         const aiPrompt = `Jsi expert botanik. Uživatel potvrdil, že na fotce je specifická rostlina/odrůda: '${exactName}'. Vygeneruj pro ni přesná data. Odpověz POUZE ve formátu JSON: {"name": "${exactName}", "category": "Kategorie (vyber jednu z: Pokojová rostlina, Keř, Strom, Bylina, Sukulent / Kaktus, Ostatní)", "usage": "Využití (vyber jednu z: Zelenina, Ovoce, Bylinka / Koření, Okrasná, Ostatní)", "light": "Světlo", "water": "Zálivka", "toxicity": "Ano/Ne a důvod", "tasks": [{"month": 3, "action": "Úkol", "details": "Detaily"}]}`;
 
         const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
