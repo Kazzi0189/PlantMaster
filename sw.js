@@ -1,4 +1,4 @@
-const CACHE_NAME = 'plantmaster-v19';
+const CACHE_NAME = 'plantmaster-v20'; // ZMĚNA: Tady musí být v20
 const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
@@ -10,13 +10,14 @@ self.addEventListener('install', (e) => {
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
   );
-  self.skipWaiting();
+  self.skipWaiting(); // Vynutí okamžitou instalaci nové verze
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
+        // Smaže všechny staré cache (v19 a starší)
         if (key !== CACHE_NAME) return caches.delete(key);
       }));
     })
@@ -25,14 +26,13 @@ self.addEventListener('activate', (e) => {
 });
 
 self.addEventListener('fetch', (e) => {
-  // Striktní ignorování AI volání
   if (e.request.url.includes('generativelanguage.googleapis.com')) return;
 
   e.respondWith(
     caches.match(e.request).then((response) => {
       return response || fetch(e.request);
     }).catch(() => {
-      return new Response('Aplikace je offline a data nejsou uložena v cache.', { status: 503 });
+      return new Response('Aplikace je offline.');
     })
   );
 });
