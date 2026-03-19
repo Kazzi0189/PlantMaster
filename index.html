@@ -277,6 +277,11 @@
         <div class="gallery-wrapper" id="detail-gallery"></div>
         <button class="btn-full btn-secondary" onclick="document.getElementById('add-photo-input').click()">📸 Přidat další fotku</button>
         <input type="file" id="add-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="addPhotoToCurrentPlant(event)">
+        <div id="plant-info-card" style="background:#e8f5e9; border-left:4px solid var(--safe); padding:15px; border-radius:12px; margin-bottom:15px; display:none;">
+            <p id="plant-desc" style="margin:0 0 10px 0; font-size:0.95rem; line-height:1.4; color:#333;"></p>
+            <p id="plant-water-info" style="margin:0; font-size:0.9rem; color:#00695c;"><strong>💧 Zálivka:</strong> <span></span></p>
+            <p id="plant-light-info" style="margin:5px 0 0 0; font-size:0.9rem; color:#f57f17;"><strong>☀️ Světlo:</strong> <span></span></p>
+        </div>
         
         <button class="btn-full" onclick="waterPlant()">💧 Zalít dnes <span id="water-status" style="font-weight:normal; font-size:0.9rem;"></span></button>
         
@@ -542,7 +547,19 @@
         req.onsuccess = () => {
             const plant = req.result; 
             if (!plant) return;
-            document.getElementById('detail-title').innerText = plant.name;
+            // Nadpis s ikonkou tužky pro úpravu názvu/odrůdy
+            document.getElementById('detail-title').innerHTML = `${plant.name} <span onclick="editPlantName()" style="cursor:pointer; font-size:1.1rem; padding-left:8px; opacity:0.8;">✏️</span>`;
+            
+            // Zobrazení Občanky
+            const infoCard = document.getElementById('plant-info-card');
+            if (plant.description || plant.water || plant.light) {
+                document.getElementById('plant-desc').innerText = plant.description || "Charakteristika zatím chybí.";
+                document.querySelector('#plant-water-info span').innerText = plant.water || "Neznámá";
+                document.querySelector('#plant-light-info span').innerText = plant.light || "Neznámé";
+                infoCard.style.display = 'block';
+            } else {
+                infoCard.style.display = 'none';
+            }
             
             // Galerie
             const gal = document.getElementById('detail-gallery'); 
@@ -580,7 +597,7 @@
             const detBox = document.getElementById('ai-mem-detective');
             if (plant.aiDetection) {
                 detBox.innerHTML = `<strong>🔎 Tip na odrůdu:</strong> ${plant.aiDetection}
-                    <button class="btn-sm-action" style="background:var(--det); color:white; border:none;" onclick="updateProfileName('${plant.aiDetection}')">Aktualizovat kartu na tuto odrůdu</button>
+                    <button class="btn-sm-action" style="background:var(--det); color:white; border:none;" onclick="updateProfileName('${plant.name} (${plant.aiDetection})')">Přidat odrůdu k názvu</button>
                     <button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDetection')">🗑️ Smazat tip</button>`;
                 detBox.style.display = 'block';
             } else { detBox.style.display = 'none'; }
@@ -1026,7 +1043,7 @@
         reader.onload = async (e) => {
             const b64 = e.target.result.split(',')[1];
             try {
-                const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":"Pokojové/Zelenina/Ovoce/Bylinky/Stromy a keře","water":"návod","light":"návod","tasks":{"0":["Leden úkol"]...}} (0-11 jsou měsíce).`;
+                const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":"Pokojové/Zelenina/Ovoce/Bylinky/Stromy a keře","description":"Základní charakteristika a nároky na údržbu (max 2 věty)","water":"Detailní instrukce: jak často a kdy zalévat","light":"Nároky na světlo","tasks":{"0":["Leden úkol"]...}} (0-11 jsou měsíce).`;
                 const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
                     method:'POST',
                     body: JSON.stringify({
@@ -1088,6 +1105,27 @@
         const tx = db.transaction('plants', 'readwrite');
         tx.objectStore('plants').clear();
         tx.oncomplete = () => { closeSettings(); renderPlants(); };
+    }
+
+    async function editPlantName() {
+        const db = await getDB();
+        const tx = db.transaction('plants', 'readonly');
+        const req = tx.objectStore('plants').get(currentPlantId);
+        
+        req.onsuccess = () => {
+            let plant = req.result;
+            const newName = prompt("Upravit název nebo odrůdu rostliny:", plant.name);
+            
+            if (newName && newName.trim() !== "" && newName !== plant.name) {
+                plant.name = newName.trim();
+                const writeTx = db.transaction('plants', 'readwrite');
+                writeTx.objectStore('plants').put(plant);
+                writeTx.oncomplete = () => {
+                    renderPlants();
+                    openDetail(currentPlantId);
+                };
+            }
+        };
     }
 </script>
 </body>
