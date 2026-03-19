@@ -820,6 +820,7 @@
     }
 
     function closeLightbox() { lb.style.display = 'none'; }
+
     async function deleteCurrentPhoto() {
         if(!confirm("Opravdu chcete smazat tuto fotku?")) return;
         
@@ -979,21 +980,7 @@
         }
     }
 
-    ) {
-        document.getElementById('import-modal').style.display = 'none';
-        showLoader('Importuji data...');
-        const db = await getDB();
-        const tx = db.transaction('plants', 'readwrite');
-        const store = tx.objectStore('plants');
-        
-        if (mode === 'overwrite') store.clear();
-        
-        importedData.forEach(p => {
-            if (mode === 'merge') delete p.id; // Smažeme ID, aby DB přiřadila nová bez konfliktu
-            store.put(p);
-        });
-        
-       async function executeImport(mode) {
+    async function executeImport(mode) {
         document.getElementById('import-modal').style.display = 'none';
         showLoader('Importuji data...');
         const db = await getDB();
