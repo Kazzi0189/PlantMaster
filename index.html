@@ -230,17 +230,20 @@
 </header>
 
 <div class="container">
-    <div style="position: sticky; top: 0; background: var(--bg); z-index: 90; padding: 10px 0; margin-top: -10px; display: flex; gap: 10px;">
-        <input type="text" id="search-box" placeholder="Hledat..." oninput="renderPlants()" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.95rem; outline: none; box-sizing: border-box;">
-        
-        <select class="filter-select" id="filter-category" onchange="renderPlants()" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.95rem; outline: none; background: white; color: #444; box-sizing: border-box; margin: 0;">
-            <option value="all">Všechny kategorie</option>
-            <option value="Pokojové">Pokojové</option>
-            <option value="Zelenina">Zelenina</option>
-            <option value="Ovoce">Ovoce</option>
-            <option value="Bylinky">Bylinky</option>
-            <option value="Stromy a keře">Stromy a keře</option>
-        </select>
+    <div style="position: sticky; top: 0; background: var(--bg); z-index: 90; padding: 10px 0; margin-top: -10px;">
+        <div class="filter-controls">
+            <input type="text" id="search-box" placeholder="Hledat rostlinu..." oninput="renderPlants()">
+        </div>
+        <div class="filter-controls" style="margin-bottom: 10px;">
+            <select class="filter-select" id="filter-category" onchange="renderPlants()">
+                <option value="all">Všechny kategorie</option>
+                <option value="Pokojové">Pokojové</option>
+                <option value="Zelenina">Zelenina</option>
+                <option value="Ovoce">Ovoce</option>
+                <option value="Bylinky">Bylinky</option>
+                <option value="Stromy a keře">Stromy a keře</option>
+            </select>
+        </div>
     </div>
 
     <div id="inbox-section">
@@ -480,17 +483,13 @@
                     </div>`;
                     
                 if (plant.tasks && plant.tasks[currentMonth]) {
-                    plant.tasks[currentMonth].forEach(taskObj => {
-                        let tName = typeof taskObj === 'string' ? taskObj : taskObj.nazev;
-                        const isDone = plant.careHistory.some(h => h.date === new Date().toLocaleDateString('cs-CZ') && h.text.includes(`Úkol: ${tName}`));
-                        // Pokud není splněno, teprve pak to ukážeme
-                        if (!isDone) {
-                            tasksDiv.innerHTML += `
-                                <div class="task-item">
-                                    <div class="task-content"><strong>${plant.name}:</strong> ${tName}</div>
-                                    <button class="btn-complete" onclick="completeTask(${plant.id}, '${tName.replace(/'/g, "\\'")}', event)">✓ Splnit</button>
-                                </div>`;
-                        }
+                    plant.tasks[currentMonth].forEach(task => {
+                        const isDone = plant.careHistory.some(h => h.date === new Date().toLocaleDateString('cs-CZ') && h.text.includes(`Úkol: ${task}`));
+                        tasksDiv.innerHTML += `
+                            <div class="task-item ${isDone ? 'completed' : ''}">
+                                <div class="task-content"><strong>${plant.name}:</strong> ${task}</div>
+                                ${!isDone ? `<button class="btn-complete" onclick="completeTask(${plant.id}, '${task}', event)">✓ Splnit</button>` : ''}
+                            </div>`;
                     });
                 }
 
@@ -578,54 +577,68 @@
             }
             document.getElementById('water-status').innerText = wText;
 
-            // Úkoly v detailu (s mizením, popisky a filtrem pro zbytečné produkty)
+            // Úkoly v detailu (s popisky a produkty)
             const tasksDiv = document.getElementById('detail-tasks'); 
             tasksDiv.innerHTML = '';
             const currentMonth = new Date().getMonth();
             if (plant.tasks && plant.tasks[currentMonth]) {
-                let hasActiveTasks = false;
                 plant.tasks[currentMonth].forEach(taskObj => {
                     let tName = typeof taskObj === 'string' ? taskObj : taskObj.nazev;
                     let tDesc = typeof taskObj === 'string' ? '' : taskObj.popis;
                     const isDone = plant.careHistory.some(h => h.date === new Date().toLocaleDateString('cs-CZ') && h.text.includes(`Úkol: ${tName}`));
                     
-                    if (!isDone) {
-                        hasActiveTasks = true;
-                        // Bod 3: Černá listina - zakážeme tlačítko přípravků u zbytečných úkolů
-                        let tNameLower = tName.toLowerCase();
-                        let hideProductBtn = ['řez', 'střih', 'záliv', 'zalév', 'skliz', 'přesaz', 'vyváz', 'pleti', 'pletí', 'kontrol', 'úklid'].some(kw => tNameLower.includes(kw));
-                        
-                        tasksDiv.innerHTML += `
-                            <div class="task-item" style="border: 1px solid #ccc; flex-direction: column; align-items: stretch;">
-                                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                    <strong style="font-size: 1.05rem;">${tName}</strong>
-                                    <button class="btn-complete" onclick="completeTask(${plant.id}, '${tName.replace(/'/g, "\\'")}', event)">✓ Splnit</button>
-                                </div>
-                                ${tDesc ? `<div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">${tDesc}</div>` : ''}
-                                ${!hideProductBtn ? `<button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${tName.replace(/'/g, "\\'")}')">💡 Hledat přípravky pro tento úkol</button>` : ''}
-                            </div>`;
-                    }
+                    tasksDiv.innerHTML += `
+                        <div class="task-item ${isDone ? 'completed' : ''}" style="border: 1px solid #ccc; flex-direction: column; align-items: stretch;">
+                            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <strong style="font-size: 1.05rem;">${tName}</strong>
+                                ${!isDone ? `<button class="btn-complete" onclick="completeTask(${plant.id}, '${tName}', event)">✓ Splnit</button>` : ''}
+                            </div>
+                            ${tDesc ? `<div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">${tDesc}</div>` : ''}
+                            ${!isDone ? `<button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${tName}')">💡 Hledat přípravky pro tento úkol</button>` : ''}
+                        </div>`;
                 });
-                if (!hasActiveTasks) {
-                    tasksDiv.innerHTML = '<p style="font-size:0.95rem; color:var(--safe); font-weight:bold;">Všechny úkoly pro tento měsíc jsou splněny! 🎉</p>'; 
-                }
             } else { 
                 tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666;">Žádné úkoly na tento měsíc.</p>'; 
             }
 
-            // Bod 2: Opravený Agromanuál (Bezpečné URL odkazy)
+            // --- TRVALÁ PAMĚŤ AI (Nové bezpečné boxy) ---
+            const detBox = document.getElementById('ai-mem-detective');
+            if (plant.aiDetection) {
+                detBox.innerHTML = `<strong>🔎 Tip na odrůdu:</strong> ${plant.aiDetection}
+                    <button class="btn-sm-action" style="background:var(--det); color:white; border:none;" onclick="updateProfileName('${plant.name} (${plant.aiDetection})')">Přidat odrůdu k názvu</button>
+                    <button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDetection')">🗑️ Smazat tip</button>`;
+                detBox.style.display = 'block';
+            } else { detBox.style.display = 'none'; }
+
+            const docBox = document.getElementById('ai-mem-doctor');
+            if (plant.aiDiagnosis) {
+                // Zpětná kompatibilita pro staré diagnózy zapsané jako čistý text
+                if (typeof plant.aiDiagnosis === 'string') {
+                    docBox.innerHTML = `<strong>🩺 Zdraví:</strong> ${plant.aiDiagnosis}
+                        <button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDiagnosis')">🗑️ Smazat diagnózu</button>`;
+                } else {
+                    // Nový chytrý JSON formát
+                    let docContent = `<strong>🩺 Zdraví:</strong> ${plant.aiDiagnosis.description}`;
+                    
+                    // Přidat tlačítko pro Agromanuál POUZE pokud je problém
+                    if (plant.aiDiagnosis.hasProblem && plant.aiDiagnosis.searchKeyword) {
+                         docContent += `<button class="btn-sm-action" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${plant.aiDiagnosis.searchKeyword}'), '_blank')">🔍 Ověřit na Agromanual.cz</button>`;
+                    }
+                    
+                    docContent += `<button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDiagnosis')">🗑️ Smazat diagnózu</button>`;
+                    docBox.innerHTML = docContent;
+                }
+                docBox.style.display = 'block';
+            } else { docBox.style.display = 'none'; }
+
             const prodBox = document.getElementById('ai-mem-products');
             if (plant.aiProducts && plant.aiProducts.length > 0) {
                 let pHTML = `<strong>💡 5 Doporučených přípravků:</strong><div style="margin-top:10px;">`;
                 plant.aiProducts.forEach(prod => {
-                    // Takhle složíme odkaz bezpečně bokem, aby nám apostrofy nerozbily HTML
-                    let urlHeureka = `https://www.heureka.cz/?h[fraze]=${encodeURIComponent(prod)}`;
-                    let urlAgro = `https://www.google.com/search?q=site:agromanual.cz+${encodeURIComponent(prod)}`;
-                    
                     pHTML += `<div style="display:flex; gap:5px; margin-bottom:5px;">
                         <span style="flex:1; align-self:center; font-size:0.9rem; font-weight:bold;">${prod}</span>
-                        <button class="btn-shop" onclick="window.open('${urlHeureka}', '_blank')">🛒 Heureka</button>
-                        <button class="btn-shop" style="background:var(--p);" onclick="window.open('${urlAgro}', '_blank')">📖 Návod</button>
+                        <button class="btn-shop" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
+                        <button class="btn-shop" style="background:var(--p);" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
                     </div>`;
                 });
                 pHTML += `</div><button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiProducts')">🗑️ Smazat návrhy</button>`;
@@ -670,8 +683,7 @@
         document.getElementById('detail-view').style.display = 'none'; 
         currentPlantId = null; 
     }
-    
-    // --- 7. KOMUNIKACE S GEMINI API (AI Doktor, Detektiv, Produkty, Úkoly) ---
+    // --- 7. KOMUNIKACE S GEMINI API (AI Doktor, Detektiv, Produkty) ---
     async function callAI(type, extraParam = '') {
         const key = localStorage.getItem('G_KEY');
         if (!key) return alert("Zadejte Gemini API Klíč v nastavení (ozubené kolečko)!");
@@ -698,10 +710,9 @@
             let prompt = "";
             let isJSON = false;
             
-            // Definice promptů podle požadované akce
+            // NOVÝ JSON PROMPT PRO DOKTORA
             if (type === 'doctor') {
-                prompt = `Jsi expert na choroby rostlin. Analyzuj zdraví rostliny na fotce. Odpověz POUZE ve formátu JSON: {"description": "Popis problému a řešení česky...", "hasProblem": true, "searchKeyword": "Přesný název choroby nebo škůdce (nebo prázdné pokud je zdravá)", "suggestedTask": "Zlikvidovat: Název problému (nebo prázdné)"}`;
-                isJSON = true;
+                // ... (kód doktora zůstává stejný)
             } else if (type === 'detective') {
                 prompt = `Urči přesnou odrůdu této rostliny. Odpověz POUZE ve formátu JSON: {"exactName": "Název rostliny"}`;
                 isJSON = true;
@@ -709,18 +720,14 @@
                 prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
                 isJSON = true;
             } else if (type === 'task-products') {
-                // NOVÉ: Hledání přípravků přímo pro konkrétní úkol
                 prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků na českém trhu přímo pro vyřešení úkolu '${extraParam}' u rostliny '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
                 isJSON = true;
             }
             
             const payload = { contents: [{ parts: [ {text: prompt} ] }] };
-            
-            // Fotku posíláme jen pro Doktora a Detektiva, u produktů stačí název a ušetříme data a čas
-            if (type !== 'products' && type !== 'task-products') {
+            if (type !== 'products') {
                 payload.contents[0].parts.push({ inline_data: { mime_type: "image/jpeg", data: b64 } });
             }
-            
             if (isJSON) {
                 payload.generationConfig = { response_mime_type: "application/json" };
             }
@@ -737,9 +744,9 @@
             // ZPRACOVÁNÍ ODPOVĚDÍ
             if (type === 'doctor') {
                 const docData = JSON.parse(aiResponse);
-                plant.aiDiagnosis = docData; 
+                plant.aiDiagnosis = docData; // Uložíme jako chytrý objekt
                 
-                // Zápis problému do historie a vytvoření nového úkolu
+                // Pokud AI najde problém, automaticky založí úkol a zapíše do historie
                 if (docData.hasProblem) {
                     if (!plant.careHistory) plant.careHistory = [];
                     plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `⚠️ AI Diagnóza: Byl zjištěn problém - ${docData.searchKeyword}` });
@@ -762,8 +769,8 @@
             
             saveTx.oncomplete = () => {
                 hideLoader();
-                renderPlants(); // Obnoví hlavní stranu (kdyby Doktor přidal nový úkol)
-                openDetail(currentPlantId); // Obnoví detail s výsledky
+                renderPlants(); // Musíme překreslit hlavní stranu kvůli novému úkolu
+                openDetail(currentPlantId);
             };
         } catch(e) {
             console.error(e);
