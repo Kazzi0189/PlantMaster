@@ -1067,6 +1067,12 @@
             const resizedBase64 = await resizeImage(file);
             // Získáme čistá data pro Gemini (odstřihneme úvodní 'data:image/jpeg;base64,')
             const b64Data = resizedBase64.split(',')[1]; 
+
+            // --- DOČASNÝ TEST VELIKOSTI ---
+            let originalSizeKB = Math.round(file.size / 1024);
+            let newSizeKB = Math.round((resizedBase64.length * 0.75) / 1024);
+            alert("TEST ZMENŠENÍ:\nPůvodní velikost: " + originalSizeKB + " KB\nPo zmenšení: " + newSizeKB + " KB");
+            // ------------------------------
             
             // 2. Příprava požadavku pro AI s přísným vynucením formátu
             const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":"Pokojové/Zelenina/Ovoce/Bylinky/Stromy a keře","description":"Základní charakteristika a nároky na údržbu (max 2 věty)","water":"Detailní instrukce: jak často a kdy zalévat","light":"Nároky na světlo","tasks":{"0":[{"nazev":"Název úkolu","popis":"Krátký popis, jak úkol provést"}]}} (0-11 jsou měsíce). Odpověz POUZE čistým JSON formátem.`;
