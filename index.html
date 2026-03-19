@@ -639,68 +639,78 @@
         currentPlantId = null; 
     }
     // --- 7. KOMUNIKACE S GEMINI API (AI Doktor, Detektiv, Produkty) ---
+    // --- 7. KOMUNIKACE S GEMINI API (AI Doktor, Detektiv, Produkty) ---
     async function callAI(type) {
         const key = localStorage.getItem('G_KEY');
         if (!key) return alert("Zadejte Gemini API Klíč v nastavení (ozubené kolečko)!");
         
         showLoader("AI analyzuje data...");
-        const db = await getDB();
-        const tx = db.transaction('plants', 'readwrite');
-        const store = tx.objectStore('plants');
-        const req = store.get(currentPlantId);
         
-        req.onsuccess = async () => {
-            let plant = req.result;
-            const b64 = plant.images[0].split(',')[1];
+        // 1. KROK: Rychlé přečtení rostliny (transakce se hned uzavře)
+        const db = await getDB();
+        const plant = await new Promise((resolve, reject) => {
+            const tx = db.transaction('plants', 'readonly');
+            const req = tx.objectStore('plants').get(currentPlantId);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+
+        if (!plant) {
+            hideLoader();
+            return alert("Chyba: Rostlina nenalezena.");
+        }
+
+        const b64 = plant.images[0].split(',')[1];
+        
+        try {
+            let prompt = "";
+            let isJSON = false;
             
-            try {
-                let prompt = "";
-                let isJSON = false;
-                
-                if (type === 'doctor') {
-                    prompt = `Jsi expert na choroby rostlin. Analyzuj zdraví rostliny na fotce. Pokud vidíš problém, popiš ho a navrhni řešení. Odpověz česky, stručně a jasně.`;
-                } else if (type === 'detective') {
-                    prompt = `Urči přesnou odrůdu této rostliny. Odpověz POUZE ve formátu JSON: {"exactName": "Název rostliny"}`;
-                    isJSON = true;
-                } else if (type === 'products') {
-                    prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
-                    isJSON = true;
-                }
-                
-                const payload = { contents: [{ parts: [ {text: prompt} ] }] };
-                if (type !== 'products') {
-                    payload.contents[0].parts.push({ inline_data: { mime_type: "image/jpeg", data: b64 } });
-                }
-                if (isJSON) {
-                    payload.generationConfig = { response_mime_type: "application/json" };
-                }
-                
-                // OPRAVA: Použit stabilní model 1.5-flash
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-                    method: 'POST', 
-                    body: JSON.stringify(payload) 
-                });
-                
-                const data = await resp.json();
-                const aiResponse = data.candidates[0].content.parts[0].text;
-                
-                if (type === 'doctor') plant.aiDiagnosis = aiResponse;
-                else if (type === 'detective') plant.aiDetection = JSON.parse(aiResponse).exactName;
-                else if (type === 'products') plant.aiProducts = JSON.parse(aiResponse);
-                
-                store.put(plant);
-                
-                // OPRAVA: Refresh detailu až po dokončení transakce
-                tx.oncomplete = () => {
-                    hideLoader();
-                    openDetail(currentPlantId);
-                };
-            } catch(e) {
-                console.error(e);
-                alert("Chyba AI analýzy. Zkuste změnit verzi modelu v kódu nebo ověřte klíč.");
-                hideLoader();
+            if (type === 'doctor') {
+                prompt = `Jsi expert na choroby rostlin. Analyzuj zdraví rostliny na fotce. Pokud vidíš problém, popiš ho a navrhni řešení. Odpověz česky, stručně a jasně.`;
+            } else if (type === 'detective') {
+                prompt = `Urči přesnou odrůdu této rostliny. Odpověz POUZE ve formátu JSON: {"exactName": "Název rostliny"}`;
+                isJSON = true;
+            } else if (type === 'products') {
+                prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
+                isJSON = true;
             }
-        };
+            
+            const payload = { contents: [{ parts: [ {text: prompt} ] }] };
+            if (type !== 'products') {
+                payload.contents[0].parts.push({ inline_data: { mime_type: "image/jpeg", data: b64 } });
+            }
+            if (isJSON) {
+                payload.generationConfig = { response_mime_type: "application/json" };
+            }
+            
+            // 2. KROK: Čekání na AI (databáze mezitím odpočívá)
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, { 
+                method: 'POST', 
+                body: JSON.stringify(payload) 
+            });
+            
+            const data = await resp.json();
+            const aiResponse = data.candidates[0].content.parts[0].text;
+            
+            if (type === 'doctor') plant.aiDiagnosis = aiResponse;
+            else if (type === 'detective') plant.aiDetection = JSON.parse(aiResponse).exactName;
+            else if (type === 'products') plant.aiProducts = JSON.parse(aiResponse);
+            
+            // 3. KROK: Nová transakce pro bezpečné uložení výsledku
+            const saveTx = db.transaction('plants', 'readwrite');
+            const saveStore = saveTx.objectStore('plants');
+            saveStore.put(plant);
+            
+            saveTx.oncomplete = () => {
+                hideLoader();
+                openDetail(currentPlantId);
+            };
+        } catch(e) {
+            console.error(e);
+            alert("Chyba AI analýzy. Zkontrolujte připojení nebo platnost API klíče.");
+            hideLoader();
+        }
     }
 
     async function deleteAIMemory(field) {
