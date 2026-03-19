@@ -230,18 +230,20 @@
 </header>
 
 <div class="container">
-    <div class="filter-controls">
-        <input type="text" id="search-box" placeholder="Hledat rostlinu..." oninput="renderPlants()">
-    </div>
-    <div class="filter-controls">
-        <select class="filter-select" id="filter-category" onchange="renderPlants()">
-            <option value="all">Všechny kategorie</option>
-            <option value="Pokojové">Pokojové</option>
-            <option value="Zelenina">Zelenina</option>
-            <option value="Ovoce">Ovoce</option>
-            <option value="Bylinky">Bylinky</option>
-            <option value="Stromy a keře">Stromy a keře</option>
-        </select>
+    <div style="position: sticky; top: 0; background: var(--bg); z-index: 90; padding: 10px 0; margin-top: -10px;">
+        <div class="filter-controls">
+            <input type="text" id="search-box" placeholder="Hledat rostlinu..." oninput="renderPlants()">
+        </div>
+        <div class="filter-controls" style="margin-bottom: 10px;">
+            <select class="filter-select" id="filter-category" onchange="renderPlants()">
+                <option value="all">Všechny kategorie</option>
+                <option value="Pokojové">Pokojové</option>
+                <option value="Zelenina">Zelenina</option>
+                <option value="Ovoce">Ovoce</option>
+                <option value="Bylinky">Bylinky</option>
+                <option value="Stromy a keře">Stromy a keře</option>
+            </select>
+        </div>
     </div>
 
     <div id="inbox-section">
@@ -314,6 +316,7 @@
 
 <div id="lightbox">
     <button id="lightbox-close" onclick="closeLightbox()">✖</button>
+    <button onclick="deleteCurrentPhoto()" style="position: absolute; bottom: 30px; background: var(--warn); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; z-index: 3010; cursor: pointer;">🗑️ Smazat fotku</button>
     <img id="lightbox-img" src="">
 </div>
 
@@ -817,6 +820,33 @@
     }
 
     function closeLightbox() { lb.style.display = 'none'; }
+    async function deleteCurrentPhoto() {
+        if(!confirm("Opravdu chcete smazat tuto fotku?")) return;
+        
+        const db = await getDB();
+        const tx = db.transaction('plants', 'readwrite');
+        const store = tx.objectStore('plants');
+        const req = store.get(currentPlantId);
+        
+        req.onsuccess = () => {
+            let plant = req.result;
+            // Ochrana, aby rostlině zůstala aspoň jedna fotka
+            if (plant.images.length <= 1) {
+                alert("Nelze smazat poslední fotku rostliny.");
+                return;
+            }
+            
+            // Najdeme aktuální fotku a odstraníme ji z pole
+            const currentSrc = document.getElementById('lightbox-img').getAttribute('src');
+            plant.images = plant.images.filter(img => img !== currentSrc);
+            
+            store.put(plant);
+            tx.oncomplete = () => {
+                closeLightbox();
+                openDetail(currentPlantId); // Překreslíme galerii
+            };
+        };
+    }
 
     lb.addEventListener('touchstart', e => {
         if (e.touches.length === 2) {
@@ -949,7 +979,7 @@
         }
     }
 
-    async function executeImport(mode) {
+    ) {
         document.getElementById('import-modal').style.display = 'none';
         showLoader('Importuji data...');
         const db = await getDB();
@@ -963,9 +993,36 @@
             store.put(p);
         });
         
-        tx.oncomplete = () => {
-            hideLoader();
-            location.reload();
+       async function executeImport(mode) {
+        document.getElementById('import-modal').style.display = 'none';
+        showLoader('Importuji data...');
+        const db = await getDB();
+        const tx = db.transaction('plants', 'readwrite');
+        const store = tx.objectStore('plants');
+        
+        if (mode === 'overwrite') store.clear();
+        
+        // Přečteme si všechny existující kytky, ať můžeme kontrolovat jména
+        const reqAll = store.getAll();
+        reqAll.onsuccess = () => {
+            const existingPlants = reqAll.result;
+            const existingNames = existingPlants.map(p => p.name.toLowerCase());
+            
+            importedData.forEach(p => {
+                if (mode === 'merge') {
+                    // Pokud už kytka se stejným jménem existuje, přeskočíme ji
+                    if (p.name && existingNames.includes(p.name.toLowerCase())) {
+                        return; 
+                    }
+                    delete p.id; // Jinak jí smažeme ID a přidáme jako novou
+                }
+                store.put(p);
+            });
+            
+            tx.oncomplete = () => {
+                hideLoader();
+                location.reload();
+            };
         };
     }
 
