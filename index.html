@@ -670,7 +670,8 @@
         document.getElementById('detail-view').style.display = 'none'; 
         currentPlantId = null; 
     }
-    // --- 7. KOMUNIKACE S GEMINI API (AI Doktor, Detektiv, Produkty) ---
+    
+    // --- 7. KOMUNIKACE S GEMINI API (AI Doktor, Detektiv, Produkty, Úkoly) ---
     async function callAI(type, extraParam = '') {
         const key = localStorage.getItem('G_KEY');
         if (!key) return alert("Zadejte Gemini API Klíč v nastavení (ozubené kolečko)!");
@@ -697,9 +698,10 @@
             let prompt = "";
             let isJSON = false;
             
-            // NOVÝ JSON PROMPT PRO DOKTORA
+            // Definice promptů podle požadované akce
             if (type === 'doctor') {
-                // ... (kód doktora zůstává stejný)
+                prompt = `Jsi expert na choroby rostlin. Analyzuj zdraví rostliny na fotce. Odpověz POUZE ve formátu JSON: {"description": "Popis problému a řešení česky...", "hasProblem": true, "searchKeyword": "Přesný název choroby nebo škůdce (nebo prázdné pokud je zdravá)", "suggestedTask": "Zlikvidovat: Název problému (nebo prázdné)"}`;
+                isJSON = true;
             } else if (type === 'detective') {
                 prompt = `Urči přesnou odrůdu této rostliny. Odpověz POUZE ve formátu JSON: {"exactName": "Název rostliny"}`;
                 isJSON = true;
@@ -707,14 +709,18 @@
                 prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
                 isJSON = true;
             } else if (type === 'task-products') {
+                // NOVÉ: Hledání přípravků přímo pro konkrétní úkol
                 prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků na českém trhu přímo pro vyřešení úkolu '${extraParam}' u rostliny '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
                 isJSON = true;
             }
             
             const payload = { contents: [{ parts: [ {text: prompt} ] }] };
-            if (type !== 'products') {
+            
+            // Fotku posíláme jen pro Doktora a Detektiva, u produktů stačí název a ušetříme data a čas
+            if (type !== 'products' && type !== 'task-products') {
                 payload.contents[0].parts.push({ inline_data: { mime_type: "image/jpeg", data: b64 } });
             }
+            
             if (isJSON) {
                 payload.generationConfig = { response_mime_type: "application/json" };
             }
@@ -731,9 +737,9 @@
             // ZPRACOVÁNÍ ODPOVĚDÍ
             if (type === 'doctor') {
                 const docData = JSON.parse(aiResponse);
-                plant.aiDiagnosis = docData; // Uložíme jako chytrý objekt
+                plant.aiDiagnosis = docData; 
                 
-                // Pokud AI najde problém, automaticky založí úkol a zapíše do historie
+                // Zápis problému do historie a vytvoření nového úkolu
                 if (docData.hasProblem) {
                     if (!plant.careHistory) plant.careHistory = [];
                     plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `⚠️ AI Diagnóza: Byl zjištěn problém - ${docData.searchKeyword}` });
@@ -756,8 +762,8 @@
             
             saveTx.oncomplete = () => {
                 hideLoader();
-                renderPlants(); // Musíme překreslit hlavní stranu kvůli novému úkolu
-                openDetail(currentPlantId);
+                renderPlants(); // Obnoví hlavní stranu (kdyby Doktor přidal nový úkol)
+                openDetail(currentPlantId); // Obnoví detail s výsledky
             };
         } catch(e) {
             console.error(e);
