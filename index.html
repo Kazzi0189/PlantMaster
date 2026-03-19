@@ -264,7 +264,7 @@
     <div id="plant-list"></div>
 </div>
 
-<input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;" onchange="handleNewPlantPhoto(event)">
+<input type="file" id="camera-input" accept="image/*" style="display:none;" onchange="handleNewPlantPhoto(event)">
 <button class="fab" onclick="document.getElementById('camera-input').click()">+</button>
 
 <div id="detail-view">
@@ -276,7 +276,7 @@
         
         <div class="gallery-wrapper" id="detail-gallery"></div>
         <button class="btn-full btn-secondary" onclick="document.getElementById('add-photo-input').click()">📸 Přidat další fotku</button>
-        <input type="file" id="add-photo-input" accept="image/*" capture="environment" style="display:none;" onchange="addPhotoToCurrentPlant(event)">
+        <input type="file" id="add-photo-input" accept="image/*" style="display:none;" onchange="addPhotoToCurrentPlant(event)">
         <div id="plant-info-card" style="background:#e8f5e9; border-left:4px solid var(--safe); padding:15px; border-radius:12px; margin-bottom:15px; display:none;">
             <p id="plant-desc" style="margin:0 0 10px 0; font-size:0.95rem; line-height:1.4; color:#333;"></p>
             <p id="plant-water-info" style="margin:0; font-size:0.9rem; color:#00695c;"><strong>💧 Zálivka:</strong> <span></span></p>
@@ -1054,58 +1054,58 @@
 
         showLoader("Analyzuji novou rostlinu...");
 
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const b64 = e.target.result.split(',')[1];
+        try {
+            // 1. ZMENŠENÍ FOTKY: Zavoláme naši novou funkci
+            const resizedBase64 = await resizeImage(file);
+            // Získáme čistá data pro Gemini (odstřihneme úvodní 'data:image/jpeg;base64,')
+            const b64Data = resizedBase64.split(',')[1]; 
             
+            // 2. Příprava požadavku pro AI s přísným vynucením formátu
             const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":"Pokojové/Zelenina/Ovoce/Bylinky/Stromy a keře","description":"Základní charakteristika a nároky na údržbu (max 2 věty)","water":"Detailní instrukce: jak často a kdy zalévat","light":"Nároky na světlo","tasks":{"0":[{"nazev":"Název úkolu","popis":"Krátký popis, jak úkol provést"}]}} (0-11 jsou měsíce). Odpověz POUZE čistým JSON formátem.`;
             
-            // Explicitní vynucení formátu JSON pro AI
             const payload = { 
-                contents: [{ parts: [ {text: prompt}, {inline_data: { mime_type: "image/jpeg", data: b64 }} ] }],
+                contents: [{ parts: [ {text: prompt}, {inline_data: { mime_type: "image/jpeg", data: b64Data }} ] }],
                 generationConfig: { response_mime_type: "application/json" }
             };
 
-            try {
-                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-                    method: 'POST',
-                    body: JSON.stringify(payload)
-                });
-                
-                const data = await resp.json();
-                let aiResponse = data.candidates[0].content.parts[0].text;
-                
-                // OCHRANA: Odstranění formátovacích značek, pokud je AI přesto pošle
-                aiResponse = aiResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
-                
-                const aiData = JSON.parse(aiResponse);
+            // 3. Komunikace s Gemini
+            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+                method: 'POST',
+                body: JSON.stringify(payload)
+            });
+            
+            const data = await resp.json();
+            let aiResponse = data.candidates[0].content.parts[0].text;
+            
+            // OCHRANA: Odstranění formátovacích značek, pokud je AI přesto pošle
+            aiResponse = aiResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
+            const aiData = JSON.parse(aiResponse);
 
-                const newPlant = {
-                    id: Date.now(),
-                    name: aiData.name || "Neznámá rostlina",
-                    category: aiData.category || "Ostatní",
-                    description: aiData.description || "",
-                    water: aiData.water || "",
-                    light: aiData.light || "",
-                    images: [e.target.result],
-                    tasks: aiData.tasks || {},
-                    careHistory: [{ date: new Date().toLocaleDateString('cs-CZ'), text: 'Rostlina přidána do systému.' }]
-                };
+            // 4. Uložení ZMENŠENÉ fotky a dat do databáze
+            const newPlant = {
+                id: Date.now(),
+                name: aiData.name || "Neznámá rostlina",
+                category: aiData.category || "Ostatní",
+                description: aiData.description || "",
+                water: aiData.water || "",
+                light: aiData.light || "",
+                images: [resizedBase64], // Tady už ukládáme lehký JPEG!
+                tasks: aiData.tasks || {},
+                careHistory: [{ date: new Date().toLocaleDateString('cs-CZ'), text: 'Rostlina přidána do systému.' }]
+            };
 
-                const db = await getDB();
-                const tx = db.transaction('plants', 'readwrite');
-                tx.objectStore('plants').put(newPlant);
-                tx.oncomplete = () => {
-                    hideLoader();
-                    renderPlants();
-                };
-            } catch (err) {
-                console.error(err);
-                alert("Chyba při analýze rostliny. Zkuste to prosím znovu.");
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            tx.objectStore('plants').put(newPlant);
+            tx.oncomplete = () => {
                 hideLoader();
-            }
-        };
-        reader.readAsDataURL(file);
+                renderPlants();
+            };
+        } catch (err) {
+            console.error(err);
+            alert("Chyba při analýze rostliny. Zkuste to prosím znovu.");
+            hideLoader();
+        }
     }
     
     async function addPhotoToCurrentPlant(event) {
@@ -1187,6 +1187,38 @@
                 openDetail(currentPlantId);
             };
         };
+    }
+
+    // --- FUNKCE PRO ZMENŠENÍ FOTKY (Komprese) ---
+    function resizeImage(file) {
+        return new Promise((resolve) => {
+            const reader = new FileReader(); 
+            reader.readAsDataURL(file);
+            reader.onload = (e) => {
+                const img = new Image(); 
+                img.src = e.target.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas'); 
+                    let w = img.width;
+                    let h = img.height;
+                    
+                    // LIMIT ROZLIŠENÍ: Pokud je fotka širší než 800px, zmenšíme ji
+                    if (w > 800) { 
+                        h = Math.round((h * 800) / w); 
+                        w = 800; 
+                    }
+                    
+                    canvas.width = w; 
+                    canvas.height = h; 
+                    
+                    // Vykreslení na neviditelné plátno (canvas)
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    
+                    // KOMPRESE: Převedeme na JPEG s kvalitou 70 %
+                    resolve(canvas.toDataURL('image/jpeg', 0.7)); 
+                };
+            };
+        });
     }
 </script>
 </body>
