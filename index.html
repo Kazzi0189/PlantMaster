@@ -480,6 +480,7 @@
 
     // --- 4. HLAVNÍ VYKRESLOVÁNÍ (S ochranou dat) ---
     // --- 4. HLAVNÍ VYKRESLOVÁNÍ (S ochranou dat) ---
+// --- 4. HLAVNÍ VYKRESLOVÁNÍ (S ochranou dat) ---
 async function renderPlants() {
     const db = await getDB();
     const tx = db.transaction('plants', 'readonly');
@@ -495,13 +496,15 @@ async function renderPlants() {
         tasksDiv.innerHTML = '';
         
         [...req.result].reverse().forEach(p => {
-            // Seznam rostlin (Tohle zůstává úplně stejné)
+            // ZDE JE OPRAVA: Používáme tvé správné p.images!
+            const mainImage = (p.images && p.images.length > 0) ? p.images[0] : 'https://cdn-icons-png.flaticon.com/512/628/628283.png';
+            
             const matchName = p.name.toLowerCase().includes(search);
             const matchCat = cat === 'all' || p.category === cat;
             if (matchName && matchCat) {
                 list.innerHTML += `
                     <div class="card" onclick="openDetail(${p.id})">
-                        <img src="${p.photos && p.photos.length > 0 ? p.photos[0] : 'https://cdn-icons-png.flaticon.com/512/628/628283.png'}" loading="lazy">
+                        <img src="${mainImage}" loading="lazy">
                         <div class="card-info">
                             <h3>${p.name}</h3>
                             ${p.category ? `<span class="cat-badge-small">${p.category}</span>` : ''}
@@ -510,12 +513,10 @@ async function renderPlants() {
                     </div>
                 `;
             }
-            // ZDE JSME SMAZALI STARÝ BLOK "// Úkoly do kalendáře", aby nedělal zmatky
         });
         
         if (list.innerHTML === '') list.innerHTML = '<p style="text-align:center; color:#666; margin-top:20px;">Zatím nemáš žádné rostliny.</p>';
 
-        // ZDE ZAVOLÁME NAŠI NOVOU FUNKCI PRO SDRUŽENÉ ÚKOLY
         renderGroupedTasks(req.result);
     };
 }
@@ -524,17 +525,21 @@ function renderGroupedTasks(plants) {
     const calendarContainer = document.getElementById('calendar-tasks');
     calendarContainer.innerHTML = '';
     
-    // Získáme aktuální měsíc (0 = Leden, 11 = Prosinec)
     const currentMonth = new Date().getMonth();
     const groupedTasks = {};
     let hasAnyTask = false;
 
-    // KROK A: Projdeme všechny rostliny a nasbíráme úkoly
     plants.forEach(plant => {
         if (!plant.tasks || !Array.isArray(plant.tasks)) return; 
 
         plant.tasks.forEach(task => {
-            const isForThisMonth = Array.isArray(task.months) ? task.months.includes(currentMonth) : task.month === currentMonth;
+            // ZMÍRNĚNÁ LOGIKA: Pokud task nemá nastavený měsíc, bereme ho automaticky jako aktuální
+            let isForThisMonth = true; 
+            if (task.months !== undefined) {
+                isForThisMonth = Array.isArray(task.months) ? task.months.includes(currentMonth) : task.months === currentMonth;
+            } else if (task.month !== undefined) {
+                isForThisMonth = task.month === currentMonth;
+            }
 
             if (isForThisMonth) {
                 const groupKey = `${task.name}|${plant.category || 'Neznámá'}`;
@@ -551,19 +556,54 @@ function renderGroupedTasks(plants) {
 
                 groupedTasks[groupKey].plantsTotal.push(plant.name);
 
-                let isCompletedThisMonth = false;
+                // Kontrola splnění
+                let isCompleted = false;
                 if (Array.isArray(task.completedMonths) && task.completedMonths.includes(currentMonth)) {
-                    isCompletedThisMonth = true;
+                    isCompleted = true;
                 } else if (task.completed === true) {
-                    isCompletedThisMonth = true; 
+                    isCompleted = true; 
                 }
 
-                if (isCompletedThisMonth) {
+                if (isCompleted) {
                     groupedTasks[groupKey].plantsCompleted.push(plant.name);
                 }
             }
         });
     });
+
+    for (const key in groupedTasks) {
+        const group = groupedTasks[key];
+        
+        if (group.plantsCompleted.length < group.plantsTotal.length) {
+            hasAnyTask = true;
+            
+            const remainingPlants = group.plantsTotal.filter(p => !group.plantsCompleted.includes(p));
+
+            const taskEl = document.createElement('div');
+            taskEl.className = 'task-item'; 
+            taskEl.style.flexDirection = 'column'; 
+            taskEl.style.alignItems = 'flex-start';
+            
+            taskEl.innerHTML = `
+                <div style="width: 100%; margin-bottom: 5px; display: flex; justify-content: space-between;">
+                    <strong style="font-size: 1.05rem; color: var(--warn);">${group.taskName}</strong> 
+                    <span style="font-size: 0.8rem; background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">${group.category}</span>
+                </div>
+                <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px; font-style: italic;">
+                    ${group.taskDesc}
+                </div>
+                <div style="font-size: 0.85rem; color: var(--p); background: #e8f5e9; padding: 6px; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                    <strong>Chybí u:</strong> ${remainingPlants.join(', ')}
+                </div>
+            `;
+            calendarContainer.appendChild(taskEl);
+        }
+    }
+
+    if (!hasAnyTask) {
+        calendarContainer.innerHTML = '<p style="color: #666; font-size: 0.95rem; padding: 10px; text-align: center;">Všechny úkoly na tento měsíc jsou hotové! 🎉</p>';
+    }
+}
 
     // KROK B: Vykreslíme to na hlavní obrazovku
     for (const key in groupedTasks) {
