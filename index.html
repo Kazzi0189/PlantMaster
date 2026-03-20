@@ -1138,20 +1138,39 @@
     async function addPhotoToCurrentPlant(event) {
         const file = event.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async (e) => {
+
+        showLoader("Zpracovávám fotografii...");
+
+        try {
+            // 1. ZMENŠENÍ FOTKY (Zavoláme naši novou funkci)
+            const resizedBase64 = await resizeImage(file);
+
+            // 2. ULOŽENÍ DO DATABÁZE
             const db = await getDB();
             const tx = db.transaction('plants', 'readwrite');
             const store = tx.objectStore('plants');
             const req = store.get(currentPlantId);
+
             req.onsuccess = () => {
-                let p = req.result;
-                p.images.push(e.target.result);
-                store.put(p);
-                openDetail(currentPlantId);
+                let plant = req.result;
+                // Pro jistotu zkontrolujeme, zda má rostlina pole pro obrázky
+                if (!plant.images) plant.images = []; 
+                
+                // Přidáme naši novou, lehkou fotku
+                plant.images.push(resizedBase64); 
+                
+                store.put(plant);
+                tx.oncomplete = () => {
+                    hideLoader();
+                    renderPlants();             // Aktualizuje hlavní seznam
+                    openDetail(currentPlantId); // Okamžitě obnoví galerii v detailu
+                };
             };
-        };
+        } catch (err) {
+            console.error(err);
+            alert("Chyba při zpracování fotky. Zkuste to prosím znovu.");
+            hideLoader();
+        }
     }
 
     // --- 13. OSTATNÍ SYSTÉMOVÉ FUNKCE ---
