@@ -470,17 +470,14 @@
             tasksDiv.innerHTML = ''; 
             const currentMonth = new Date().getMonth();
             
-            // ZDE ZAČÍNÁ NAŠE NOVÁ LOGIKA SDRUŽOVÁNÍ
-            const groupedTasks = {};
-            
             [...req.result].reverse().forEach(plant => {
-                // Tvoje tichá záchrana chybějících polí u starých rostlin
+                // Tichá záchrana chybějících polí u starých rostlin
                 if (!plant.careHistory) plant.careHistory = []; 
                 if (!plant.images) plant.images = plant.image ? [plant.image] : [];
                 if (cat !== 'all' && plant.category !== cat) return; 
                 if (search && !plant.name.toLowerCase().includes(search)) return;
                 
-                // Tvoje původní vykreslení karet - beze změny!
+                // Čistý a bezpečný onclick, žádné složité dotykové události
                 list.innerHTML += `
                     <div class="card" onclick="openDetail(${plant.id})">
                         <img src="${plant.images[0] || 'https://via.placeholder.com/70'}">
@@ -490,40 +487,18 @@
                         </div>
                     </div>`;
                     
-                // Úprava výpisu úkolů (Sdružování)
                 if (plant.tasks && plant.tasks[currentMonth]) {
                     plant.tasks[currentMonth].forEach(task => {
-                        // Tvá původní logika pro zjištění, zda je úkol splněn
                         const isDone = plant.careHistory.some(h => h.date === new Date().toLocaleDateString('cs-CZ') && h.text.includes(`Úkol: ${task}`));
-                        
-                        // Pokud úkol NENÍ splněn, přidáme ho do skupiny
-                        if (!isDone) {
-                            const key = `${task}|${plant.category || 'Neznámá'}`;
-                            if (!groupedTasks[key]) {
-                                groupedTasks[key] = { name: task, cat: plant.category || 'Neznámá', count: 0 };
-                            }
-                            groupedTasks[key].count++;
-                        }
+                        tasksDiv.innerHTML += `
+                            <div class="task-item ${isDone ? 'completed' : ''}">
+                                <div class="task-content"><strong>${plant.name}:</strong> ${task}</div>
+                                ${!isDone ? `<button class="btn-complete" onclick="completeTask(${plant.id}, '${task}', event)">✓ Splnit</button>` : ''}
+                            </div>`;
                     });
                 }
-            });
 
-            // Nakonec vykreslíme připravené skupiny na hlavní plochu
-            const keys = Object.keys(groupedTasks);
-            if (keys.length === 0) {
-                tasksDiv.innerHTML = '<p style="text-align:center; color:#388e3c; font-size:0.9rem; margin:10px 0;">Všechny úkoly na tento měsíc jsou hotové! 🎉</p>';
-            } else {
-                keys.forEach(key => {
-                    const g = groupedTasks[key];
-                    tasksDiv.innerHTML += `
-                        <div class="task-item" style="border-bottom: 1px solid #eee; padding: 10px 0; display: flex; justify-content: space-between; align-items: center;">
-                            <div class="task-info">
-                                <span style="font-weight: bold; color: #333; display: block;">${g.name} - ${g.cat}</span>
-                                <span style="font-size: 0.75rem; background: #e0e0e0; color: #666; padding: 2px 8px; border-radius: 10px; margin-top: 4px; display: inline-block;">Zbývá u ${g.count} rostlin</span>
-                            </div>
-                        </div>`;
-                });
-            }
+            });
         };
     }
 
@@ -607,43 +582,29 @@
             }
             document.getElementById('water-status').innerText = wText;
 
-            // --- ZAČÁTEK ZMĚNY: Úkoly v detailu (Logika "Splň a zmiz") ---
+            // Úkoly v detailu (s popisky a produkty)
             const tasksDiv = document.getElementById('detail-tasks'); 
             tasksDiv.innerHTML = '';
             const currentMonth = new Date().getMonth();
-            let hasUnfinishedTasks = false; // Nové počítadlo nesplněných úkolů
-
-            if (plant.tasks && plant.tasks[currentMonth] && plant.tasks[currentMonth].length > 0) {
+            if (plant.tasks && plant.tasks[currentMonth]) {
                 plant.tasks[currentMonth].forEach(taskObj => {
                     let tName = typeof taskObj === 'string' ? taskObj : taskObj.nazev;
                     let tDesc = typeof taskObj === 'string' ? '' : taskObj.popis;
-                    // Kontrola, zda je úkol splněn (stejná jako tvoje)
                     const isDone = plant.careHistory.some(h => h.date === new Date().toLocaleDateString('cs-CZ') && h.text.includes(`Úkol: ${tName}`));
                     
-                    // Vykreslíme úkol POUZE pokud NENÍ splněn
-                    if (!isDone) {
-                        hasUnfinishedTasks = true;
-                        tasksDiv.innerHTML += `
-                            <div class="task-item" style="border: 1px solid #ffb74d; background: #fff8e1; border-radius: 10px; margin-bottom: 10px; padding: 12px; flex-direction: column; align-items: stretch;">
-                                <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                    <strong style="font-size: 1.05rem; color: #e65100;">${tName}</strong>
-                                    <button class="btn-complete" style="background: #ff9800; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-weight: bold; cursor: pointer;" onclick="completeTask(${plant.id}, '${tName}', event)">✓ Splnit</button>
-                                </div>
-                                ${tDesc ? `<div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">${tDesc}</div>` : ''}
-                                <button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7; background:white; padding:8px; border-radius:6px; font-weight:bold; cursor:pointer;" onclick="callAI('task-products', '${tName}')">💡 Hledat přípravky pro tento úkol</button>
-                            </div>`;
-                    }
+                    tasksDiv.innerHTML += `
+                        <div class="task-item ${isDone ? 'completed' : ''}" style="border: 1px solid #ccc; flex-direction: column; align-items: stretch;">
+                            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <strong style="font-size: 1.05rem;">${tName}</strong>
+                                ${!isDone ? `<button class="btn-complete" onclick="completeTask(${plant.id}, '${tName}', event)">✓ Splnit</button>` : ''}
+                            </div>
+                            ${tDesc ? `<div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">${tDesc}</div>` : ''}
+                            ${!isDone ? `<button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${tName}')">💡 Hledat přípravky pro tento úkol</button>` : ''}
+                        </div>`;
                 });
-
-                // Pokud sice úkoly existovaly, ale všechny už byly "isDone" (zmizely):
-                if (!hasUnfinishedTasks) {
-                    tasksDiv.innerHTML = '<p style="font-size:1rem; color:#388e3c; font-weight:bold; text-align:center; padding: 10px 0;">Všechny úkoly na tento měsíc jsou splněny! 🎉</p>';
-                }
-
             } else { 
                 tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666;">Žádné úkoly na tento měsíc.</p>'; 
             }
-            // --- KONEC ZMĚNY ---
 
             // --- TRVALÁ PAMĚŤ AI (Nové bezpečné boxy) ---
             const detBox = document.getElementById('ai-mem-detective');
@@ -682,7 +643,7 @@
                     pHTML += `<div style="display:flex; gap:5px; margin-bottom:5px;">
                         <span style="flex:1; align-self:center; font-size:0.9rem; font-weight:bold;">${prod}</span>
                         <button class="btn-shop" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
-                        <button class="btn-shop" style="background:var(--p); color:white; border:none;" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
+                        <button class="btn-shop" style="background:var(--p);" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
                     </div>`;
                 });
                 pHTML += `</div><button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiProducts')">🗑️ Smazat návrhy</button>`;
