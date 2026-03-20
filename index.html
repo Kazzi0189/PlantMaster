@@ -622,14 +622,36 @@ function renderGroupedTasks(plants) {
         const store = tx.objectStore('plants'); 
         const req = store.get(plantId);
         
-        req.onsuccess = () => {
-            let plant = req.result;
-            plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `Splněn úkol: ${taskName}${details}` });
-            store.put(plant); 
-            renderPlants(); 
-            if (currentPlantId === plantId) openDetail(plantId);
+     req.onsuccess = () => {
+        let plant = req.result;
+        const currentMonth = new Date().getMonth();
+
+        // 1. ZAZNAMENÁME SPLNĚNÍ (aby úkol zmizel z aktivních)
+        if (plant.tasks && Array.isArray(plant.tasks)) {
+            const task = plant.tasks.find(t => t.name === taskName);
+            if (task) {
+                if (!task.completedMonths) task.completedMonths = [];
+                if (!task.completedMonths.includes(currentMonth)) {
+                    task.completedMonths.push(currentMonth);
+                }
+            }
+        }
+
+        // 2. ZAPÍŠEME DO HISTORIE (zůstane tam navždy)
+        plant.careHistory.push({ 
+            date: new Date().toLocaleDateString('cs-CZ'), 
+            text: `Splněn úkol: ${taskName}${details}` 
+        });
+
+        store.put(plant);
+
+        // 3. PO DOKONČENÍ TRANSAKCE AKTUALIZUJEME UI
+        tx.oncomplete = () => {
+            renderPlants(); // Obnoví hlavní obrazovku
+            if (currentPlantId === plantId) openDetail(plantId); // Překreslí detail (úkol zmizí)
         };
-    }
+    };
+}   
 
     async function waterPlant() {
         const db = await getDB(); 
@@ -639,14 +661,30 @@ function renderGroupedTasks(plants) {
         
         req.onsuccess = () => {
             let plant = req.result;
-            plant.lastWatered = new Date().toISOString();
-            plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: '💧 Zálivka' });
-            store.put(plant); 
-            openDetail(currentPlantId);
-        };
-    }
+            const currentMonth = new Date().getMonth();
 
-    // --- 6. DETAIL ROSTLINY ---
+            // CHIRURGICKÝ ŘEZ: Najdeme úkol v poli a přidáme aktuální měsíc do splněných
+            if (plant.tasks && Array.isArray(plant.tasks)) {
+                const task = plant.tasks.find(t => t.name === taskName);
+                if (task) {
+                    if (!task.completedMonths) task.completedMonths = [];
+                    if (!task.completedMonths.includes(currentMonth)) {
+                        task.completedMonths.push(currentMonth);
+                    }
+                }
+            }
+
+            // Zapíšeme do historie (to už tam máš, jen to tu nechávám pro úplnost)
+            plant.careHistory.push({ 
+                date: new Date().toLocaleDateString('cs-CZ'), 
+                text: `Splněn úkol: ${taskName}${details}` 
+            });
+
+            store.put(plant);
+            tx.oncomplete = () => {
+                renderPlants(); // Obnoví hlavní obrazovku
+                if (currentPlantId === plantId) openDetail(plantId); // Bleskově překreslí detail (úkol zmizí)
+            };
     async function openDetail(id) {
         currentPlantId = id; 
         const db = await getDB(); 
@@ -685,29 +723,40 @@ function renderGroupedTasks(plants) {
             }
             document.getElementById('water-status').innerText = wText;
 
-            // Úkoly v detailu (s popisky a produkty)
-            const tasksDiv = document.getElementById('detail-tasks'); 
-            tasksDiv.innerHTML = '';
-            const currentMonth = new Date().getMonth();
-            if (plant.tasks && plant.tasks[currentMonth]) {
-                plant.tasks[currentMonth].forEach(taskObj => {
-                    let tName = typeof taskObj === 'string' ? taskObj : taskObj.nazev;
-                    let tDesc = typeof taskObj === 'string' ? '' : taskObj.popis;
-                    const isDone = plant.careHistory.some(h => h.date === new Date().toLocaleDateString('cs-CZ') && h.text.includes(`Úkol: ${tName}`));
-                    
+            // Úkoly v detailu (Logika: "Zobraz jen to, co zbývá")
+        const tasksDiv = document.getElementById('detail-tasks');
+        tasksDiv.innerHTML = '';
+        const currentMonth = new Date().getMonth();
+        let hasVisibleTasks = false;
+
+        if (plant.tasks && Array.isArray(plant.tasks)) {
+            plant.tasks.forEach(task => {
+                // Filtrujeme: Patří úkol do tohoto měsíce?
+                const isForThisMonth = Array.isArray(task.months) ? task.months.includes(currentMonth) : task.month === currentMonth;
+                // Je už splněný?
+                const isDone = Array.isArray(task.completedMonths) && task.completedMonths.includes(currentMonth);
+
+                // ZOBRAZÍME JEN POKUD: Je pro tento měsíc A NENÍ splněný
+                if (isForThisMonth && !isDone) {
+                    hasVisibleTasks = true;
                     tasksDiv.innerHTML += `
-                        <div class="task-item ${isDone ? 'completed' : ''}" style="border: 1px solid #ccc; flex-direction: column; align-items: stretch;">
+                        <div class="task-item" style="border: 1px solid #ccc; flex-direction: column; align-items: stretch; margin-bottom:10px; padding:10px;">
                             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                <strong style="font-size: 1.05rem;">${tName}</strong>
-                                ${!isDone ? `<button class="btn-complete" onclick="completeTask(${plant.id}, '${tName}', event)">✓ Splnit</button>` : ''}
+                                <strong style="font-size: 1.05rem; color: var(--p);">${task.name}</strong>
+                                <button class="btn-complete" onclick="completeTask(${plant.id}, '${task.name}', event)">✓ Splnit</button>
                             </div>
-                            ${tDesc ? `<div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">${tDesc}</div>` : ''}
-                            ${!isDone ? `<button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${tName}')">💡 Hledat přípravky pro tento úkol</button>` : ''}
+                            <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">
+                                ${task.desc || task.description || 'Popis úkolu chybí.'}
+                            </div>
+                            <button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${task.name}')">💡 Hledat přípravky</button>
                         </div>`;
-                });
-            } else { 
-                tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666;">Žádné úkoly na tento měsíc.</p>'; 
-            }
+                }
+            });
+        }
+
+        if (!hasVisibleTasks) {
+            tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666; text-align:center;">Všechny úkoly na tento měsíc jsou hotové! 🎉</p>';
+        }
 
             // --- TRVALÁ PAMĚŤ AI (Nové bezpečné boxy) ---
             const detBox = document.getElementById('ai-mem-detective');
