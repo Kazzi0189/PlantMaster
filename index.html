@@ -114,6 +114,28 @@
         .btn-complete { background: var(--safe); color: white; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; }
         .btn-undo { background: #9e9e9e; color: white; border: none; padding: 6px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; }
 
+        /* NOVÁ TLAČÍTKA PRO ÚKOLY V DETAILU */
+.btn-splnit { 
+    background: var(--warn); /* Použije tvou červenou barvu */
+    color: white; 
+    border: none; 
+    padding: 6px 12px; 
+    border-radius: 5px; 
+    font-weight: bold; 
+    cursor: pointer; 
+}
+
+.btn-hotovo { 
+    background: var(--safe); /* Použije tvou zelenou barvu */
+    color: white; 
+    border: none; 
+    padding: 6px 12px; 
+    border-radius: 5px; 
+    font-weight: bold; 
+    cursor: not-allowed; /* Kurzor ukáže, že už nejde kliknout */
+    opacity: 0.8; 
+}
+
         .card { 
             background: var(--card); 
             border-radius: 16px; 
@@ -230,20 +252,17 @@
 </header>
 
 <div class="container">
-    <div style="position: sticky; top: 0; background: var(--bg); z-index: 90; padding: 10px 0; margin-top: -10px;">
-        <div class="filter-controls">
-            <input type="text" id="search-box" placeholder="Hledat rostlinu..." oninput="renderPlants()">
-        </div>
-        <div class="filter-controls" style="margin-bottom: 10px;">
-            <select class="filter-select" id="filter-category" onchange="renderPlants()">
-                <option value="all">Všechny kategorie</option>
-                <option value="Pokojové">Pokojové</option>
-                <option value="Zelenina">Zelenina</option>
-                <option value="Ovoce">Ovoce</option>
-                <option value="Bylinky">Bylinky</option>
-                <option value="Stromy a keře">Stromy a keře</option>
-            </select>
-        </div>
+    <div style="position: sticky; top: 0; background: var(--bg); z-index: 90; padding: 10px 0; margin-top: -10px; display: flex; gap: 10px;">
+        <input type="text" id="search-box" placeholder="Hledat..." oninput="renderPlants()" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.95rem; outline: none; box-sizing: border-box;">
+        
+        <select class="filter-select" id="filter-category" onchange="renderPlants()" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.95rem; outline: none; background: white; color: #444; box-sizing: border-box; margin: 0;">
+            <option value="all">Všechny kategorie</option>
+            <option value="Pokojové">Pokojové</option>
+            <option value="Zelenina">Zelenina</option>
+            <option value="Ovoce">Ovoce</option>
+            <option value="Bylinky">Bylinky</option>
+            <option value="Stromy a keře">Stromy a keře</option>
+        </select>
     </div>
 
     <div id="inbox-section">
@@ -460,50 +479,131 @@
     }
 
     // --- 4. HLAVNÍ VYKRESLOVÁNÍ (S ochranou dat) ---
-    async function renderPlants() {
-        const db = await getDB(); 
-        const tx = db.transaction('plants', 'readonly'); 
-        const req = tx.objectStore('plants').getAll();
-        req.onsuccess = () => {
-            const search = document.getElementById('search-box').value.toLowerCase(); 
-            const cat = document.getElementById('filter-category').value;
-            const list = document.getElementById('plant-list'); 
-            const tasksDiv = document.getElementById('calendar-tasks');
-            list.innerHTML = ''; 
-            tasksDiv.innerHTML = ''; 
-            const currentMonth = new Date().getMonth();
+    // --- 4. HLAVNÍ VYKRESLOVÁNÍ (S ochranou dat) ---
+// --- 4. HLAVNÍ VYKRESLOVÁNÍ (S ochranou dat) ---
+async function renderPlants() {
+    const db = await getDB();
+    const tx = db.transaction('plants', 'readonly');
+    const req = tx.objectStore('plants').getAll();
+    req.onsuccess = () => {
+        const search = document.getElementById('search-box').value.toLowerCase();
+        const cat = document.getElementById('filter-category').value;
+        
+        const list = document.getElementById('plant-list');
+        const tasksDiv = document.getElementById('calendar-tasks');
+        
+        list.innerHTML = '';
+        tasksDiv.innerHTML = '';
+        
+        [...req.result].reverse().forEach(p => {
+            // ZDE JE OPRAVA: Používáme tvé správné p.images!
+            const mainImage = (p.images && p.images.length > 0) ? p.images[0] : 'https://cdn-icons-png.flaticon.com/512/628/628283.png';
             
-            [...req.result].reverse().forEach(plant => {
-                // Tichá záchrana chybějících polí u starých rostlin
-                if (!plant.careHistory) plant.careHistory = []; 
-                if (!plant.images) plant.images = plant.image ? [plant.image] : [];
-                if (cat !== 'all' && plant.category !== cat) return; 
-                if (search && !plant.name.toLowerCase().includes(search)) return;
-                
-                // Čistý a bezpečný onclick, žádné složité dotykové události
+            const matchName = p.name.toLowerCase().includes(search);
+            const matchCat = cat === 'all' || p.category === cat;
+            if (matchName && matchCat) {
                 list.innerHTML += `
-                    <div class="card" onclick="openDetail(${plant.id})">
-                        <img src="${plant.images[0] || 'https://via.placeholder.com/70'}">
+                    <div class="card" onclick="openDetail(${p.id})">
+                        <img src="${mainImage}" loading="lazy">
                         <div class="card-info">
-                            <h3>${plant.name}</h3>
-                            <span class="cat-badge-small">${plant.category || 'Neznámá'}</span>
+                            <h3>${p.name}</h3>
+                            ${p.category ? `<span class="cat-badge-small">${p.category}</span>` : ''}
+                            <p>Zalito: ${p.lastWatered || 'Nikdy'}</p>
                         </div>
-                    </div>`;
-                    
-                if (plant.tasks && plant.tasks[currentMonth]) {
-                    plant.tasks[currentMonth].forEach(task => {
-                        const isDone = plant.careHistory.some(h => h.date === new Date().toLocaleDateString('cs-CZ') && h.text.includes(`Úkol: ${task}`));
-                        tasksDiv.innerHTML += `
-                            <div class="task-item ${isDone ? 'completed' : ''}">
-                                <div class="task-content"><strong>${plant.name}:</strong> ${task}</div>
-                                ${!isDone ? `<button class="btn-complete" onclick="completeTask(${plant.id}, '${task}', event)">✓ Splnit</button>` : ''}
-                            </div>`;
-                    });
+                    </div>
+                `;
+            }
+        });
+        
+        if (list.innerHTML === '') list.innerHTML = '<p style="text-align:center; color:#666; margin-top:20px;">Zatím nemáš žádné rostliny.</p>';
+
+        renderGroupedTasks(req.result);
+    };
+}
+
+function renderGroupedTasks(plants) {
+    const calendarContainer = document.getElementById('calendar-tasks');
+    calendarContainer.innerHTML = '';
+    
+    const currentMonth = new Date().getMonth();
+    const groupedTasks = {};
+    let hasAnyTask = false;
+
+    plants.forEach(plant => {
+        if (!plant.tasks || !Array.isArray(plant.tasks)) return; 
+
+        plant.tasks.forEach(task => {
+            // ZMÍRNĚNÁ LOGIKA: Pokud task nemá nastavený měsíc, bereme ho automaticky jako aktuální
+            let isForThisMonth = true; 
+            if (task.months !== undefined) {
+                isForThisMonth = Array.isArray(task.months) ? task.months.includes(currentMonth) : task.months === currentMonth;
+            } else if (task.month !== undefined) {
+                isForThisMonth = task.month === currentMonth;
+            }
+
+            if (isForThisMonth) {
+                const groupKey = `${task.name}|${plant.category || 'Neznámá'}`;
+
+                if (!groupedTasks[groupKey]) {
+                    groupedTasks[groupKey] = {
+                        taskName: task.name || 'Neznámý úkol',
+                        taskDesc: task.desc || task.description || '', 
+                        category: plant.category || 'Neznámá',
+                        plantsTotal: [],
+                        plantsCompleted: []
+                    };
                 }
 
-            });
-        };
+                groupedTasks[groupKey].plantsTotal.push(plant.name);
+
+                // Kontrola splnění
+                let isCompleted = false;
+                if (Array.isArray(task.completedMonths) && task.completedMonths.includes(currentMonth)) {
+                    isCompleted = true;
+                } else if (task.completed === true) {
+                    isCompleted = true; 
+                }
+
+                if (isCompleted) {
+                    groupedTasks[groupKey].plantsCompleted.push(plant.name);
+                }
+            }
+        });
+    });
+
+    for (const key in groupedTasks) {
+        const group = groupedTasks[key];
+        
+        if (group.plantsCompleted.length < group.plantsTotal.length) {
+            hasAnyTask = true;
+            
+            const remainingPlants = group.plantsTotal.filter(p => !group.plantsCompleted.includes(p));
+
+            const taskEl = document.createElement('div');
+            taskEl.className = 'task-item'; 
+            taskEl.style.flexDirection = 'column'; 
+            taskEl.style.alignItems = 'flex-start';
+            
+            taskEl.innerHTML = `
+                <div style="width: 100%; margin-bottom: 5px; display: flex; justify-content: space-between;">
+                    <strong style="font-size: 1.05rem; color: var(--warn);">${group.taskName}</strong> 
+                    <span style="font-size: 0.8rem; background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">${group.category}</span>
+                </div>
+                <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px; font-style: italic;">
+                    ${group.taskDesc}
+                </div>
+                <div style="font-size: 0.85rem; color: var(--p); background: #e8f5e9; padding: 6px; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                    <strong>Chybí u:</strong> ${remainingPlants.join(', ')}
+                </div>
+            `;
+            calendarContainer.appendChild(taskEl);
+        }
     }
+
+    if (!hasAnyTask) {
+        calendarContainer.innerHTML = '<p style="color: #666; font-size: 0.95rem; padding: 10px; text-align: center;">Všechny úkoly na tento měsíc jsou hotové! 🎉</p>';
+    }
+}
 
     // --- 5. LOGIKA ÚKOLŮ S DOPTÁVÁNÍM ---
     async function completeTask(plantId, taskName, event) {
@@ -522,14 +622,36 @@
         const store = tx.objectStore('plants'); 
         const req = store.get(plantId);
         
-        req.onsuccess = () => {
-            let plant = req.result;
-            plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `Splněn úkol: ${taskName}${details}` });
-            store.put(plant); 
-            renderPlants(); 
-            if (currentPlantId === plantId) openDetail(plantId);
+     req.onsuccess = () => {
+        let plant = req.result;
+        const currentMonth = new Date().getMonth();
+
+        // 1. ZAZNAMENÁME SPLNĚNÍ (aby úkol zmizel z aktivních)
+        if (plant.tasks && Array.isArray(plant.tasks)) {
+            const task = plant.tasks.find(t => t.name === taskName);
+            if (task) {
+                if (!task.completedMonths) task.completedMonths = [];
+                if (!task.completedMonths.includes(currentMonth)) {
+                    task.completedMonths.push(currentMonth);
+                }
+            }
+        }
+
+        // 2. ZAPÍŠEME DO HISTORIE (zůstane tam navždy)
+        plant.careHistory.push({ 
+            date: new Date().toLocaleDateString('cs-CZ'), 
+            text: `Splněn úkol: ${taskName}${details}` 
+        });
+
+        store.put(plant);
+
+        // 3. PO DOKONČENÍ TRANSAKCE AKTUALIZUJEME UI
+        tx.oncomplete = () => {
+            renderPlants(); // Obnoví hlavní obrazovku
+            if (currentPlantId === plantId) openDetail(plantId); // Překreslí detail (úkol zmizí)
         };
-    }
+    };
+}   
 
     async function waterPlant() {
         const db = await getDB(); 
@@ -539,14 +661,30 @@
         
         req.onsuccess = () => {
             let plant = req.result;
-            plant.lastWatered = new Date().toISOString();
-            plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: '💧 Zálivka' });
-            store.put(plant); 
-            openDetail(currentPlantId);
-        };
-    }
+            const currentMonth = new Date().getMonth();
 
-    // --- 6. DETAIL ROSTLINY ---
+            // CHIRURGICKÝ ŘEZ: Najdeme úkol v poli a přidáme aktuální měsíc do splněných
+            if (plant.tasks && Array.isArray(plant.tasks)) {
+                const task = plant.tasks.find(t => t.name === taskName);
+                if (task) {
+                    if (!task.completedMonths) task.completedMonths = [];
+                    if (!task.completedMonths.includes(currentMonth)) {
+                        task.completedMonths.push(currentMonth);
+                    }
+                }
+            }
+
+            // Zapíšeme do historie (to už tam máš, jen to tu nechávám pro úplnost)
+            plant.careHistory.push({ 
+                date: new Date().toLocaleDateString('cs-CZ'), 
+                text: `Splněn úkol: ${taskName}${details}` 
+            });
+
+            store.put(plant);
+            tx.oncomplete = () => {
+                renderPlants(); // Obnoví hlavní obrazovku
+                if (currentPlantId === plantId) openDetail(plantId); // Bleskově překreslí detail (úkol zmizí)
+            };
     async function openDetail(id) {
         currentPlantId = id; 
         const db = await getDB(); 
@@ -585,29 +723,40 @@
             }
             document.getElementById('water-status').innerText = wText;
 
-            // Úkoly v detailu (s popisky a produkty)
-            const tasksDiv = document.getElementById('detail-tasks'); 
-            tasksDiv.innerHTML = '';
-            const currentMonth = new Date().getMonth();
-            if (plant.tasks && plant.tasks[currentMonth]) {
-                plant.tasks[currentMonth].forEach(taskObj => {
-                    let tName = typeof taskObj === 'string' ? taskObj : taskObj.nazev;
-                    let tDesc = typeof taskObj === 'string' ? '' : taskObj.popis;
-                    const isDone = plant.careHistory.some(h => h.date === new Date().toLocaleDateString('cs-CZ') && h.text.includes(`Úkol: ${tName}`));
-                    
+            // Úkoly v detailu (Logika: "Zobraz jen to, co zbývá")
+        const tasksDiv = document.getElementById('detail-tasks');
+        tasksDiv.innerHTML = '';
+        const currentMonth = new Date().getMonth();
+        let hasVisibleTasks = false;
+
+        if (plant.tasks && Array.isArray(plant.tasks)) {
+            plant.tasks.forEach(task => {
+                // Filtrujeme: Patří úkol do tohoto měsíce?
+                const isForThisMonth = Array.isArray(task.months) ? task.months.includes(currentMonth) : task.month === currentMonth;
+                // Je už splněný?
+                const isDone = Array.isArray(task.completedMonths) && task.completedMonths.includes(currentMonth);
+
+                // ZOBRAZÍME JEN POKUD: Je pro tento měsíc A NENÍ splněný
+                if (isForThisMonth && !isDone) {
+                    hasVisibleTasks = true;
                     tasksDiv.innerHTML += `
-                        <div class="task-item ${isDone ? 'completed' : ''}" style="border: 1px solid #ccc; flex-direction: column; align-items: stretch;">
+                        <div class="task-item" style="border: 1px solid #ccc; flex-direction: column; align-items: stretch; margin-bottom:10px; padding:10px;">
                             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                <strong style="font-size: 1.05rem;">${tName}</strong>
-                                ${!isDone ? `<button class="btn-complete" onclick="completeTask(${plant.id}, '${tName}', event)">✓ Splnit</button>` : ''}
+                                <strong style="font-size: 1.05rem; color: var(--p);">${task.name}</strong>
+                                <button class="btn-complete" onclick="completeTask(${plant.id}, '${task.name}', event)">✓ Splnit</button>
                             </div>
-                            ${tDesc ? `<div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">${tDesc}</div>` : ''}
-                            ${!isDone ? `<button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${tName}')">💡 Hledat přípravky pro tento úkol</button>` : ''}
+                            <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">
+                                ${task.desc || task.description || 'Popis úkolu chybí.'}
+                            </div>
+                            <button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${task.name}')">💡 Hledat přípravky</button>
                         </div>`;
-                });
-            } else { 
-                tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666;">Žádné úkoly na tento měsíc.</p>'; 
-            }
+                }
+            });
+        }
+
+        if (!hasVisibleTasks) {
+            tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666; text-align:center;">Všechny úkoly na tento měsíc jsou hotové! 🎉</p>';
+        }
 
             // --- TRVALÁ PAMĚŤ AI (Nové bezpečné boxy) ---
             const detBox = document.getElementById('ai-mem-detective');
@@ -1082,12 +1231,26 @@
             
             const data = await resp.json();
 
-            // PŘESNÝ LAPAČ CHYB OD GOOGLU (Tady uvidíme přímo hlášení z jejich serverů)
+            // PŘEKLADATEL CHYB OD GOOGLU DO ČEŠTINY
             if (data.error) {
-                throw new Error("Google API hlásí: " + data.error.message);
+                let errMsg = data.error.message || "";
+                
+                if (errMsg.includes("Quota exceeded")) {
+                    if (errMsg.includes("retry in")) {
+                        // Vytáhne si z textu vteřiny a zaokrouhlí je
+                        let match = errMsg.match(/retry in ([\d\.]+)s/);
+                        let seconds = match ? Math.ceil(parseFloat(match[1])) : 60;
+                        throw new Error(`Byl překročen rychlostní limit. Počkejte prosím ${seconds} sekund a zkuste to znovu.`);
+                    } else {
+                        throw new Error("Byl vyčerpán denní limit pro umělou inteligenci. Zkuste to prosím zítra.");
+                    }
+                }
+                // Pro jakékoliv jiné neznámé chyby
+                throw new Error("Nelze se spojit s AI. Zkuste to prosím později.");
             }
+            
             if (!data.candidates || data.candidates.length === 0) {
-                throw new Error("Google neposlal žádná data (neznámá chyba).");
+                throw new Error("Google neposlal žádná data (zkontrolujte připojení k internetu).");
             }
 
             let aiResponse = data.candidates[0].content.parts[0].text;
@@ -1118,6 +1281,7 @@
             };
         } catch (err) {
             console.error(err);
+            // Vypíše krásnou českou hlášku, kterou jsme nahoře nastavili
             alert("Chyba: " + err.message);
             hideLoader();
         }
@@ -1126,20 +1290,39 @@
     async function addPhotoToCurrentPlant(event) {
         const file = event.target.files[0];
         if (!file) return;
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = async (e) => {
+
+        showLoader("Zpracovávám fotografii...");
+
+        try {
+            // 1. ZMENŠENÍ FOTKY (Zavoláme naši novou funkci)
+            const resizedBase64 = await resizeImage(file);
+
+            // 2. ULOŽENÍ DO DATABÁZE
             const db = await getDB();
             const tx = db.transaction('plants', 'readwrite');
             const store = tx.objectStore('plants');
             const req = store.get(currentPlantId);
+
             req.onsuccess = () => {
-                let p = req.result;
-                p.images.push(e.target.result);
-                store.put(p);
-                openDetail(currentPlantId);
+                let plant = req.result;
+                // Pro jistotu zkontrolujeme, zda má rostlina pole pro obrázky
+                if (!plant.images) plant.images = []; 
+                
+                // Přidáme naši novou, lehkou fotku
+                plant.images.push(resizedBase64); 
+                
+                store.put(plant);
+                tx.oncomplete = () => {
+                    hideLoader();
+                    renderPlants();             // Aktualizuje hlavní seznam
+                    openDetail(currentPlantId); // Okamžitě obnoví galerii v detailu
+                };
             };
-        };
+        } catch (err) {
+            console.error(err);
+            alert("Chyba při zpracování fotky. Zkuste to prosím znovu.");
+            hideLoader();
+        }
     }
 
     // --- 13. OSTATNÍ SYSTÉMOVÉ FUNKCE ---
