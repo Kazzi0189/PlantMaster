@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="cs">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -991,64 +992,67 @@
 
                 store.put(plant);
                 tx.oncomplete = () => {
-                    renderPlants(); // Obnoví hlavní obrazovku
-                    if (currentPlantId === plantId) openDetail(plantId); // Bleskově překreslí detail (úkol zmizí)
+                    renderPlants();
+                    if (currentPlantId === plantId) openDetail(plantId);
                 };
-                async function openDetail(id) {
-                    currentPlantId = id;
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readonly');
-                    const req = tx.objectStore('plants').get(id);
+            };
+        }
 
-                    req.onsuccess = () => {
-                        const plant = req.result;
-                        if (!plant) return;
-                        // Nadpis s ikonkou tužky pro úpravu názvu/odrůdy
-                        document.getElementById('detail-title').innerHTML = `${plant.name} <span onclick="editPlantName()" style="cursor:pointer; font-size:1.1rem; padding-left:8px; opacity:0.8;">✏️</span>`;
+        async function openDetail(id) {
+            currentPlantId = id;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const req = tx.objectStore('plants').get(id);
 
-                        // Zobrazení Občanky
-                        const infoCard = document.getElementById('plant-info-card');
-                        if (plant.description || plant.water || plant.light) {
-                            document.getElementById('plant-desc').innerText = plant.description || "Charakteristika zatím chybí.";
-                            document.querySelector('#plant-water-info span').innerText = plant.water || "Neznámá";
-                            document.querySelector('#plant-light-info span').innerText = plant.light || "Neznámé";
-                            infoCard.style.display = 'block';
-                        } else {
-                            infoCard.style.display = 'none';
-                        }
+            req.onsuccess = () => {
+                const plant = req.result;
+                if (!plant) return;
+                // Nadpis s ikonkou tužky pro úpravu názvu/odrůdy
+                document.getElementById('detail-title').innerHTML = `${plant.name} <span onclick="editPlantName()" style="cursor:pointer; font-size:1.1rem; padding-left:8px; opacity:0.8;">✏️</span>`;
 
-                        // Galerie
-                        const gal = document.getElementById('detail-gallery');
-                        gal.innerHTML = '';
-                        plant.images.forEach(imgData => {
-                            gal.innerHTML += `<img src="${imgData}" onclick="openLightbox('${imgData}')">`;
-                        });
+                // Zobrazení Občanky
+                const infoCard = document.getElementById('plant-info-card');
+                if (plant.description || plant.water || plant.light) {
+                    document.getElementById('plant-desc').innerText = plant.description || "Charakteristika zatím chybí.";
+                    document.querySelector('#plant-water-info span').innerText = plant.water || "Neznámá";
+                    document.querySelector('#plant-light-info span').innerText = plant.light || "Neznámé";
+                    infoCard.style.display = 'block';
+                } else {
+                    infoCard.style.display = 'none';
+                }
 
-                        // Vylepšená Zálivka - Textový status s výpočtem dnů
-                        let wText = " (Zatím nezalito)";
-                        if (plant.lastWatered) {
-                            let diff = Math.floor(Math.abs(new Date() - new Date(plant.lastWatered)) / (1000 * 60 * 60 * 24));
-                            wText = ` (Naposledy: ${diff === 0 ? "Dnes" : (diff === 1 ? "Včera" : `Před ${diff} dny`)})`;
-                        }
-                        document.getElementById('water-status').innerText = wText;
+                // Galerie
+                const gal = document.getElementById('detail-gallery');
+                gal.innerHTML = '';
+                plant.images.forEach(imgData => {
+                    gal.innerHTML += `<img src="${imgData}" onclick="openLightbox('${imgData}')">`;
+                });
 
-                        // Úkoly v detailu (Logika: "Zobraz jen to, co zbývá")
-                        const tasksDiv = document.getElementById('detail-tasks');
-                        tasksDiv.innerHTML = '';
-                        const currentMonth = new Date().getMonth();
-                        let hasVisibleTasks = false;
+                // Vylepšená Zálivka - Textový status s výpočtem dnů
+                let wText = " (Zatím nezalito)";
+                if (plant.lastWatered) {
+                    let diff = Math.floor(Math.abs(new Date() - new Date(plant.lastWatered)) / (1000 * 60 * 60 * 24));
+                    wText = ` (Naposledy: ${diff === 0 ? "Dnes" : (diff === 1 ? "Včera" : `Před ${diff} dny`)})`;
+                }
+                document.getElementById('water-status').innerText = wText;
 
-                        if (plant.tasks && Array.isArray(plant.tasks)) {
-                            plant.tasks.forEach(task => {
-                                // Filtrujeme: Patří úkol do tohoto měsíce?
-                                const isForThisMonth = Array.isArray(task.months) ? task.months.includes(currentMonth) : task.month === currentMonth;
-                                // Je už splněný?
-                                const isDone = Array.isArray(task.completedMonths) && task.completedMonths.includes(currentMonth);
+                // Úkoly v detailu (Logika: "Zobraz jen to, co zbývá")
+                const tasksDiv = document.getElementById('detail-tasks');
+                tasksDiv.innerHTML = '';
+                const currentMonth = new Date().getMonth();
+                let hasVisibleTasks = false;
 
-                                // ZOBRAZÍME JEN POKUD: Je pro tento měsíc A NENÍ splněný
-                                if (isForThisMonth && !isDone) {
-                                    hasVisibleTasks = true;
-                                    tasksDiv.innerHTML += `
+                if (plant.tasks && Array.isArray(plant.tasks)) {
+                    plant.tasks.forEach(task => {
+                        // Filtrujeme: Patří úkol do tohoto měsíce?
+                        const isForThisMonth = Array.isArray(task.months) ? task.months.includes(currentMonth) : task.month === currentMonth;
+                        // Je už splněný?
+                        const isDone = Array.isArray(task.completedMonths) && task.completedMonths.includes(currentMonth);
+
+                        // ZOBRAZÍME JEN POKUD: Je pro tento měsíc A NENÍ splněný
+                        if (isForThisMonth && !isDone) {
+                            hasVisibleTasks = true;
+                            tasksDiv.innerHTML += `
                         <div class="task-item" style="border: 1px solid #ccc; flex-direction: column; align-items: stretch; margin-bottom:10px; padding:10px;">
                             <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                                 <strong style="font-size: 1.05rem; color: var(--p);">${task.name}</strong>
@@ -1059,672 +1063,672 @@
                             </div>
                             <button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${task.name}')">💡 Hledat přípravky</button>
                         </div>`;
-                                }
-                            });
                         }
+                    });
+                }
 
-                        if (!hasVisibleTasks) {
-                            tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666; text-align:center;">Všechny úkoly na tento měsíc jsou hotové! 🎉</p>';
-                        }
+                if (!hasVisibleTasks) {
+                    tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666; text-align:center;">Všechny úkoly na tento měsíc jsou hotové! 🎉</p>';
+                }
 
-                        // --- TRVALÁ PAMĚŤ AI (Nové bezpečné boxy) ---
-                        const detBox = document.getElementById('ai-mem-detective');
-                        if (plant.aiDetection) {
-                            detBox.innerHTML = `<strong>🔎 Tip na odrůdu:</strong> ${plant.aiDetection}
+                // --- TRVALÁ PAMĚŤ AI (Nové bezpečné boxy) ---
+                const detBox = document.getElementById('ai-mem-detective');
+                if (plant.aiDetection) {
+                    detBox.innerHTML = `<strong>🔎 Tip na odrůdu:</strong> ${plant.aiDetection}
                     <button class="btn-sm-action" style="background:var(--det); color:white; border:none;" onclick="updateProfileName('${plant.name} (${plant.aiDetection})')">Přidat odrůdu k názvu</button>
                     <button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDetection')">🗑️ Smazat tip</button>`;
-                            detBox.style.display = 'block';
-                        } else { detBox.style.display = 'none'; }
+                    detBox.style.display = 'block';
+                } else { detBox.style.display = 'none'; }
 
-                        const docBox = document.getElementById('ai-mem-doctor');
-                        if (plant.aiDiagnosis) {
-                            // Zpětná kompatibilita pro staré diagnózy zapsané jako čistý text
-                            if (typeof plant.aiDiagnosis === 'string') {
-                                docBox.innerHTML = `<strong>🩺 Zdraví:</strong> ${plant.aiDiagnosis}
+                const docBox = document.getElementById('ai-mem-doctor');
+                if (plant.aiDiagnosis) {
+                    // Zpětná kompatibilita pro staré diagnózy zapsané jako čistý text
+                    if (typeof plant.aiDiagnosis === 'string') {
+                        docBox.innerHTML = `<strong>🩺 Zdraví:</strong> ${plant.aiDiagnosis}
                         <button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDiagnosis')">🗑️ Smazat diagnózu</button>`;
-                            } else {
-                                // Nový chytrý JSON formát
-                                let docContent = `<strong>🩺 Zdraví:</strong> ${plant.aiDiagnosis.description}`;
+                    } else {
+                        // Nový chytrý JSON formát
+                        let docContent = `<strong>🩺 Zdraví:</strong> ${plant.aiDiagnosis.description}`;
 
-                                // Přidat tlačítko pro Agromanuál POUZE pokud je problém
-                                if (plant.aiDiagnosis.hasProblem && plant.aiDiagnosis.searchKeyword) {
-                                    docContent += `<button class="btn-sm-action" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${plant.aiDiagnosis.searchKeyword}'), '_blank')">🔍 Ověřit na Agromanual.cz</button>`;
-                                }
+                        // Přidat tlačítko pro Agromanuál POUZE pokud je problém
+                        if (plant.aiDiagnosis.hasProblem && plant.aiDiagnosis.searchKeyword) {
+                            docContent += `<button class="btn-sm-action" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${plant.aiDiagnosis.searchKeyword}'), '_blank')">🔍 Ověřit na Agromanual.cz</button>`;
+                        }
 
-                                docContent += `<button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDiagnosis')">🗑️ Smazat diagnózu</button>`;
-                                docBox.innerHTML = docContent;
-                            }
-                            docBox.style.display = 'block';
-                        } else { docBox.style.display = 'none'; }
+                        docContent += `<button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDiagnosis')">🗑️ Smazat diagnózu</button>`;
+                        docBox.innerHTML = docContent;
+                    }
+                    docBox.style.display = 'block';
+                } else { docBox.style.display = 'none'; }
 
-                        const prodBox = document.getElementById('ai-mem-products');
-                        if (plant.aiProducts && plant.aiProducts.length > 0) {
-                            let pHTML = `<strong>💡 5 Doporučených přípravků:</strong><div style="margin-top:10px;">`;
-                            plant.aiProducts.forEach(prod => {
-                                pHTML += `<div style="display:flex; gap:5px; margin-bottom:5px;">
+                const prodBox = document.getElementById('ai-mem-products');
+                if (plant.aiProducts && plant.aiProducts.length > 0) {
+                    let pHTML = `<strong>💡 5 Doporučených přípravků:</strong><div style="margin-top:10px;">`;
+                    plant.aiProducts.forEach(prod => {
+                        pHTML += `<div style="display:flex; gap:5px; margin-bottom:5px;">
                         <span style="flex:1; align-self:center; font-size:0.9rem; font-weight:bold;">${prod}</span>
                         <button class="btn-shop" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
                         <button class="btn-shop" style="background:var(--p);" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
                     </div>`;
-                            });
-                            pHTML += `</div><button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiProducts')">🗑️ Smazat návrhy</button>`;
-                            prodBox.innerHTML = pHTML;
-                            prodBox.style.display = 'block';
-                        } else { prodBox.style.display = 'none'; }
+                    });
+                    pHTML += `</div><button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiProducts')">🗑️ Smazat návrhy</button>`;
+                    prodBox.innerHTML = pHTML;
+                    prodBox.style.display = 'block';
+                } else { prodBox.style.display = 'none'; }
 
-                        // Historie (Časová osa s možností smazání - Undo)
-                        const tl = document.getElementById('detail-timeline');
-                        tl.innerHTML = '';
-                        [...plant.careHistory].reverse().forEach((h, idx) => {
-                            let realIndex = plant.careHistory.length - 1 - idx;
-                            tl.innerHTML += `<div class="timeline-item" style="display:flex; justify-content:space-between; align-items:center;">
+                // Historie (Časová osa s možností smazání - Undo)
+                const tl = document.getElementById('detail-timeline');
+                tl.innerHTML = '';
+                [...plant.careHistory].reverse().forEach((h, idx) => {
+                    let realIndex = plant.careHistory.length - 1 - idx;
+                    tl.innerHTML += `<div class="timeline-item" style="display:flex; justify-content:space-between; align-items:center;">
                     <div><strong>${h.date}:</strong> ${h.text}</div>
                     <button onclick="deleteHistoryItem(${realIndex})" style="background:none; border:none; color:var(--warn); cursor:pointer; font-size:1.1rem; padding:0 10px;" title="Smazat záznam">❌</button>
                 </div>`;
-                        });
+                });
 
-                        // --- DYNAMICKÉ YOUTUBE ŠTÍTKY ---
-                        const ytTags = document.getElementById('yt-dynamic-tags');
-                        ytTags.innerHTML = `
+                // --- DYNAMICKÉ YOUTUBE ŠTÍTKY ---
+                const ytTags = document.getElementById('yt-dynamic-tags');
+                ytTags.innerHTML = `
                 <button onclick="searchYT('${plant.name} Řez')" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; background:white; font-weight:bold;">✂️ Řez</button>
                 <button onclick="searchYT('${plant.name} Hnojení')" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; background:white; font-weight:bold;">🌱 Hnojení</button>
                 <button onclick="searchYT('${plant.name} Škůdci a postřiky')" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; background:white; font-weight:bold;">🐛 Škůdci</button>
                 <button onclick="searchYT('${plant.name} Přesazování')" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; background:white; font-weight:bold;">🪴 Přesazování</button>
             `;
 
-                        // Vykreslení uložených videí
-                        const vids = document.getElementById('saved-videos');
-                        vids.innerHTML = '';
-                        if (plant.savedVideos) {
-                            plant.savedVideos.forEach((v, idx) => {
-                                let vId = v.includes('v=') ? v.split('v=')[1].split('&')[0] : v.split('youtu.be/')[1]?.split('?')[0];
-                                if (vId) vids.innerHTML += `<div style="margin-bottom:15px;"><iframe width="100%" height="200" src="https://www.youtube.com/embed/${vId}" frameborder="0" allowfullscreen style="border-radius:12px;"></iframe><button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteVideo(${idx})">Smazat video</button></div>`;
-                            });
-                        }
-                        document.getElementById('detail-view').style.display = 'block';
-                    };
-                }
-
-                function closeDetail() {
-                    document.getElementById('detail-view').style.display = 'none';
-                    currentPlantId = null;
-                }
-                // --- 7. KOMUNIKACE S GEMINI API (AI Doktor, Detektiv, Produkty) ---
-                async function callAI(type, extraParam = '') {
-                    const key = localStorage.getItem('G_KEY');
-                    if (!key) return alert("Zadejte Gemini API Klíč v nastavení (ozubené kolečko)!");
-
-                    showLoader("AI analyzuje data...");
-
-                    // 1. KROK: Rychlé přečtení rostliny
-                    const db = await getDB();
-                    const plant = await new Promise((resolve, reject) => {
-                        const tx = db.transaction('plants', 'readonly');
-                        const req = tx.objectStore('plants').get(currentPlantId);
-                        req.onsuccess = () => resolve(req.result);
-                        req.onerror = () => reject(req.error);
+                // Vykreslení uložených videí
+                const vids = document.getElementById('saved-videos');
+                vids.innerHTML = '';
+                if (plant.savedVideos) {
+                    plant.savedVideos.forEach((v, idx) => {
+                        let vId = v.includes('v=') ? v.split('v=')[1].split('&')[0] : v.split('youtu.be/')[1]?.split('?')[0];
+                        if (vId) vids.innerHTML += `<div style="margin-bottom:15px;"><iframe width="100%" height="200" src="https://www.youtube.com/embed/${vId}" frameborder="0" allowfullscreen style="border-radius:12px;"></iframe><button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteVideo(${idx})">Smazat video</button></div>`;
                     });
+                }
+                document.getElementById('detail-view').style.display = 'block';
+            };
+        }
 
-                    if (!plant) {
-                        hideLoader();
-                        return alert("Chyba: Rostlina nenalezena.");
-                    }
+        function closeDetail() {
+            document.getElementById('detail-view').style.display = 'none';
+            currentPlantId = null;
+        }
+        // --- 7. KOMUNIKACE S GEMINI API (AI Doktor, Detektiv, Produkty) ---
+        async function callAI(type, extraParam = '') {
+            const key = localStorage.getItem('G_KEY');
+            if (!key) return alert("Zadejte Gemini API Klíč v nastavení (ozubené kolečko)!");
 
-                    const b64 = plant.images[0].split(',')[1];
+            showLoader("AI analyzuje data...");
 
-                    try {
-                        let prompt = "";
-                        let isJSON = false;
+            // 1. KROK: Rychlé přečtení rostliny
+            const db = await getDB();
+            const plant = await new Promise((resolve, reject) => {
+                const tx = db.transaction('plants', 'readonly');
+                const req = tx.objectStore('plants').get(currentPlantId);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
 
-                        // NOVÝ JSON PROMPT PRO DOKTORA
-                        if (type === 'doctor') {
-                            // ... (kód doktora zůstává stejný)
-                        } else if (type === 'detective') {
-                            prompt = `Urči přesnou odrůdu této rostliny. Odpověz POUZE ve formátu JSON: {"exactName": "Název rostliny"}`;
-                            isJSON = true;
-                        } else if (type === 'products') {
-                            prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
-                            isJSON = true;
-                        } else if (type === 'task-products') {
-                            prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků na českém trhu přímo pro vyřešení úkolu '${extraParam}' u rostliny '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
-                            isJSON = true;
-                        }
+            if (!plant) {
+                hideLoader();
+                return alert("Chyba: Rostlina nenalezena.");
+            }
 
-                        const payload = { contents: [{ parts: [{ text: prompt }] }] };
-                        if (type !== 'products') {
-                            payload.contents[0].parts.push({ inline_data: { mime_type: "image/jpeg", data: b64 } });
-                        }
-                        if (isJSON) {
-                            payload.generationConfig = { response_mime_type: "application/json" };
-                        }
+            const b64 = plant.images[0].split(',')[1];
 
-                        // 2. KROK: Čekání na AI
-                        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-                            method: 'POST',
-                            body: JSON.stringify(payload)
-                        });
+            try {
+                let prompt = "";
+                let isJSON = false;
 
-                        const data = await resp.json();
-                        const aiResponse = data.candidates[0].content.parts[0].text;
-
-                        // ZPRACOVÁNÍ ODPOVĚDÍ
-                        if (type === 'doctor') {
-                            const docData = JSON.parse(aiResponse);
-                            plant.aiDiagnosis = docData; // Uložíme jako chytrý objekt
-
-                            // Pokud AI najde problém, automaticky založí úkol a zapíše do historie
-                            if (docData.hasProblem) {
-                                if (!plant.careHistory) plant.careHistory = [];
-                                plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `⚠️ AI Diagnóza: Byl zjištěn problém - ${docData.searchKeyword}` });
-
-                                const currentMonth = new Date().getMonth();
-                                if (!plant.tasks) plant.tasks = {};
-                                if (!plant.tasks[currentMonth]) plant.tasks[currentMonth] = [];
-                                if (docData.suggestedTask && !plant.tasks[currentMonth].includes(docData.suggestedTask)) {
-                                    plant.tasks[currentMonth].push(docData.suggestedTask);
-                                }
-                            }
-                        }
-                        else if (type === 'detective') plant.aiDetection = JSON.parse(aiResponse).exactName;
-                        else if (type === 'products' || type === 'task-products') plant.aiProducts = JSON.parse(aiResponse);
-
-                        // 3. KROK: Nová transakce pro bezpečné uložení výsledku
-                        const saveTx = db.transaction('plants', 'readwrite');
-                        const saveStore = saveTx.objectStore('plants');
-                        saveStore.put(plant);
-
-                        saveTx.oncomplete = () => {
-                            hideLoader();
-                            renderPlants(); // Musíme překreslit hlavní stranu kvůli novému úkolu
-                            openDetail(currentPlantId);
-                        };
-                    } catch (e) {
-                        console.error(e);
-                        alert("Chyba AI analýzy. Zkontrolujte připojení nebo platnost API klíče.");
-                        hideLoader();
-                    }
+                // NOVÝ JSON PROMPT PRO DOKTORA
+                if (type === 'doctor') {
+                    // ... (kód doktora zůstává stejný)
+                } else if (type === 'detective') {
+                    prompt = `Urči přesnou odrůdu této rostliny. Odpověz POUZE ve formátu JSON: {"exactName": "Název rostliny"}`;
+                    isJSON = true;
+                } else if (type === 'products') {
+                    prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
+                    isJSON = true;
+                } else if (type === 'task-products') {
+                    prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků na českém trhu přímo pro vyřešení úkolu '${extraParam}' u rostliny '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
+                    isJSON = true;
                 }
 
-                async function deleteAIMemory(field) {
-                    if (!confirm("Opravdu smazat tento uložený záznam z paměti?")) return;
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readwrite');
-                    const store = tx.objectStore('plants');
-                    const req = store.get(currentPlantId);
-
-                    req.onsuccess = () => {
-                        let plant = req.result;
-                        delete plant[field];
-                        store.put(plant);
-                        // OPRAVA: Refresh až po uložení
-                        tx.oncomplete = () => {
-                            openDetail(currentPlantId);
-                        };
-                    };
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                if (type !== 'products') {
+                    payload.contents[0].parts.push({ inline_data: { mime_type: "image/jpeg", data: b64 } });
+                }
+                if (isJSON) {
+                    payload.generationConfig = { response_mime_type: "application/json" };
                 }
 
-                async function updateProfileName(newName) {
-                    if (!confirm(`Chcete přejmenovat kartu na '${newName}' a načíst nové úkoly?`)) return;
-                    const key = localStorage.getItem('G_KEY');
-                    showLoader("Aktualizuji profil...");
-
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readwrite');
-                    const store = tx.objectStore('plants');
-                    const req = store.get(currentPlantId);
-
-                    req.onsuccess = async () => {
-                        let plant = req.result;
-                        try {
-                            // AI vygeneruje nové úkoly pro nově určenou odrůdu
-                            const prompt = `Jsi botanik. Pro rostlinu '${newName}' vygeneruj JSON s návodem a úkoly: {"water": "návod zálivky", "light": "návod světlo", "tasks": {"0":["úkol leden"],"1":["úkol únor"]...}} (0-11 jsou měsíce).`;
-                            const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-                                method: 'POST',
-                                body: JSON.stringify({
-                                    contents: [{ parts: [{ text: prompt }] }],
-                                    generationConfig: { response_mime_type: "application/json" }
-                                })
-                            });
-                            const aiData = JSON.parse((await resp.json()).candidates[0].content.parts[0].text);
-
-                            plant.name = newName;
-                            plant.water = aiData.water;
-                            plant.light = aiData.light;
-                            plant.tasks = aiData.tasks;
-                            delete plant.aiDetection; // Smažeme tip, už je to oficiální název
-
-                            store.put(plant);
-                            hideLoader();
-                            renderPlants();
-                            openDetail(currentPlantId);
-                        } catch (e) {
-                            hideLoader();
-                            alert("Chyba při aktualizaci profilu.");
-                        }
-                    };
-                }
-
-                // --- 8. IZOLOVANÝ PINCH-TO-ZOOM (Lightbox) ---
-                const lb = document.getElementById('lightbox');
-                const lbImg = document.getElementById('lightbox-img');
-                let curScale = 1, curX = 0, curY = 0, startX = 0, startY = 0, startDist = 0, startScale = 1;
-
-                function openLightbox(src) {
-                    lbImg.src = src;
-                    curScale = 1; curX = 0; curY = 0;
-                    lbImg.style.transform = `translate(0px, 0px) scale(1)`;
-                    lb.style.display = 'flex';
-                }
-
-                function closeLightbox() { lb.style.display = 'none'; }
-
-                async function deleteCurrentPhoto() {
-                    if (!confirm("Opravdu chcete smazat tuto fotku?")) return;
-
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readwrite');
-                    const store = tx.objectStore('plants');
-                    const req = store.get(currentPlantId);
-
-                    req.onsuccess = () => {
-                        let plant = req.result;
-                        // Ochrana, aby rostlině zůstala aspoň jedna fotka
-                        if (plant.images.length <= 1) {
-                            alert("Nelze smazat poslední fotku rostliny.");
-                            return;
-                        }
-
-                        // Najdeme aktuální fotku a odstraníme ji z pole
-                        const currentSrc = document.getElementById('lightbox-img').getAttribute('src');
-                        plant.images = plant.images.filter(img => img !== currentSrc);
-
-                        store.put(plant);
-                        tx.oncomplete = () => {
-                            closeLightbox();
-                            openDetail(currentPlantId); // Překreslíme galerii
-                        };
-                    };
-                }
-
-                lb.addEventListener('touchstart', e => {
-                    if (e.touches.length === 2) {
-                        startDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                        startScale = curScale;
-                    } else {
-                        startX = e.touches[0].clientX - curX;
-                        startY = e.touches[0].clientY - curY;
-                    }
+                // 2. KROK: Čekání na AI
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
                 });
 
-                lb.addEventListener('touchmove', e => {
-                    e.preventDefault(); // Blokuje scroll pozadí pouze v lightboxu
-                    if (e.touches.length === 2) {
-                        let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
-                        curScale = Math.max(1, Math.min(startScale * (dist / startDist), 5));
-                    } else {
-                        curX = e.touches[0].clientX - startX;
-                        curY = e.touches[0].clientY - startY;
-                    }
-                    lbImg.style.transform = `translate(${curX}px, ${curY}px) scale(${curScale})`;
-                }, { passive: false });
+                const data = await resp.json();
+                const aiResponse = data.candidates[0].content.parts[0].text;
 
-                // --- 9. HLASOVÉ POZNÁMKY (Speech Recognition) ---
-                const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-                let recognition;
-                if (SpeechRec) {
-                    recognition = new SpeechRec();
-                    recognition.lang = 'cs-CZ';
-                    recognition.onresult = (e) => {
-                        const input = document.getElementById('note-input');
-                        input.value = (input.value + " " + e.results[0][0].transcript).trim();
-                    };
-                    // NOVÉ: Vrací barvu na původní zelenou po skončení diktování
-                    recognition.onend = () => {
-                        document.getElementById('btn-mic').style.backgroundColor = "var(--p)";
-                    };
-                }
+                // ZPRACOVÁNÍ ODPOVĚDÍ
+                if (type === 'doctor') {
+                    const docData = JSON.parse(aiResponse);
+                    plant.aiDiagnosis = docData; // Uložíme jako chytrý objekt
 
-                function startDictation() {
-                    if (!recognition) return alert("Hlasové zadávání není v tomto prohlížeči podporováno.");
-                    // NOVÉ: Změní barvu na červenou (var--warn) při startu
-                    document.getElementById('btn-mic').style.backgroundColor = "var(--warn)";
-                    recognition.start();
-                }
+                    // Pokud AI najde problém, automaticky založí úkol a zapíše do historie
+                    if (docData.hasProblem) {
+                        if (!plant.careHistory) plant.careHistory = [];
+                        plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `⚠️ AI Diagnóza: Byl zjištěn problém - ${docData.searchKeyword}` });
 
-                async function saveNote() {
-                    const text = document.getElementById('note-input').value.trim();
-                    if (!text) return;
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readwrite');
-                    const store = tx.objectStore('plants');
-                    const req = store.get(currentPlantId);
-                    req.onsuccess = () => {
-                        let plant = req.result;
-                        plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `📝 Poznámka: ${text}` });
-                        store.put(plant);
-                        document.getElementById('note-input').value = "";
-                        openDetail(currentPlantId);
-                    };
-                }
-
-                // --- 10. YouTube A OSTATNÍ FUNKCE ---
-                function searchYT(query) { window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank'); }
-
-                async function deleteVideo(idx) {
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readwrite');
-                    const store = tx.objectStore('plants');
-                    const req = store.get(currentPlantId);
-                    req.onsuccess = () => {
-                        let plant = req.result;
-                        plant.savedVideos.splice(idx, 1);
-                        store.put(plant);
-                        openDetail(currentPlantId);
-                    };
-                }
-
-                async function deleteCurrentPlant() {
-                    if (!confirm("Opravdu smazat rostlinu i celou její historii?")) return;
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readwrite');
-                    tx.objectStore('plants').delete(currentPlantId);
-                    tx.oncomplete = () => { closeDetail(); renderPlants(); };
-                }
-
-                // --- 11. ZÁLOHOVÁNÍ DO .ZIP (Export & Import) ---
-                async function exportZip() {
-                    showLoader('Připravuji zálohu...');
-                    const zip = new JSZip();
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readonly');
-                    const req = tx.objectStore('plants').getAll();
-
-                    req.onsuccess = () => {
-                        zip.file('databaze.json', JSON.stringify(req.result));
-                        zip.file('nastaveni.json', JSON.stringify({ key: localStorage.getItem('G_KEY') || "" }));
-
-                        zip.generateAsync({ type: "blob" }).then(blob => {
-                            const a = document.createElement('a');
-                            a.href = URL.createObjectURL(blob);
-                            a.download = "PlantMaster_Zaloha.zip";
-                            a.click();
-                            hideLoader();
-                        }); // Zde je správně ukončená metoda .then()
-                    }; // Zde je správně ukončený blok req.onsuccess
-                } // Zde je definitivně uzavřená celá funkce exportZip
-                async function handleImport(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-                    showLoader('Načítám zálohu...');
-                    try {
-                        const zip = new JSZip();
-                        const contents = await zip.loadAsync(file);
-                        importedData = JSON.parse(await contents.file('databaze.json').async('string'));
-
-                        // Obnova API klíče
-                        if (contents.file('nastaveni.json')) {
-                            const settings = JSON.parse(await contents.file('nastaveni.json').async('string'));
-                            if (settings.key) localStorage.setItem('G_KEY', settings.key);
+                        const currentMonth = new Date().getMonth();
+                        if (!plant.tasks) plant.tasks = {};
+                        if (!plant.tasks[currentMonth]) plant.tasks[currentMonth] = [];
+                        if (docData.suggestedTask && !plant.tasks[currentMonth].includes(docData.suggestedTask)) {
+                            plant.tasks[currentMonth].push(docData.suggestedTask);
                         }
-
-                        hideLoader();
-                        closeSettings();
-                        document.getElementById('import-modal').style.display = 'flex';
-                        event.target.value = '';
-                    } catch (e) {
-                        hideLoader();
-                        alert("Chyba: Toto není platný .zip soubor PlantMasteru.");
                     }
                 }
+                else if (type === 'detective') plant.aiDetection = JSON.parse(aiResponse).exactName;
+                else if (type === 'products' || type === 'task-products') plant.aiProducts = JSON.parse(aiResponse);
 
-                async function executeImport(mode) {
-                    document.getElementById('import-modal').style.display = 'none';
-                    showLoader('Importuji data...');
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readwrite');
-                    const store = tx.objectStore('plants');
+                // 3. KROK: Nová transakce pro bezpečné uložení výsledku
+                const saveTx = db.transaction('plants', 'readwrite');
+                const saveStore = saveTx.objectStore('plants');
+                saveStore.put(plant);
 
-                    if (mode === 'overwrite') store.clear();
+                saveTx.oncomplete = () => {
+                    hideLoader();
+                    renderPlants(); // Musíme překreslit hlavní stranu kvůli novému úkolu
+                    openDetail(currentPlantId);
+                };
+            } catch (e) {
+                console.error(e);
+                alert("Chyba AI analýzy. Zkontrolujte připojení nebo platnost API klíče.");
+                hideLoader();
+            }
+        }
 
-                    // Přečteme si všechny existující kytky, ať můžeme kontrolovat jména
-                    const reqAll = store.getAll();
-                    reqAll.onsuccess = () => {
-                        const existingPlants = reqAll.result;
-                        const existingNames = existingPlants.map(p => p.name.toLowerCase());
+        async function deleteAIMemory(field) {
+            if (!confirm("Opravdu smazat tento uložený záznam z paměti?")) return;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
 
-                        importedData.forEach(p => {
-                            if (mode === 'merge') {
-                                // Pokud už kytka se stejným jménem existuje, přeskočíme ji
-                                if (p.name && existingNames.includes(p.name.toLowerCase())) {
-                                    return;
-                                }
-                                delete p.id; // Jinak jí smažeme ID a přidáme jako novou
-                            }
-                            store.put(p);
-                        });
+            req.onsuccess = () => {
+                let plant = req.result;
+                delete plant[field];
+                store.put(plant);
+                // OPRAVA: Refresh až po uložení
+                tx.oncomplete = () => {
+                    openDetail(currentPlantId);
+                };
+            };
+        }
 
-                        tx.oncomplete = () => {
-                            hideLoader();
-                            location.reload();
-                        };
-                    };
-                }
+        async function updateProfileName(newName) {
+            if (!confirm(`Chcete přejmenovat kartu na '${newName}' a načíst nové úkoly?`)) return;
+            const key = localStorage.getItem('G_KEY');
+            showLoader("Aktualizuji profil...");
 
-                // --- 12. PŘIDÁVÁNÍ FOTEK A AI START ---
-                async function handleNewPlantPhoto(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
 
-                    const key = localStorage.getItem('G_KEY');
-                    if (!key) return alert("Nejprve zadejte API klíč v nastavení!");
-
-                    showLoader("Analyzuji novou rostlinu...");
-
-                    try {
-                        // 1. ZMENŠENÍ FOTKY 
-                        const resizedBase64 = await resizeImage(file);
-                        const b64Data = resizedBase64.split(',')[1];
-
-                        // 2. POŽADAVEK NA AI
-                        const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":"Pokojové/Zelenina/Ovoce/Bylinky/Stromy a keře","description":"Základní charakteristika a nároky na údržbu (max 2 věty)","water":"Detailní instrukce: jak často a kdy zalévat","light":"Nároky na světlo","tasks":{"0":[{"nazev":"Název úkolu","popis":"Krátký popis, jak úkol provést"}]}} (0-11 jsou měsíce). Odpověz POUZE čistým JSON formátem.`;
-
-                        const payload = {
-                            contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } }] }],
+            req.onsuccess = async () => {
+                let plant = req.result;
+                try {
+                    // AI vygeneruje nové úkoly pro nově určenou odrůdu
+                    const prompt = `Jsi botanik. Pro rostlinu '${newName}' vygeneruj JSON s návodem a úkoly: {"water": "návod zálivky", "light": "návod světlo", "tasks": {"0":["úkol leden"],"1":["úkol únor"]...}} (0-11 jsou měsíce).`;
+                    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
                             generationConfig: { response_mime_type: "application/json" }
-                        };
-
-                        const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-                            method: 'POST',
-                            body: JSON.stringify(payload)
-                        });
-
-                        const data = await resp.json();
-
-                        // PŘEKLADATEL CHYB OD GOOGLU DO ČEŠTINY
-                        if (data.error) {
-                            let errMsg = data.error.message || "";
-
-                            if (errMsg.includes("Quota exceeded")) {
-                                if (errMsg.includes("retry in")) {
-                                    // Vytáhne si z textu vteřiny a zaokrouhlí je
-                                    let match = errMsg.match(/retry in ([\d\.]+)s/);
-                                    let seconds = match ? Math.ceil(parseFloat(match[1])) : 60;
-                                    throw new Error(`Byl překročen rychlostní limit. Počkejte prosím ${seconds} sekund a zkuste to znovu.`);
-                                } else {
-                                    throw new Error("Byl vyčerpán denní limit pro umělou inteligenci. Zkuste to prosím zítra.");
-                                }
-                            }
-                            // Pro jakékoliv jiné neznámé chyby
-                            throw new Error("Nelze se spojit s AI. Zkuste to prosím později.");
-                        }
-
-                        if (!data.candidates || data.candidates.length === 0) {
-                            throw new Error("Google neposlal žádná data (zkontrolujte připojení k internetu).");
-                        }
-
-                        let aiResponse = data.candidates[0].content.parts[0].text;
-
-                        // Očištění dat
-                        aiResponse = aiResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
-                        const aiData = JSON.parse(aiResponse);
-
-                        // 3. Uložení do databáze
-                        const newPlant = {
-                            id: Date.now(),
-                            name: aiData.name || "Neznámá rostlina",
-                            category: aiData.category || "Ostatní",
-                            description: aiData.description || "",
-                            water: aiData.water || "",
-                            light: aiData.light || "",
-                            images: [resizedBase64],
-                            tasks: aiData.tasks || {},
-                            careHistory: [{ date: new Date().toLocaleDateString('cs-CZ'), text: 'Rostlina přidána do systému.' }]
-                        };
-
-                        const db = await getDB();
-                        const tx = db.transaction('plants', 'readwrite');
-                        tx.objectStore('plants').put(newPlant);
-                        tx.oncomplete = () => {
-                            hideLoader();
-                            renderPlants();
-                        };
-                    } catch (err) {
-                        console.error(err);
-                        // Vypíše krásnou českou hlášku, kterou jsme nahoře nastavili
-                        alert("Chyba: " + err.message);
-                        hideLoader();
-                    }
-                }
-
-                async function addPhotoToCurrentPlant(event) {
-                    const file = event.target.files[0];
-                    if (!file) return;
-
-                    showLoader("Zpracovávám fotografii...");
-
-                    try {
-                        // 1. ZMENŠENÍ FOTKY (Zavoláme naši novou funkci)
-                        const resizedBase64 = await resizeImage(file);
-
-                        // 2. ULOŽENÍ DO DATABÁZE
-                        const db = await getDB();
-                        const tx = db.transaction('plants', 'readwrite');
-                        const store = tx.objectStore('plants');
-                        const req = store.get(currentPlantId);
-
-                        req.onsuccess = () => {
-                            let plant = req.result;
-                            // Pro jistotu zkontrolujeme, zda má rostlina pole pro obrázky
-                            if (!plant.images) plant.images = [];
-
-                            // Přidáme naši novou, lehkou fotku
-                            plant.images.push(resizedBase64);
-
-                            store.put(plant);
-                            tx.oncomplete = () => {
-                                hideLoader();
-                                renderPlants();             // Aktualizuje hlavní seznam
-                                openDetail(currentPlantId); // Okamžitě obnoví galerii v detailu
-                            };
-                        };
-                    } catch (err) {
-                        console.error(err);
-                        alert("Chyba při zpracování fotky. Zkuste to prosím znovu.");
-                        hideLoader();
-                    }
-                }
-
-                // --- 13. OSTATNÍ SYSTÉMOVÉ FUNKCE ---
-                function openSettings() { document.getElementById('settings-view').style.display = 'block'; }
-                function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
-                function saveSettings() {
-                    localStorage.setItem('G_KEY', document.getElementById('api-key').value.trim());
-                    closeSettings();
-                    alert("Nastavení uloženo.");
-                }
-                function showLoader(txt) {
-                    document.getElementById('loader-text').innerText = txt;
-                    document.getElementById('loader').style.display = 'flex';
-                }
-                function hideLoader() { document.getElementById('loader').style.display = 'none'; }
-
-                async function deleteAll() {
-                    if (!confirm('VAROVÁNÍ: Opravdu chcete vymazat celou databázi rostlin? Akce je nevratná!')) return;
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readwrite');
-                    tx.objectStore('plants').clear();
-                    tx.oncomplete = () => { closeSettings(); renderPlants(); };
-                }
-
-                async function editPlantName() {
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readonly');
-                    const req = tx.objectStore('plants').get(currentPlantId);
-
-                    req.onsuccess = () => {
-                        let plant = req.result;
-                        const newName = prompt("Upravit název nebo odrůdu rostliny:", plant.name);
-
-                        if (newName && newName.trim() !== "" && newName !== plant.name) {
-                            plant.name = newName.trim();
-                            const writeTx = db.transaction('plants', 'readwrite');
-                            writeTx.objectStore('plants').put(plant);
-                            writeTx.oncomplete = () => {
-                                renderPlants();
-                                openDetail(currentPlantId);
-                            };
-                        }
-                    };
-                }
-
-                // NOVÁ FUNKCE PRO VZETÍ ZPĚT (Smazání z historie)
-                async function deleteHistoryItem(index) {
-                    if (!confirm("Opravdu smazat tento záznam? (Tímto můžete vzít zpět zálivku nebo splněný úkol)")) return;
-                    const db = await getDB();
-                    const tx = db.transaction('plants', 'readwrite');
-                    const store = tx.objectStore('plants');
-                    const req = store.get(currentPlantId);
-
-                    req.onsuccess = () => {
-                        let plant = req.result;
-                        plant.careHistory.splice(index, 1);
-                        store.put(plant);
-                        tx.oncomplete = () => {
-                            renderPlants();
-                            openDetail(currentPlantId);
-                        };
-                    };
-                }
-
-                // --- FUNKCE PRO ZMENŠENÍ FOTKY (Komprese) ---
-                function resizeImage(file) {
-                    return new Promise((resolve) => {
-                        const reader = new FileReader();
-                        reader.readAsDataURL(file);
-                        reader.onload = (e) => {
-                            const img = new Image();
-                            img.src = e.target.result;
-                            img.onload = () => {
-                                const canvas = document.createElement('canvas');
-                                let w = img.width;
-                                let h = img.height;
-
-                                // LIMIT ROZLIŠENÍ: Pokud je fotka širší než 800px, zmenšíme ji
-                                if (w > 800) {
-                                    h = Math.round((h * 800) / w);
-                                    w = 800;
-                                }
-
-                                canvas.width = w;
-                                canvas.height = h;
-                                // Vykreslení na neviditelné plátno (canvas)
-                                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                                // KOMPRESE: Převedeme na JPEG s kvalitou 70%
-                                resolve(canvas.toDataURL('image/jpeg', 0.7));
-                            };
-                        };
+                        })
                     });
+                    const aiData = JSON.parse((await resp.json()).candidates[0].content.parts[0].text);
+
+                    plant.name = newName;
+                    plant.water = aiData.water;
+                    plant.light = aiData.light;
+                    plant.tasks = aiData.tasks;
+                    delete plant.aiDetection; // Smažeme tip, už je to oficiální název
+
+                    store.put(plant);
+                    hideLoader();
+                    renderPlants();
+                    openDetail(currentPlantId);
+                } catch (e) {
+                    hideLoader();
+                    alert("Chyba při aktualizaci profilu.");
                 }
+            };
+        }
+
+        // --- 8. IZOLOVANÝ PINCH-TO-ZOOM (Lightbox) ---
+        const lb = document.getElementById('lightbox');
+        const lbImg = document.getElementById('lightbox-img');
+        let curScale = 1, curX = 0, curY = 0, startX = 0, startY = 0, startDist = 0, startScale = 1;
+
+        function openLightbox(src) {
+            lbImg.src = src;
+            curScale = 1; curX = 0; curY = 0;
+            lbImg.style.transform = `translate(0px, 0px) scale(1)`;
+            lb.style.display = 'flex';
+        }
+
+        function closeLightbox() { lb.style.display = 'none'; }
+
+        async function deleteCurrentPhoto() {
+            if (!confirm("Opravdu chcete smazat tuto fotku?")) return;
+
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                // Ochrana, aby rostlině zůstala aspoň jedna fotka
+                if (plant.images.length <= 1) {
+                    alert("Nelze smazat poslední fotku rostliny.");
+                    return;
+                }
+
+                // Najdeme aktuální fotku a odstraníme ji z pole
+                const currentSrc = document.getElementById('lightbox-img').getAttribute('src');
+                plant.images = plant.images.filter(img => img !== currentSrc);
+
+                store.put(plant);
+                tx.oncomplete = () => {
+                    closeLightbox();
+                    openDetail(currentPlantId); // Překreslíme galerii
+                };
+            };
+        }
+
+        lb.addEventListener('touchstart', e => {
+            if (e.touches.length === 2) {
+                startDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                startScale = curScale;
+            } else {
+                startX = e.touches[0].clientX - curX;
+                startY = e.touches[0].clientY - curY;
+            }
+        });
+
+        lb.addEventListener('touchmove', e => {
+            e.preventDefault(); // Blokuje scroll pozadí pouze v lightboxu
+            if (e.touches.length === 2) {
+                let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                curScale = Math.max(1, Math.min(startScale * (dist / startDist), 5));
+            } else {
+                curX = e.touches[0].clientX - startX;
+                curY = e.touches[0].clientY - startY;
+            }
+            lbImg.style.transform = `translate(${curX}px, ${curY}px) scale(${curScale})`;
+        }, { passive: false });
+
+        // --- 9. HLASOVÉ POZNÁMKY (Speech Recognition) ---
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        if (SpeechRec) {
+            recognition = new SpeechRec();
+            recognition.lang = 'cs-CZ';
+            recognition.onresult = (e) => {
+                const input = document.getElementById('note-input');
+                input.value = (input.value + " " + e.results[0][0].transcript).trim();
+            };
+            // NOVÉ: Vrací barvu na původní zelenou po skončení diktování
+            recognition.onend = () => {
+                document.getElementById('btn-mic').style.backgroundColor = "var(--p)";
+            };
+        }
+
+        function startDictation() {
+            if (!recognition) return alert("Hlasové zadávání není v tomto prohlížeči podporováno.");
+            // NOVÉ: Změní barvu na červenou (var--warn) při startu
+            document.getElementById('btn-mic').style.backgroundColor = "var(--warn)";
+            recognition.start();
+        }
+
+        async function saveNote() {
+            const text = document.getElementById('note-input').value.trim();
+            if (!text) return;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
+            req.onsuccess = () => {
+                let plant = req.result;
+                plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `📝 Poznámka: ${text}` });
+                store.put(plant);
+                document.getElementById('note-input').value = "";
+                openDetail(currentPlantId);
+            };
+        }
+
+        // --- 10. YouTube A OSTATNÍ FUNKCE ---
+        function searchYT(query) { window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank'); }
+
+        async function deleteVideo(idx) {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
+            req.onsuccess = () => {
+                let plant = req.result;
+                plant.savedVideos.splice(idx, 1);
+                store.put(plant);
+                openDetail(currentPlantId);
+            };
+        }
+
+        async function deleteCurrentPlant() {
+            if (!confirm("Opravdu smazat rostlinu i celou její historii?")) return;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            tx.objectStore('plants').delete(currentPlantId);
+            tx.oncomplete = () => { closeDetail(); renderPlants(); };
+        }
+
+        // --- 11. ZÁLOHOVÁNÍ DO .ZIP (Export & Import) ---
+        async function exportZip() {
+            showLoader('Připravuji zálohu...');
+            const zip = new JSZip();
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const req = tx.objectStore('plants').getAll();
+
+            req.onsuccess = () => {
+                zip.file('databaze.json', JSON.stringify(req.result));
+                zip.file('nastaveni.json', JSON.stringify({ key: localStorage.getItem('G_KEY') || "" }));
+
+                zip.generateAsync({ type: "blob" }).then(blob => {
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = "PlantMaster_Zaloha.zip";
+                    a.click();
+                    hideLoader();
+                }); // Zde je správně ukončená metoda .then()
+            }; // Zde je správně ukončený blok req.onsuccess
+        } // Zde je definitivně uzavřená celá funkce exportZip
+        async function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            showLoader('Načítám zálohu...');
+            try {
+                const zip = new JSZip();
+                const contents = await zip.loadAsync(file);
+                importedData = JSON.parse(await contents.file('databaze.json').async('string'));
+
+                // Obnova API klíče
+                if (contents.file('nastaveni.json')) {
+                    const settings = JSON.parse(await contents.file('nastaveni.json').async('string'));
+                    if (settings.key) localStorage.setItem('G_KEY', settings.key);
+                }
+
+                hideLoader();
+                closeSettings();
+                document.getElementById('import-modal').style.display = 'flex';
+                event.target.value = '';
+            } catch (e) {
+                hideLoader();
+                alert("Chyba: Toto není platný .zip soubor PlantMasteru.");
+            }
+        }
+
+        async function executeImport(mode) {
+            document.getElementById('import-modal').style.display = 'none';
+            showLoader('Importuji data...');
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+
+            if (mode === 'overwrite') store.clear();
+
+            // Přečteme si všechny existující kytky, ať můžeme kontrolovat jména
+            const reqAll = store.getAll();
+            reqAll.onsuccess = () => {
+                const existingPlants = reqAll.result;
+                const existingNames = existingPlants.map(p => p.name.toLowerCase());
+
+                importedData.forEach(p => {
+                    if (mode === 'merge') {
+                        // Pokud už kytka se stejným jménem existuje, přeskočíme ji
+                        if (p.name && existingNames.includes(p.name.toLowerCase())) {
+                            return;
+                        }
+                        delete p.id; // Jinak jí smažeme ID a přidáme jako novou
+                    }
+                    store.put(p);
+                });
+
+                tx.oncomplete = () => {
+                    hideLoader();
+                    location.reload();
+                };
+            };
+        }
+
+        // --- 12. PŘIDÁVÁNÍ FOTEK A AI START ---
+        async function handleNewPlantPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const key = localStorage.getItem('G_KEY');
+            if (!key) return alert("Nejprve zadejte API klíč v nastavení!");
+
+            showLoader("Analyzuji novou rostlinu...");
+
+            try {
+                // 1. ZMENŠENÍ FOTKY 
+                const resizedBase64 = await resizeImage(file);
+                const b64Data = resizedBase64.split(',')[1];
+
+                // 2. POŽADAVEK NA AI
+                const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":"Pokojové/Zelenina/Ovoce/Bylinky/Stromy a keře","description":"Základní charakteristika a nároky na údržbu (max 2 věty)","water":"Detailní instrukce: jak často a kdy zalévat","light":"Nároky na světlo","tasks":{"0":[{"nazev":"Název úkolu","popis":"Krátký popis, jak úkol provést"}]}} (0-11 jsou měsíce). Odpověz POUZE čistým JSON formátem.`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } }] }],
+                    generationConfig: { response_mime_type: "application/json" }
+                };
+
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await resp.json();
+
+                // PŘEKLADATEL CHYB OD GOOGLU DO ČEŠTINY
+                if (data.error) {
+                    let errMsg = data.error.message || "";
+
+                    if (errMsg.includes("Quota exceeded")) {
+                        if (errMsg.includes("retry in")) {
+                            // Vytáhne si z textu vteřiny a zaokrouhlí je
+                            let match = errMsg.match(/retry in ([\d\.]+)s/);
+                            let seconds = match ? Math.ceil(parseFloat(match[1])) : 60;
+                            throw new Error(`Byl překročen rychlostní limit. Počkejte prosím ${seconds} sekund a zkuste to znovu.`);
+                        } else {
+                            throw new Error("Byl vyčerpán denní limit pro umělou inteligenci. Zkuste to prosím zítra.");
+                        }
+                    }
+                    // Pro jakékoliv jiné neznámé chyby
+                    throw new Error("Nelze se spojit s AI. Zkuste to prosím později.");
+                }
+
+                if (!data.candidates || data.candidates.length === 0) {
+                    throw new Error("Google neposlal žádná data (zkontrolujte připojení k internetu).");
+                }
+
+                let aiResponse = data.candidates[0].content.parts[0].text;
+
+                // Očištění dat
+                aiResponse = aiResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
+                const aiData = JSON.parse(aiResponse);
+
+                // 3. Uložení do databáze
+                const newPlant = {
+                    id: Date.now(),
+                    name: aiData.name || "Neznámá rostlina",
+                    category: aiData.category || "Ostatní",
+                    description: aiData.description || "",
+                    water: aiData.water || "",
+                    light: aiData.light || "",
+                    images: [resizedBase64],
+                    tasks: aiData.tasks || {},
+                    careHistory: [{ date: new Date().toLocaleDateString('cs-CZ'), text: 'Rostlina přidána do systému.' }]
+                };
+
+                const db = await getDB();
+                const tx = db.transaction('plants', 'readwrite');
+                tx.objectStore('plants').put(newPlant);
+                tx.oncomplete = () => {
+                    hideLoader();
+                    renderPlants();
+                };
+            } catch (err) {
+                console.error(err);
+                // Vypíše krásnou českou hlášku, kterou jsme nahoře nastavili
+                alert("Chyba: " + err.message);
+                hideLoader();
+            }
+        }
+
+        async function addPhotoToCurrentPlant(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showLoader("Zpracovávám fotografii...");
+
+            try {
+                // 1. ZMENŠENÍ FOTKY (Zavoláme naši novou funkci)
+                const resizedBase64 = await resizeImage(file);
+
+                // 2. ULOŽENÍ DO DATABÁZE
+                const db = await getDB();
+                const tx = db.transaction('plants', 'readwrite');
+                const store = tx.objectStore('plants');
+                const req = store.get(currentPlantId);
+
+                req.onsuccess = () => {
+                    let plant = req.result;
+                    // Pro jistotu zkontrolujeme, zda má rostlina pole pro obrázky
+                    if (!plant.images) plant.images = [];
+
+                    // Přidáme naši novou, lehkou fotku
+                    plant.images.push(resizedBase64);
+
+                    store.put(plant);
+                    tx.oncomplete = () => {
+                        hideLoader();
+                        renderPlants();             // Aktualizuje hlavní seznam
+                        openDetail(currentPlantId); // Okamžitě obnoví galerii v detailu
+                    };
+                };
+            } catch (err) {
+                console.error(err);
+                alert("Chyba při zpracování fotky. Zkuste to prosím znovu.");
+                hideLoader();
+            }
+        }
+
+        // --- 13. OSTATNÍ SYSTÉMOVÉ FUNKCE ---
+        function openSettings() { document.getElementById('settings-view').style.display = 'block'; }
+        function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
+        function saveSettings() {
+            localStorage.setItem('G_KEY', document.getElementById('api-key').value.trim());
+            closeSettings();
+            alert("Nastavení uloženo.");
+        }
+        function showLoader(txt) {
+            document.getElementById('loader-text').innerText = txt;
+            document.getElementById('loader').style.display = 'flex';
+        }
+        function hideLoader() { document.getElementById('loader').style.display = 'none'; }
+
+        async function deleteAll() {
+            if (!confirm('VAROVÁNÍ: Opravdu chcete vymazat celou databázi rostlin? Akce je nevratná!')) return;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            tx.objectStore('plants').clear();
+            tx.oncomplete = () => { closeSettings(); renderPlants(); };
+        }
+
+        async function editPlantName() {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const req = tx.objectStore('plants').get(currentPlantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                const newName = prompt("Upravit název nebo odrůdu rostliny:", plant.name);
+
+                if (newName && newName.trim() !== "" && newName !== plant.name) {
+                    plant.name = newName.trim();
+                    const writeTx = db.transaction('plants', 'readwrite');
+                    writeTx.objectStore('plants').put(plant);
+                    writeTx.oncomplete = () => {
+                        renderPlants();
+                        openDetail(currentPlantId);
+                    };
+                }
+            };
+        }
+
+        // NOVÁ FUNKCE PRO VZETÍ ZPĚT (Smazání z historie)
+        async function deleteHistoryItem(index) {
+            if (!confirm("Opravdu smazat tento záznam? (Tímto můžete vzít zpět zálivku nebo splněný úkol)")) return;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                plant.careHistory.splice(index, 1);
+                store.put(plant);
+                tx.oncomplete = () => {
+                    renderPlants();
+                    openDetail(currentPlantId);
+                };
+            };
+        }
+
+        // --- FUNKCE PRO ZMENŠENÍ FOTKY (Komprese) ---
+        function resizeImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width;
+                        let h = img.height;
+
+                        // LIMIT ROZLIŠENÍ: Pokud je fotka širší než 800px, zmenšíme ji
+                        if (w > 800) {
+                            h = Math.round((h * 800) / w);
+                            w = 800;
+                        }
+
+                        canvas.width = w;
+                        canvas.height = h;
+                        // Vykreslení na neviditelné plátno (canvas)
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        // KOMPRESE: Převedeme na JPEG s kvalitou 70%
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                };
+            });
+        }
     </script>
 </body>
 
