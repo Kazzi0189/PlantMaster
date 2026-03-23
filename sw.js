@@ -1,4 +1,4 @@
-const CACHE_NAME = 'plantmaster-v21'; // ZMĚNA: Tady musí být v21
+const CACHE_NAME = 'plantmaster-v22'; // ZMĚNA: Tady musí být v21
 const ASSETS_TO_CACHE = [
   './index.html',
   './manifest.json',
