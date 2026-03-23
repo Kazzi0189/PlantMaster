@@ -230,17 +230,20 @@
 </header>
 
 <div class="container">
-    <div style="position: sticky; top: 0; background: var(--bg); z-index: 90; padding: 10px 0; margin-top: -10px; display: flex; gap: 10px;">
-        <input type="text" id="search-box" placeholder="Hledat..." oninput="renderPlants()" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.95rem; outline: none; box-sizing: border-box;">
-        
-        <select class="filter-select" id="filter-category" onchange="renderPlants()" style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.95rem; outline: none; background: white; color: #444; box-sizing: border-box; margin: 0;">
-            <option value="all">Všechny kategorie</option>
-            <option value="Pokojové">Pokojové</option>
-            <option value="Zelenina">Zelenina</option>
-            <option value="Ovoce">Ovoce</option>
-            <option value="Bylinky">Bylinky</option>
-            <option value="Stromy a keře">Stromy a keře</option>
-        </select>
+    <div style="position: sticky; top: 0; background: var(--bg); z-index: 90; padding: 10px 0; margin-top: -10px;">
+        <div class="filter-controls">
+            <input type="text" id="search-box" placeholder="Hledat rostlinu..." oninput="renderPlants()">
+        </div>
+        <div class="filter-controls" style="margin-bottom: 10px;">
+            <select class="filter-select" id="filter-category" onchange="renderPlants()">
+                <option value="all">Všechny kategorie</option>
+                <option value="Pokojové">Pokojové</option>
+                <option value="Zelenina">Zelenina</option>
+                <option value="Ovoce">Ovoce</option>
+                <option value="Bylinky">Bylinky</option>
+                <option value="Stromy a keře">Stromy a keře</option>
+            </select>
+        </div>
     </div>
 
     <div id="inbox-section">
@@ -1079,26 +1082,12 @@
             
             const data = await resp.json();
 
-            // PŘEKLADATEL CHYB OD GOOGLU DO ČEŠTINY
+            // PŘESNÝ LAPAČ CHYB OD GOOGLU (Tady uvidíme přímo hlášení z jejich serverů)
             if (data.error) {
-                let errMsg = data.error.message || "";
-                
-                if (errMsg.includes("Quota exceeded")) {
-                    if (errMsg.includes("retry in")) {
-                        // Vytáhne si z textu vteřiny a zaokrouhlí je
-                        let match = errMsg.match(/retry in ([\d\.]+)s/);
-                        let seconds = match ? Math.ceil(parseFloat(match[1])) : 60;
-                        throw new Error(`Byl překročen rychlostní limit. Počkejte prosím ${seconds} sekund a zkuste to znovu.`);
-                    } else {
-                        throw new Error("Byl vyčerpán denní limit pro umělou inteligenci. Zkuste to prosím zítra.");
-                    }
-                }
-                // Pro jakékoliv jiné neznámé chyby
-                throw new Error("Nelze se spojit s AI. Zkuste to prosím později.");
+                throw new Error("Google API hlásí: " + data.error.message);
             }
-            
             if (!data.candidates || data.candidates.length === 0) {
-                throw new Error("Google neposlal žádná data (zkontrolujte připojení k internetu).");
+                throw new Error("Google neposlal žádná data (neznámá chyba).");
             }
 
             let aiResponse = data.candidates[0].content.parts[0].text;
@@ -1129,7 +1118,6 @@
             };
         } catch (err) {
             console.error(err);
-            // Vypíše krásnou českou hlášku, kterou jsme nahoře nastavili
             alert("Chyba: " + err.message);
             hideLoader();
         }
@@ -1138,39 +1126,20 @@
     async function addPhotoToCurrentPlant(event) {
         const file = event.target.files[0];
         if (!file) return;
-
-        showLoader("Zpracovávám fotografii...");
-
-        try {
-            // 1. ZMENŠENÍ FOTKY (Zavoláme naši novou funkci)
-            const resizedBase64 = await resizeImage(file);
-
-            // 2. ULOŽENÍ DO DATABÁZE
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = async (e) => {
             const db = await getDB();
             const tx = db.transaction('plants', 'readwrite');
             const store = tx.objectStore('plants');
             const req = store.get(currentPlantId);
-
             req.onsuccess = () => {
-                let plant = req.result;
-                // Pro jistotu zkontrolujeme, zda má rostlina pole pro obrázky
-                if (!plant.images) plant.images = []; 
-                
-                // Přidáme naši novou, lehkou fotku
-                plant.images.push(resizedBase64); 
-                
-                store.put(plant);
-                tx.oncomplete = () => {
-                    hideLoader();
-                    renderPlants();             // Aktualizuje hlavní seznam
-                    openDetail(currentPlantId); // Okamžitě obnoví galerii v detailu
-                };
+                let p = req.result;
+                p.images.push(e.target.result);
+                store.put(p);
+                openDetail(currentPlantId);
             };
-        } catch (err) {
-            console.error(err);
-            alert("Chyba při zpracování fotky. Zkuste to prosím znovu.");
-            hideLoader();
-        }
+        };
     }
 
     // --- 13. OSTATNÍ SYSTÉMOVÉ FUNKCE ---
