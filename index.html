@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="cs">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
@@ -1441,17 +1442,17 @@
 
                     req.onsuccess = () => {
                         zip.file('databaze.json', JSON.stringify(req.result));
-                        zip.file('nastaveni.json', JSON.stringify({ key: localStorage.getItem('G_KEY') || '' }));
+                        zip.file('nastaveni.json', JSON.stringify({ key: localStorage.getItem('G_KEY') || "" }));
+
                         zip.generateAsync({ type: "blob" }).then(blob => {
                             const a = document.createElement('a');
                             a.href = URL.createObjectURL(blob);
                             a.download = "PlantMaster_Zaloha.zip";
                             a.click();
                             hideLoader();
-                        });
-                    };
-                }
-
+                        }); // Zde je správně ukončená metoda .then()
+                    }; // Zde je správně ukončený blok req.onsuccess
+                } // Zde je definitivně uzavřená celá funkce exportZip
                 async function handleImport(event) {
                     const file = event.target.files[0];
                     if (!file) return;
@@ -1697,34 +1698,35 @@
                 }
 
                 // --- FUNKCE PRO ZMENŠENÍ FOTKY (Komprese) ---
-function resizeImage(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = (e) => {
-      const img = new Image();
-      img.src = e.target.result;
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        let w = img.width;
-        let h = img.height;
+                function resizeImage(file) {
+                    return new Promise((resolve) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onload = (e) => {
+                            const img = new Image();
+                            img.src = e.target.result;
+                            img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                let w = img.width;
+                                let h = img.height;
 
-        // LIMIT ROZLIŠENÍ: Pokud je fotka širší než 800px, zmenšíme ji
-        if (w > 800) {
-          h = Math.round((h * 800) / w);
-          w = 800;
-        }
+                                // LIMIT ROZLIŠENÍ: Pokud je fotka širší než 800px, zmenšíme ji
+                                if (w > 800) {
+                                    h = Math.round((h * 800) / w);
+                                    w = 800;
+                                }
 
-        canvas.width = w;
-        canvas.height = h;
-        // Vykreslení na neviditelné plátno (canvas)
-        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-        // KOMPRESE: Převedeme na JPEG s kvalitou 70%
-        resolve(canvas.toDataURL('image/jpeg', 0.7));
-      };
-    };
-  });
-}
-</script>
+                                canvas.width = w;
+                                canvas.height = h;
+                                // Vykreslení na neviditelné plátno (canvas)
+                                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                                // KOMPRESE: Převedeme na JPEG s kvalitou 70%
+                                resolve(canvas.toDataURL('image/jpeg', 0.7));
+                            };
+                        };
+                    });
+                }
+    </script>
 </body>
+
 </html>
