@@ -1154,6 +1154,17 @@
             currentPlantId = null;
         }
         // --- 7. KOMUNIKACE S GEMINI API (AI Doktor, Detektiv, Produkty) ---
+        // --- TUTO FUNKCI VLOŽ NAD FUNKCI callAI ---
+        function extractJSON(responseText) {
+            try {
+                const start = responseText.indexOf('{');
+                const end = responseText.lastIndexOf('}');
+                if (start === -1 || end === -1) return responseText;
+                return responseText.substring(start, end + 1);
+            } catch (e) {
+                return responseText;
+            }
+        }
         async function callAI(type, extraParam = '') {
             const key = localStorage.getItem('G_KEY');
             if (!key) return alert("Zadejte Gemini API Klíč v nastavení (ozubené kolečko)!");
@@ -1211,15 +1222,19 @@
                 const data = await resp.json();
                 const aiResponse = data.candidates[0].content.parts[0].text;
 
-                // ZPRACOVÁNÍ ODPOVĚDÍ
+                // --- TADY JSOU OPRAVY ---
+                // Zpracování odpovědí s využitím extractJSON pro jistotu
                 if (type === 'doctor') {
-                    const docData = JSON.parse(aiResponse);
-                    plant.aiDiagnosis = docData; // Uložíme jako chytrý objekt
+                    // Tady jsme přidali extractJSON(aiResponse)
+                    const docData = JSON.parse(extractJSON(aiResponse));
+                    plant.aiDiagnosis = docData;
 
-                    // Pokud AI najde problém, automaticky založí úkol a zapíše do historie
                     if (docData.hasProblem) {
                         if (!plant.careHistory) plant.careHistory = [];
-                        plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `⚠️ AI Diagnóza: Byl zjištěn problém - ${docData.searchKeyword}` });
+                        plant.careHistory.push({
+                            date: new Date().toLocaleDateString('cs-CZ'),
+                            text: `⚠️ AI Diagnóza: Byl zjištěn problém - ${docData.searchKeyword}`
+                        });
 
                         const currentMonth = new Date().getMonth();
                         if (!plant.tasks) plant.tasks = {};
@@ -1229,8 +1244,14 @@
                         }
                     }
                 }
-                else if (type === 'detective') plant.aiDetection = JSON.parse(aiResponse).exactName;
-                else if (type === 'products' || type === 'task-products') plant.aiProducts = JSON.parse(aiResponse);
+                else if (type === 'detective') {
+                    // I tady přidáváme extractJSON
+                    plant.aiDetection = JSON.parse(extractJSON(aiResponse)).exactName;
+                }
+                else if (type === 'products' || type === 'task-products') {
+                    // A i tady
+                    plant.aiProducts = JSON.parse(extractJSON(aiResponse));
+                }
 
                 // 3. KROK: Nová transakce pro bezpečné uložení výsledku
                 const saveTx = db.transaction('plants', 'readwrite');
@@ -1289,7 +1310,9 @@
                             generationConfig: { response_mime_type: "application/json" }
                         })
                     });
-                    const aiData = JSON.parse((await resp.json()).candidates[0].content.parts[0].text);
+                    const rawResponse = await resp.json();
+                    const aiText = rawResponse.candidates[0].content.parts[0].text;
+                    const aiData = JSON.parse(extractJSON(aiText));
 
                     plant.name = newName;
                     plant.water = aiData.water;
