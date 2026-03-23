@@ -492,7 +492,6 @@
                             </div>`;
                     });
                 }
-
             });
         };
     }
@@ -577,24 +576,17 @@
             }
             document.getElementById('water-status').innerText = wText;
 
-            // Úkoly v detailu (s popisky a produkty)
+            // Úkoly
             const tasksDiv = document.getElementById('detail-tasks'); 
             tasksDiv.innerHTML = '';
             const currentMonth = new Date().getMonth();
             if (plant.tasks && plant.tasks[currentMonth]) {
-                plant.tasks[currentMonth].forEach(taskObj => {
-                    let tName = typeof taskObj === 'string' ? taskObj : taskObj.nazev;
-                    let tDesc = typeof taskObj === 'string' ? '' : taskObj.popis;
-                    const isDone = plant.careHistory.some(h => h.date === new Date().toLocaleDateString('cs-CZ') && h.text.includes(`Úkol: ${tName}`));
-                    
+                plant.tasks[currentMonth].forEach(task => {
+                    const isDone = plant.careHistory.some(h => h.date === new Date().toLocaleDateString('cs-CZ') && h.text.includes(`Úkol: ${task}`));
                     tasksDiv.innerHTML += `
-                        <div class="task-item ${isDone ? 'completed' : ''}" style="border: 1px solid #ccc; flex-direction: column; align-items: stretch;">
-                            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                <strong style="font-size: 1.05rem;">${tName}</strong>
-                                ${!isDone ? `<button class="btn-complete" onclick="completeTask(${plant.id}, '${tName}', event)">✓ Splnit</button>` : ''}
-                            </div>
-                            ${tDesc ? `<div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">${tDesc}</div>` : ''}
-                            ${!isDone ? `<button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${tName}')">💡 Hledat přípravky pro tento úkol</button>` : ''}
+                        <div class="task-item ${isDone ? 'completed' : ''}" style="border: 1px solid #ccc;">
+                            <div class="task-content"><strong>${task}</strong></div>
+                            ${!isDone ? `<button class="btn-complete" onclick="completeTask(${plant.id}, '${task}', event)">✓ Splnit</button>` : ''}
                         </div>`;
                 });
             } else { 
@@ -646,15 +638,11 @@
                 prodBox.style.display = 'block';
             } else { prodBox.style.display = 'none'; }
 
-            // Historie (Časová osa s možností smazání - Undo)
+            // Historie (Časová osa)
             const tl = document.getElementById('detail-timeline'); 
             tl.innerHTML = '';
-            [...plant.careHistory].reverse().forEach((h, idx) => { 
-                let realIndex = plant.careHistory.length - 1 - idx;
-                tl.innerHTML += `<div class="timeline-item" style="display:flex; justify-content:space-between; align-items:center;">
-                    <div><strong>${h.date}:</strong> ${h.text}</div>
-                    <button onclick="deleteHistoryItem(${realIndex})" style="background:none; border:none; color:var(--warn); cursor:pointer; font-size:1.1rem; padding:0 10px;" title="Smazat záznam">❌</button>
-                </div>`; 
+            [...plant.careHistory].reverse().forEach(h => { 
+                tl.innerHTML += `<div class="timeline-item"><strong>${h.date}:</strong> ${h.text}</div>`; 
             });
 
             // --- DYNAMICKÉ YOUTUBE ŠTÍTKY ---
@@ -684,7 +672,7 @@
         currentPlantId = null; 
     }
     // --- 7. KOMUNIKACE S GEMINI API (AI Doktor, Detektiv, Produkty) ---
-    async function callAI(type, extraParam = '') {
+    async function callAI(type) {
         const key = localStorage.getItem('G_KEY');
         if (!key) return alert("Zadejte Gemini API Klíč v nastavení (ozubené kolečko)!");
         
@@ -712,15 +700,13 @@
             
             // NOVÝ JSON PROMPT PRO DOKTORA
             if (type === 'doctor') {
-                // ... (kód doktora zůstává stejný)
+                prompt = `Jsi expert na choroby rostlin. Analyzuj zdraví rostliny na fotce. Odpověz POUZE ve formátu JSON: {"description": "Popis problému a řešení česky...", "hasProblem": true, "searchKeyword": "Přesný název choroby nebo škůdce (nebo prázdné pokud je zdravá)", "suggestedTask": "Zlikvidovat: Název problému (nebo prázdné)"}`;
+                isJSON = true;
             } else if (type === 'detective') {
                 prompt = `Urči přesnou odrůdu této rostliny. Odpověz POUZE ve formátu JSON: {"exactName": "Název rostliny"}`;
                 isJSON = true;
             } else if (type === 'products') {
                 prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
-                isJSON = true;
-            } else if (type === 'task-products') {
-                prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků na českém trhu přímo pro vyřešení úkolu '${extraParam}' u rostliny '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
                 isJSON = true;
             }
             
@@ -760,7 +746,7 @@
                 }
             }
             else if (type === 'detective') plant.aiDetection = JSON.parse(aiResponse).exactName;
-            else if (type === 'products' || type === 'task-products') plant.aiProducts = JSON.parse(aiResponse);
+            else if (type === 'products') plant.aiProducts = JSON.parse(aiResponse);
             
             // 3. KROK: Nová transakce pro bezpečné uložení výsledku
             const saveTx = db.transaction('plants', 'readwrite');
@@ -1057,7 +1043,7 @@
         reader.onload = async (e) => {
             const b64 = e.target.result.split(',')[1];
             try {
-                const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":"Pokojové/Zelenina/Ovoce/Bylinky/Stromy a keře","description":"Základní charakteristika a nároky na údržbu (max 2 věty)","water":"Detailní instrukce: jak často a kdy zalévat","light":"Nároky na světlo","tasks":{"0":[{"nazev":"Název úkolu","popis":"Krátký popis, jak úkol provést"}]}} (0-11 jsou měsíce).`;
+                const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":"Pokojové/Zelenina/Ovoce/Bylinky/Stromy a keře","description":"Základní charakteristika a nároky na údržbu (max 2 věty)","water":"Detailní instrukce: jak často a kdy zalévat","light":"Nároky na světlo","tasks":{"0":["Leden úkol"]...}} (0-11 jsou měsíce).`;
                 const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
                     method:'POST',
                     body: JSON.stringify({
@@ -1139,25 +1125,6 @@
                     openDetail(currentPlantId);
                 };
             }
-        };
-    }
-
-    // NOVÁ FUNKCE PRO VZETÍ ZPĚT (Smazání z historie)
-    async function deleteHistoryItem(index) {
-        if(!confirm("Opravdu smazat tento záznam? (Tímto můžete vzít zpět zálivku nebo splněný úkol)")) return;
-        const db = await getDB();
-        const tx = db.transaction('plants', 'readwrite');
-        const store = tx.objectStore('plants');
-        const req = store.get(currentPlantId);
-        
-        req.onsuccess = () => {
-            let plant = req.result;
-            plant.careHistory.splice(index, 1);
-            store.put(plant);
-            tx.oncomplete = () => {
-                renderPlants();
-                openDetail(currentPlantId);
-            };
         };
     }
 </script>
