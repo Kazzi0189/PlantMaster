@@ -1403,9 +1403,9 @@
             const store = tx.objectStore('plants');
             const req = store.get(currentPlantId);
             req.onsuccess = () => {
-                let plant = req.result;
-                plant.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `📝 Poznámka: ${text}` });
-                store.put(plant);
+                let plantData = req.result;
+                plantData.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `📝 Poznámka: ${text}` });
+                store.put(plantData);
                 document.getElementById('note-input').value = "";
                 openDetail(currentPlantId);
             };
@@ -1420,9 +1420,9 @@
             const store = tx.objectStore('plants');
             const req = store.get(currentPlantId);
             req.onsuccess = () => {
-                let plant = req.result;
-                plant.savedVideos.splice(idx, 1);
-                store.put(plant);
+                let plantData = req.result;
+                plantData.savedVideos.splice(idx, 1);
+                store.put(plantData);
                 openDetail(currentPlantId);
             };
         }
