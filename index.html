@@ -1641,8 +1641,8 @@
                 const b64Data = resizedBase64.split(',')[1];
 
                 // 2. POŽADAVEK NA AI
-                const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":["Kategorie 1", "Kategorie 2"],"description":"Základní charakteristika a nároky na údržbu (max 2 věty)","water":"Detailní instrukce: jak často a kdy zalévat","light":"Nároky na světlo","tasks":{"0":[{"nazev":"Název úkolu","popis":"Krátký popis, jak úkol provést"}]}} (0-11 jsou měsíce). 
-DŮLEŽITÉ PRAVIDLO PRO KATEGORIE: Vyber 1 až 2 nejvhodnější štítky z tohoto seznamu: Pokojové, Zelenina, Ovoce, Bylinky, Stromy, Keře. Například pro jabloň vrať ["Stromy", "Ovoce"], pro maliník ["Keře", "Ovoce"]. 
+                const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":["Kategorie 1", "Kategorie 2"],"description":"Základní charakteristika (max 2 věty)","water":"Detailní instrukce: jak často zalévat","light":"Nároky na světlo","tasks":[{"name":"Název úkolu","description":"Krátký popis, jak úkol provést","months":[2, 3]}]} (kde "months" je pole čísel měsíců 0-11, např. březen a duben je [2, 3]). 
+DŮLEŽITÉ PRAVIDLO PRO KATEGORIE: Vyber 1 až 2 nejvhodnější štítky z tohoto seznamu: Pokojové, Zelenina, Ovoce, Bylinky, Stromy, Keře. Například pro jabloň vrať ["Stromy", "Ovoce"]. 
 Odpověz POUZE čistým JSON formátem bez dalších textů.`;
                 const payload = {
                     contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } }] }],
