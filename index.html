@@ -1081,8 +1081,32 @@
                 // Vylepšená Zálivka - Textový status s výpočtem dnů
                 let wText = " (Zatím nezalito)";
                 if (plant.lastWatered) {
-                    let diff = Math.floor(Math.abs(new Date() - new Date(plant.lastWatered)) / (1000 * 60 * 60 * 24));
-                    wText = ` (Naposledy: ${diff === 0 ? "Dnes" : (diff === 1 ? "Včera" : `Před ${diff} dny`)})`;
+                    try {
+                        // Ochrana: rozdělení českého data (např. "24. 3. 2026")
+                        // Používáme regulární výraz, abychom odstranili případné mezery za tečkami
+                        const parts = plant.lastWatered.split('.').map(p => p.trim());
+                        if (parts.length === 3) {
+                            const den = parseInt(parts[0], 10);
+                            // Měsíce v JavaScriptu začínají od 0, takže musíme odečíst 1
+                            const mesic = parseInt(parts[1], 10) - 1;
+                            const rok = parseInt(parts[2], 10);
+
+                            // Vytvoříme mezinárodně platné strojové datum pro výpočet
+                            const dateWatered = new Date(rok, mesic, den);
+                            // Nulujeme hodiny, aby se počítaly čisté dny
+                            dateWatered.setHours(0, 0, 0, 0);
+
+                            const dneska = new Date();
+                            dneska.setHours(0, 0, 0, 0);
+
+                            const diff = Math.floor(Math.abs(dneska - dateWatered) / (1000 * 60 * 60 * 24));
+                            wText = ` (Naposledy: ${diff === 0 ? "Dnes" : (diff === 1 ? "Včera" : `Před ${diff} dny`)})`;
+                        } else {
+                            wText = ` (Naposledy: ${plant.lastWatered})`; // Pokud je to něco jiného než tečky, aspoň vypíše text
+                        }
+                    } catch (e) {
+                        wText = ` (Naposledy: ${plant.lastWatered})`;
+                    }
                 }
                 document.getElementById('water-status').innerText = wText;
 
