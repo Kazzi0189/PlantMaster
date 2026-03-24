@@ -1193,7 +1193,11 @@
 
                 // NOVÝ JSON PROMPT PRO DOKTORA
                 if (type === 'doctor') {
-                    // ... (kód doktora zůstává stejný)
+                    prompt = `Jsi expert na zdraví rostlin. Analyzuj tuto rostlinu '${plant.name}'. 
+                    Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou: 
+                    {"hasProblem": true, "diagnosis": "název choroby nebo škůdce", "description": "stručný popis problému", "solution": "kroky k nápravě", "searchKeyword": "klíčové slovo pro vyhledávání (např. mšice)", "suggestedTask": "krátký název úkolu pro zahradníka"}. 
+                    Pokud je rostlina zdravá, "hasProblem" bude false a ostatní pole budou prázdná nebo pozitivní.`;
+                    isJSON = true;
                 } else if (type === 'detective') {
                     prompt = `Urči přesnou odrůdu této rostliny. Odpověz POUZE ve formátu JSON: {"exactName": "Název rostliny"}`;
                     isJSON = true;
@@ -1225,6 +1229,7 @@
                 // --- TADY JSOU OPRAVY ---
                 // Zpracování odpovědí s využitím extractJSON pro jistotu
                 if (type === 'doctor') {
+                    console.log("Surová odpověď od AI (doktor):", aiResponse);
                     // Tady jsme přidali extractJSON(aiResponse)
                     const docData = JSON.parse(extractJSON(aiResponse));
                     plant.aiDiagnosis = docData;
