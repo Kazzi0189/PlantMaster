@@ -565,7 +565,8 @@
                 <option value="Zelenina">Zelenina</option>
                 <option value="Ovoce">Ovoce</option>
                 <option value="Bylinky">Bylinky</option>
-                <option value="Stromy a keře">Stromy a keře</option>
+                <option value="Stromy">Stromy</option>
+                <option value="Keře">Keře</option>
             </select>
         </div>
 
@@ -1619,7 +1620,7 @@
 
                 // 2. POŽADAVEK NA AI
                 const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":["Kategorie 1", "Kategorie 2"],"description":"Základní charakteristika a nároky na údržbu (max 2 věty)","water":"Detailní instrukce: jak často a kdy zalévat","light":"Nároky na světlo","tasks":{"0":[{"nazev":"Název úkolu","popis":"Krátký popis, jak úkol provést"}]}} (0-11 jsou měsíce). 
-DŮLEŽITÉ PRAVIDLO PRO KATEGORIE: Vyber 1 až 2 nejvhodnější štítky z tohoto seznamu: Pokojové, Zelenina, Ovoce, Bylinky, Stromy a keře. Například pro jabloň vrať ["Stromy a keře", "Ovoce"]. 
+DŮLEŽITÉ PRAVIDLO PRO KATEGORIE: Vyber 1 až 2 nejvhodnější štítky z tohoto seznamu: Pokojové, Zelenina, Ovoce, Bylinky, Stromy, Keře. Například pro jabloň vrať ["Stromy", "Ovoce"], pro maliník ["Keře", "Ovoce"]. 
 Odpověz POUZE čistým JSON formátem bez dalších textů.`;
                 const payload = {
                     contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } }] }],
