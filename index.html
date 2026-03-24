@@ -1019,33 +1019,31 @@
             const db = await getDB();
             const tx = db.transaction('plants', 'readwrite');
             const store = tx.objectStore('plants');
+
+            // Použijeme currentPlantId, abychom věděli, kterou kytku právě máme otevřenou
             const req = store.get(currentPlantId);
 
             req.onsuccess = () => {
                 let plant = req.result;
-                const currentMonth = new Date().getMonth();
+                const dnes = new Date().toLocaleDateString('cs-CZ');
 
-                // CHIRURGICKÝ ŘEZ: Najdeme úkol v poli a přidáme aktuální měsíc do splněných
-                if (plant.tasks && Array.isArray(plant.tasks)) {
-                    const task = plant.tasks.find(t => t.name === taskName);
-                    if (task) {
-                        if (!task.completedMonths) task.completedMonths = [];
-                        if (!task.completedMonths.includes(currentMonth)) {
-                            task.completedMonths.push(currentMonth);
-                        }
-                    }
-                }
+                // 1. Aktualizace data posledního zalití
+                plant.lastWatered = dnes;
 
-                // Zapíšeme do historie (to už tam máš, jen to tu nechávám pro úplnost)
+                // 2. Zápis do historie péče
+                if (!plant.careHistory) plant.careHistory = []; // Pojistka, kdyby historie neexistovala
                 plant.careHistory.push({
-                    date: new Date().toLocaleDateString('cs-CZ'),
-                    text: `Splněn úkol: ${taskName}${details}`
+                    date: dnes,
+                    text: '💧 Zalito'
                 });
 
+                // 3. Uložení zpět do databáze
                 store.put(plant);
                 tx.oncomplete = () => {
+                    // Překreslíme detail, aby tam naskočila ta nová zpráva v historii
+                    openDetail(currentPlantId);
+                    // Překreslíme i hlavní obrazovku, aby se aktualizoval nápis "Zalito: dnes"
                     renderPlants();
-                    if (currentPlantId === plantId) openDetail(plantId);
                 };
             };
         }
