@@ -835,22 +835,44 @@
                 tasksDiv.innerHTML = '';
 
                 [...req.result].reverse().forEach(p => {
-                    // ZDE JE OPRAVA: Používáme tvé správné p.images!
                     const mainImage = (p.images && p.images.length > 0) ? p.images[0] : 'https://cdn-icons-png.flaticon.com/512/628/628283.png';
 
                     const matchName = p.name.toLowerCase().includes(search);
-                    const matchCat = cat === 'all' || p.category === cat;
+
+                    // --- OPRAVA FILTROVÁNÍ PRO VÍCE KATEGORIÍ ---
+                    // Kontroluje, zda p.category je pole (nové rostliny) nebo jen text (staré rostliny)
+                    let matchCat = false;
+                    if (cat === 'all') {
+                        matchCat = true;
+                    } else if (Array.isArray(p.category)) {
+                        matchCat = p.category.includes(cat); // Najde kategorii v seznamu
+                    } else {
+                        matchCat = p.category === cat; // Zpětná kompatibilita pro staré uložení
+                    }
+
+                    // --- OPRAVA VYKRESLENÍ ŠTÍTKŮ ---
+                    let badgesHTML = '';
+                    if (p.category) {
+                        if (Array.isArray(p.category)) {
+                            // Vytvoří štítek pro každou kategorii v seznamu a oddělí je mezerou
+                            badgesHTML = p.category.map(c => `<span class="cat-badge-small">${c}</span>`).join(' ');
+                        } else {
+                            // Pro staré rostliny vykreslí jen jeden
+                            badgesHTML = `<span class="cat-badge-small">${p.category}</span>`;
+                        }
+                    }
+
                     if (matchName && matchCat) {
                         list.innerHTML += `
-                    <div class="card" onclick="openDetail(${p.id})">
-                        <img src="${mainImage}" loading="lazy">
-                        <div class="card-info">
-                            <h3>${p.name}</h3>
-                            ${p.category ? `<span class="cat-badge-small">${p.category}</span>` : ''}
-                            <p>Zalito: ${p.lastWatered || 'Nikdy'}</p>
-                        </div>
-                    </div>
-                `;
+            <div class="card" onclick="openDetail(${p.id})">
+                <img src="${mainImage}" loading="lazy">
+                <div class="card-info">
+                    <h3>${p.name}</h3>
+                    <div style="margin-bottom: 5px;">${badgesHTML}</div>
+                    <p>Zalito: ${p.lastWatered || 'Nikdy'}</p>
+                </div>
+            </div>
+        `;
                     }
                 });
 
@@ -1596,8 +1618,9 @@
                 const b64Data = resizedBase64.split(',')[1];
 
                 // 2. POŽADAVEK NA AI
-                const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":"Pokojové/Zelenina/Ovoce/Bylinky/Stromy a keře","description":"Základní charakteristika a nároky na údržbu (max 2 věty)","water":"Detailní instrukce: jak často a kdy zalévat","light":"Nároky na světlo","tasks":{"0":[{"nazev":"Název úkolu","popis":"Krátký popis, jak úkol provést"}]}} (0-11 jsou měsíce). Odpověz POUZE čistým JSON formátem.`;
-
+                const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":["Kategorie 1", "Kategorie 2"],"description":"Základní charakteristika a nároky na údržbu (max 2 věty)","water":"Detailní instrukce: jak často a kdy zalévat","light":"Nároky na světlo","tasks":{"0":[{"nazev":"Název úkolu","popis":"Krátký popis, jak úkol provést"}]}} (0-11 jsou měsíce). 
+DŮLEŽITÉ PRAVIDLO PRO KATEGORIE: Vyber 1 až 2 nejvhodnější štítky z tohoto seznamu: Pokojové, Zelenina, Ovoce, Bylinky, Stromy a keře. Například pro jabloň vrať ["Stromy a keře", "Ovoce"]. 
+Odpověz POUZE čistým JSON formátem bez dalších textů.`;
                 const payload = {
                     contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } }] }],
                     generationConfig: { response_mime_type: "application/json" }
