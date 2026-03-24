@@ -510,6 +510,35 @@
             display: inline-block;
             margin-top: 5px;
         }
+
+        /* --- OPRAVA ZOBRAZENÍ INBOXU NA MOBILU --- */
+        #inbox-section {
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+            /* Zabrání přetékání čehokoliv ven */
+        }
+
+        .inbox-controls {
+            display: flex;
+            flex-wrap: wrap;
+            /* Dovolí prvkům odskočit na další řádek */
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        #inbox-plant-select {
+            flex: 1 1 100%;
+            /* Roletka zabere celou šířku 100% */
+            padding: 12px;
+        }
+
+        .inbox-controls button {
+            flex: 1;
+            /* Tlačítka se rovnoměrně rozdělí o zbytek místa pod roletkou */
+            margin: 0;
+            /* Vyresetování případných mezer z jiných stylů */
+        }
     </style>
 </head>
 
