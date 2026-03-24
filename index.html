@@ -1505,9 +1505,18 @@
                 zip.file('nastaveni.json', JSON.stringify({ key: localStorage.getItem('G_KEY') || "" }));
 
                 zip.generateAsync({ type: "blob" }).then(blob => {
+                    // --- NOVÁ ČÁST: Zjištění a formátování data ---
+                    const dnes = new Date();
+                    const den = String(dnes.getDate()).padStart(2, '0');
+                    const mesic = String(dnes.getMonth() + 1).padStart(2, '0');
+                    const rok = dnes.getFullYear();
+                    const datumText = `${den}-${mesic}-${rok}`;
+                    // ----------------------------------------------
+
                     const a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
-                    a.download = "PlantMaster_Zaloha.zip";
+                    // Změněný řádek: Dynamický název souboru s aktuálním datem
+                    a.download = `PlantMaster_Zaloha_${datumText}.zip`;
                     a.click();
                     hideLoader();
                 }); // Zde je správně ukončená metoda .then()
