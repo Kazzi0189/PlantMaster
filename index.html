@@ -1704,6 +1704,7 @@
                 const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":["Kategorie 1", "Kategorie 2"],"description":"Základní charakteristika (max 2 věty)","water":"Detailní instrukce: jak často zalévat","light":"Nároky na světlo","tasks":[{"name":"Název úkolu","description":"Krátký popis, jak úkol provést","months":[2, 3]}]} (kde "months" je pole čísel měsíců 0-11, např. březen a duben je [2, 3]). 
 DŮLEŽITÉ PRAVIDLO PRO KATEGORIE: Vyber 1 až 2 nejvhodnější štítky z tohoto seznamu: Pokojové, Zelenina, Ovoce, Bylinky, Stromy, Keře. Například pro jabloň vrať ["Stromy", "Ovoce"]. 
 Odpověz POUZE čistým JSON formátem bez dalších textů.`;
+
                 const payload = {
                     contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } }] }],
                     generationConfig: { response_mime_type: "application/json" }
@@ -1714,35 +1715,23 @@ Odpověz POUZE čistým JSON formátem bez dalších textů.`;
                     body: JSON.stringify(payload)
                 });
 
+                // --- ZÁCHRANNÁ BRZDA 1: Kontrola sítě ---
+                if (!resp.ok) {
+                    if (resp.status === 429) throw new Error("API_LIMIT");
+                    throw new Error(`HTTP_ERROR_${resp.status}`);
+                }
+
                 const data = await resp.json();
 
-                // PŘEKLADATEL CHYB OD GOOGLU DO ČEŠTINY
-                if (data.error) {
-                    let errMsg = data.error.message || "";
-
-                    if (errMsg.includes("Quota exceeded")) {
-                        if (errMsg.includes("retry in")) {
-                            // Vytáhne si z textu vteřiny a zaokrouhlí je
-                            let match = errMsg.match(/retry in ([\d\.]+)s/);
-                            let seconds = match ? Math.ceil(parseFloat(match[1])) : 60;
-                            throw new Error(`Byl překročen rychlostní limit. Počkejte prosím ${seconds} sekund a zkuste to znovu.`);
-                        } else {
-                            throw new Error("Byl vyčerpán denní limit pro umělou inteligenci. Zkuste to prosím zítra.");
-                        }
-                    }
-                    // Pro jakékoliv jiné neznámé chyby
-                    throw new Error("Nelze se spojit s AI. Zkuste to prosím později.");
+                // --- ZÁCHRANNÁ BRZDA 2: Kontrola prázdných dat ---
+                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+                    throw new Error("NO_DATA");
                 }
 
-                if (!data.candidates || data.candidates.length === 0) {
-                    throw new Error("Google neposlal žádná data (zkontrolujte připojení k internetu).");
-                }
+                const aiResponse = data.candidates[0].content.parts[0].text;
 
-                let aiResponse = data.candidates[0].content.parts[0].text;
-
-                // Očištění dat
-                aiResponse = aiResponse.replace(/```json/gi, '').replace(/```/g, '').trim();
-                const aiData = JSON.parse(aiResponse);
+                // --- NASAZENÍ CHYTRÉ ČTEČKY (Nahrazuje staré čištění pomocí replace) ---
+                const aiData = JSON.parse(extractJSON(aiResponse));
 
                 // 3. Uložení do databáze
                 const newPlant = {
@@ -1760,15 +1749,24 @@ Odpověz POUZE čistým JSON formátem bez dalších textů.`;
                 const db = await getDB();
                 const tx = db.transaction('plants', 'readwrite');
                 tx.objectStore('plants').put(newPlant);
+
                 tx.oncomplete = () => {
                     hideLoader();
                     renderPlants();
                 };
+
             } catch (err) {
                 console.error(err);
-                // Vypíše krásnou českou hlášku, kterou jsme nahoře nastavili
-                alert("Chyba: " + err.message);
                 hideLoader();
+
+                // --- SJEDNOCENÉ VAROVÁNÍ ---
+                if (err.message === "API_LIMIT") {
+                    alert("Zpomalte prosím. 🚦 Překročili jsme chvilkový limit dotazů na umělou inteligenci. Počkejte minutu a zkuste to znovu.");
+                } else if (err.message === "NO_DATA") {
+                    alert("Umělá inteligence nevrátila žádná data (zkontrolujte připojení k internetu).");
+                } else {
+                    alert("Chyba při analýze rostliny: " + err.message);
+                }
             }
         }
 
