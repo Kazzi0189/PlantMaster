@@ -971,12 +971,18 @@
         async function completeTask(plantId, taskName, event) {
             if (event) event.stopPropagation();
 
-            // Nová logika - ptáme se u každého úkolu
-            const product = prompt(`Splněn úkol: ${taskName}\nJaký přípravek nebo substrát jste použili?\n(Pokud žádný, nechte prázdné a dejte OK)`);
+            // Nová chytrá logika - ptáme se jen u relevantních úkolů
+            const keywords = ['hnoj', 'výživ', 'postřik', 'škůdc', 'nemoc', 'příprav', 'substrát'];
+            const nameLower = taskName.toLowerCase();
+            const needsProduct = keywords.some(kw => nameLower.includes(kw));
+
             let details = '';
-            if (product && product.trim() !== "") {
-                const ratio = prompt(`V jakém poměru nebo množství jste '${product}' aplikovali?`);
-                details = ` [Přípravek: ${product}${ratio ? ', Poměr: ' + ratio : ''}]`;
+            if (needsProduct) {
+                const product = prompt(`Splněn úkol: ${taskName}\nJaký přípravek nebo substrát jste použili?\n(Pokud žádný, nechte prázdné a dejte OK)`);
+                if (product && product.trim() !== "") {
+                    const ratio = prompt(`V jakém poměru nebo množství jste '${product}' aplikovali?`);
+                    details = ` [Přípravek: ${product}${ratio ? ', Poměr: ' + ratio : ''}]`;
+                }
             }
 
             const db = await getDB();
@@ -999,18 +1005,17 @@
                     }
                 }
 
-                // 2. ZAPÍŠEME DO HISTORIE (zůstane tam navždy)
+                // 2. ZAPÍŠEME DO HISTORIE
+                if (!plant.careHistory) plant.careHistory = [];
                 plant.careHistory.push({
                     date: new Date().toLocaleDateString('cs-CZ'),
-                    text: `Splněn úkol: ${taskName}${details}`
+                    text: `✅ Splněn úkol: ${taskName}${details}`
                 });
 
                 store.put(plant);
-
-                // 3. PO DOKONČENÍ TRANSAKCE AKTUALIZUJEME UI
                 tx.oncomplete = () => {
-                    renderPlants(); // Obnoví hlavní obrazovku
-                    if (currentPlantId === plantId) openDetail(plantId); // Překreslí detail (úkol zmizí)
+                    renderPlants();
+                    if (currentPlantId === plantId) openDetail(plantId);
                 };
             };
         }
@@ -1793,7 +1798,7 @@ Odpověz POUZE čistým JSON formátem bez dalších textů.`;
             };
         }
 
-        // NOVÁ FUNKCE PRO VZETÍ ZPĚT (Smazání z historie)
+        // NOVÁ FUNKCE PRO VZETÍ ZPĚT (Smazání z historie a vrácení úkolu)
         async function deleteHistoryItem(index) {
             if (!confirm("Opravdu smazat tento záznam? (Tímto můžete vzít zpět zálivku nebo splněný úkol)")) return;
             const db = await getDB();
@@ -1803,7 +1808,28 @@ Odpověz POUZE čistým JSON formátem bez dalších textů.`;
 
             req.onsuccess = () => {
                 let plant = req.result;
+
+                // --- NOVÁ LOGIKA PRO VRÁCENÍ ÚKOLU ZPĚT ---
+                const smazanaPolozka = plant.careHistory[index];
+
+                // Pokud mažeme úkol, musíme ho "odškrtnout" i v kalendáři
+                if (smazanaPolozka && smazanaPolozka.text.includes('Splněn úkol:')) {
+                    const currentMonth = new Date().getMonth();
+
+                    if (plant.tasks && Array.isArray(plant.tasks)) {
+                        // Najdeme úkol, jehož název je zmíněný v textu smazané historie
+                        const task = plant.tasks.find(t => smazanaPolozka.text.includes(t.name));
+                        if (task && task.completedMonths) {
+                            // Odstraníme aktuální měsíc ze seznamu splněných (tím se úkol vrátí na obrazovku)
+                            task.completedMonths = task.completedMonths.filter(m => m !== currentMonth);
+                        }
+                    }
+                }
+                // ------------------------------------------
+
+                // Následně záznam trvale smažeme z historie péče
                 plant.careHistory.splice(index, 1);
+
                 store.put(plant);
                 tx.oncomplete = () => {
                     renderPlants();
