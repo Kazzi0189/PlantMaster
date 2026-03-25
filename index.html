@@ -1264,7 +1264,15 @@
                 return alert("Chyba: Rostlina nenalezena.");
             }
 
-            const b64 = plant.images[0].split(',')[1];
+            // --- OPRAVA 1: Připravíme VŠECHNY fotky z galerie, ne jen tu první ---
+            const imageParts = plant.images.map(imgData => {
+                return {
+                    inline_data: {
+                        mime_type: "image/jpeg",
+                        data: imgData.split(',')[1]
+                    }
+                };
+            });
 
             try {
                 let prompt = "";
@@ -1273,25 +1281,32 @@
                 // NOVÝ JSON PROMPT PRO DOKTORA
                 if (type === 'doctor') {
                     prompt = `Jsi expert na zdraví rostlin. Analyzuj tuto rostlinu '${plant.name}'. 
-                    Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou: 
-                    {"hasProblem": true, "diagnosis": "název choroby nebo škůdce", "description": "stručný popis problému", "solution": "kroky k nápravě", "searchKeyword": "klíčové slovo pro vyhledávání (např. mšice)", "suggestedTask": "krátký název úkolu pro zahradníka"}. 
-                    Pokud je rostlina zdravá, "hasProblem" bude false a ostatní pole budou prázdná nebo pozitivní.`;
+            Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou: 
+            {"hasProblem": true, "diagnosis": "název choroby nebo škůdce", "description": "stručný popis problému", "solution": "kroky k nápravě", "searchKeyword": "klíčové slovo pro vyhledávání (např. mšice)", "suggestedTask": "krátký název úkolu pro zahradníka"}. 
+            Pokud je rostlina zdravá, "hasProblem" bude false a ostatní pole budou prázdná nebo pozitivní.`;
                     isJSON = true;
-                } else if (type === 'detective') {
-                    prompt = `Urči přesnou odrůdu této rostliny. Odpověz POUZE ve formátu JSON: {"exactName": "Název rostliny"}`;
+                }
+                // --- OPRAVA 2: Nový chytřejší prompt pro detektiva ---
+                else if (type === 'detective') {
+                    prompt = `Prohlédni si VŠECHNY přiložené fotky této rostliny a pokus se určit její přesnou odrůdu. Pokud přiložené fotky k přesnému určení nestačí (např. chybí detail plodu, květů nebo listů), nenapíšeš název odrůdy, ale napíšeš jasnou krátkou instrukci, co má uživatel dofotit (např. "Pro určení odrůdy potřebuji detail zralého plodu a listu."). Odpověz POUZE ve formátu JSON: {"exactName": "Název odrůdy NEBO žádost o další fotky"}`;
                     isJSON = true;
-                } else if (type === 'products') {
+                }
+                else if (type === 'products') {
                     prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
                     isJSON = true;
-                } else if (type === 'task-products') {
+                }
+                else if (type === 'task-products') {
                     prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků na českém trhu přímo pro vyřešení úkolu '${extraParam}' u rostliny '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
                     isJSON = true;
                 }
 
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
+
+                // --- OPRAVA 3: Přidáme všechny připravené fotky do zprávy ---
                 if (type !== 'products') {
-                    payload.contents[0].parts.push({ inline_data: { mime_type: "image/jpeg", data: b64 } });
+                    payload.contents[0].parts.push(...imageParts);
                 }
+
                 if (isJSON) {
                     payload.generationConfig = { response_mime_type: "application/json" };
                 }
@@ -1305,11 +1320,9 @@
                 const data = await resp.json();
                 const aiResponse = data.candidates[0].content.parts[0].text;
 
-                // --- TADY JSOU OPRAVY ---
-                // Zpracování odpovědí s využitím extractJSON pro jistotu
+                // Zpracování odpovědí
                 if (type === 'doctor') {
                     console.log("Surová odpověď od AI (doktor):", aiResponse);
-                    // Tady jsme přidali extractJSON(aiResponse)
                     const docData = JSON.parse(extractJSON(aiResponse));
                     plant.aiDiagnosis = docData;
 
@@ -1329,11 +1342,9 @@
                     }
                 }
                 else if (type === 'detective') {
-                    // I tady přidáváme extractJSON
                     plant.aiDetection = JSON.parse(extractJSON(aiResponse)).exactName;
                 }
                 else if (type === 'products' || type === 'task-products') {
-                    // A i tady
                     plant.aiProducts = JSON.parse(extractJSON(aiResponse));
                 }
 
@@ -1344,7 +1355,7 @@
 
                 saveTx.oncomplete = () => {
                     hideLoader();
-                    renderPlants(); // Musíme překreslit hlavní stranu kvůli novému úkolu
+                    renderPlants();
                     openDetail(currentPlantId);
                 };
             } catch (e) {
