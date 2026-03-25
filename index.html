@@ -1268,7 +1268,6 @@
 
             showLoader("AI analyzuje data...");
 
-            // 1. KROK: Rychlé přečtení rostliny
             const db = await getDB();
             const plant = await new Promise((resolve, reject) => {
                 const tx = db.transaction('plants', 'readonly');
@@ -1282,7 +1281,6 @@
                 return alert("Chyba: Rostlina nenalezena.");
             }
 
-            // --- OPRAVA 1: Připravíme VŠECHNY fotky z galerie, ne jen tu první ---
             const imageParts = plant.images.map(imgData => {
                 return {
                     inline_data: {
@@ -1296,15 +1294,10 @@
                 let prompt = "";
                 let isJSON = false;
 
-                // NOVÝ JSON PROMPT PRO DOKTORA
                 if (type === 'doctor') {
-                    prompt = `Jsi expert na zdraví rostlin. Analyzuj tuto rostlinu '${plant.name}'. 
-            Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou: 
-            {"hasProblem": true, "diagnosis": "název choroby nebo škůdce", "description": "stručný popis problému", "solution": "kroky k nápravě", "searchKeyword": "klíčové slovo pro vyhledávání (např. mšice)", "suggestedTask": "krátký název úkolu pro zahradníka"}. 
-            Pokud je rostlina zdravá, "hasProblem" bude false a ostatní pole budou prázdná nebo pozitivní.`;
+                    prompt = `Jsi expert na zdraví rostlin. Analyzuj tuto rostlinu '${plant.name}'. Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou: {"hasProblem": true, "diagnosis": "název choroby nebo škůdce", "description": "stručný popis problému", "solution": "kroky k nápravě", "searchKeyword": "klíčové slovo pro vyhledávání (např. mšice)", "suggestedTask": "krátký název úkolu pro zahradníka"}. Pokud je rostlina zdravá, "hasProblem" bude false a ostatní pole budou prázdná nebo pozitivní.`;
                     isJSON = true;
                 }
-                // --- OPRAVA 2: Nový chytřejší prompt pro detektiva ---
                 else if (type === 'detective') {
                     prompt = `Prohlédni si VŠECHNY přiložené fotky této rostliny a pokus se určit její přesnou odrůdu. Pokud přiložené fotky k přesnému určení nestačí (např. chybí detail plodu, květů nebo listů), nenapíšeš název odrůdy, ale napíšeš jasnou krátkou instrukci, co má uživatel dofotit (např. "Pro určení odrůdy potřebuji detail zralého plodu a listu."). Odpověz POUZE ve formátu JSON: {"exactName": "Název odrůdy NEBO žádost o další fotky"}`;
                     isJSON = true;
@@ -1320,7 +1313,6 @@
 
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
 
-                // --- OPRAVA 3: Přidáme všechny připravené fotky do zprávy ---
                 if (type !== 'products') {
                     payload.contents[0].parts.push(...imageParts);
                 }
@@ -1329,18 +1321,27 @@
                     payload.generationConfig = { response_mime_type: "application/json" };
                 }
 
-                // 2. KROK: Čekání na AI
                 const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
                     method: 'POST',
                     body: JSON.stringify(payload)
                 });
 
+                // --- ZÁCHRANNÁ BRZDA 1: Kontrola přetížení ---
+                if (!resp.ok) {
+                    if (resp.status === 429) throw new Error("API_LIMIT");
+                    throw new Error(`HTTP_ERROR_${resp.status}`);
+                }
+
                 const data = await resp.json();
+
+                // --- ZÁCHRANNÁ BRZDA 2: Kontrola prázdných dat ---
+                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+                    throw new Error("NO_DATA");
+                }
+
                 const aiResponse = data.candidates[0].content.parts[0].text;
 
-                // Zpracování odpovědí
                 if (type === 'doctor') {
-                    console.log("Surová odpověď od AI (doktor):", aiResponse);
                     const docData = JSON.parse(extractJSON(aiResponse));
                     plant.aiDiagnosis = docData;
 
@@ -1366,7 +1367,6 @@
                     plant.aiProducts = JSON.parse(extractJSON(aiResponse));
                 }
 
-                // 3. KROK: Nová transakce pro bezpečné uložení výsledku
                 const saveTx = db.transaction('plants', 'readwrite');
                 const saveStore = saveTx.objectStore('plants');
                 saveStore.put(plant);
@@ -1377,9 +1377,16 @@
                     openDetail(currentPlantId);
                 };
             } catch (e) {
-                console.error(e);
-                alert("Chyba AI analýzy. Zkontrolujte připojení nebo platnost API klíče.");
                 hideLoader();
+                console.error(e);
+                // Chytřejší chybové hlášky podle toho, co se pokazilo
+                if (e.message === "API_LIMIT") {
+                    alert("Zpomalte prosím. 🚦 Překročili jsme chvilkový limit dotazů na umělou inteligenci. Počkejte minutu a zkuste to znovu.");
+                } else if (e.message === "NO_DATA") {
+                    alert("Umělá inteligence nevrátila žádnou odpověď. Zkuste to prosím znovu.");
+                } else {
+                    alert("Chyba AI analýzy. Zkontrolujte připojení nebo platnost API klíče.");
+                }
             }
         }
 
