@@ -1065,10 +1065,9 @@
                 const plant = req.result;
                 if (!plant) return;
 
-                // Titulek
+                // 1. Nadpis a základní info
                 document.getElementById('detail-title').innerHTML = `${plant.name} <span onclick="editPlantName()" style="cursor:pointer; font-size:1.1rem; padding-left:8px; opacity:0.8;">✏️</span>`;
 
-                // Občanka
                 const infoCard = document.getElementById('plant-info-card');
                 if (plant.description || plant.water || plant.light) {
                     document.getElementById('plant-desc').innerText = plant.description || "Charakteristika zatím chybí.";
@@ -1079,14 +1078,14 @@
                     infoCard.style.display = 'none';
                 }
 
-                // Galerie
+                // 2. Galerie
                 const gal = document.getElementById('detail-gallery');
                 gal.innerHTML = '';
                 plant.images.forEach(imgData => {
                     gal.innerHTML += `<img src="${imgData}" onclick="openLightbox('${imgData}')">`;
                 });
 
-                // Zálivka status
+                // 3. Zálivka status
                 let wText = " (Zatím nezalito)";
                 if (plant.lastWatered) {
                     const parts = plant.lastWatered.split('.').map(p => p.trim());
@@ -1101,7 +1100,7 @@
                 }
                 document.getElementById('water-status').innerText = wText;
 
-                // --- ÚKOLY (S vylepšeným zobrazením přípravků) ---
+                // 4. ÚKOLY (Úkolové přípravky)
                 const tasksDiv = document.getElementById('detail-tasks');
                 tasksDiv.innerHTML = '';
                 const currentMonth = new Date().getMonth();
@@ -1115,20 +1114,19 @@
                         if (isForThisMonth && !isDone) {
                             hasVisibleTasks = true;
 
-                            // Sestavení boxíku pro produkty k úkolu
-                            let productsHTML = '';
+                            // HTML pro přípravky vázané na tento konkrétní úkol
+                            let taskProductsHTML = '';
                             if (task.taskProducts && task.taskProducts.length > 0) {
-                                productsHTML = `<div style="margin-top:10px; padding:10px; background:#f0f7f0; border-radius:8px; border:1px solid #c8e6c9;">
-                            <div style="font-size:0.8rem; font-weight:bold; color:#2e7d32; margin-bottom:5px;">💡 Doporučené přípravky pro tento úkol:</div>`;
+                                taskProductsHTML = `<div style="margin-top:10px; padding:10px; background:#f0f7f0; border-radius:8px; border:1px solid #c8e6c9;">
+                            <div style="font-size:0.8rem; font-weight:bold; color:#2e7d32; margin-bottom:5px;">💡 Přípravky pro tento úkol:</div>`;
                                 task.taskProducts.forEach(prod => {
-                                    productsHTML += `
+                                    taskProductsHTML += `
                                 <div style="display:flex; gap:5px; margin-bottom:5px; align-items:center;">
                                     <span style="flex:1; font-size:0.85rem;">${prod}</span>
                                     <button class="btn-shop" style="padding:4px 8px; font-size:0.75rem;" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
-                                    <button class="btn-shop" style="padding:4px 8px; font-size:0.75rem; background:var(--p);" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
                                 </div>`;
                                 });
-                                productsHTML += `</div>`;
+                                taskProductsHTML += `</div>`;
                             }
 
                             tasksDiv.innerHTML += `
@@ -1140,37 +1138,64 @@
                             <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">
                                 ${task.desc || task.description || 'Popis úkolu chybí.'}
                             </div>
-                            <button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${task.name}')">💡 Hledat přípravky</button>
-                            ${productsHTML} 
+                            <button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${task.name}')">💡 Hledat přípravky k úkolu</button>
+                            ${taskProductsHTML} 
                         </div>`;
                         }
                     });
                 }
 
+                // --- UNIVERZÁLNÍ TLAČÍTKO PRO OBECNÉ PŘÍPRAVKY ---
+                // Zobrazí se vždy, bez ohledu na to, zda jsou úkoly splněné nebo ne
+                const generalBtnHTML = `
+            <div style="text-align:center; margin-top:15px; padding-top:10px; border-top:1px dashed #ccc;">
+                <button class="btn-sm-action" style="background:#f3e5f5; border-color:#9c27b0; color:#4a148c; font-weight:bold; width:100%; padding:10px;" onclick="callAI('products')">✨ Doporučit obecné přípravky (hnojiva, substráty...)</button>
+            </div>`;
+
                 if (!hasVisibleTasks) {
-                    tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666; text-align:center;">Všechny úkoly jsou hotové! 🎉</p>';
+                    tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666; text-align:center;">Všechny úkoly jsou hotové! 🎉</p>' + generalBtnHTML;
+                } else {
+                    tasksDiv.innerHTML += generalBtnHTML;
                 }
 
-                // AI Paměť (Rámečky Detektiv, Doktor atd.)
+                // 5. OBECNÉ PŘÍPRAVKY (Zobrazení v samostatném šuplíku, který se nepřepisuje úkoly)
+                const prodBox = document.getElementById('ai-mem-products');
+                if (plant.aiProducts && plant.aiProducts.length > 0) {
+                    let pHTML = `<div style="border: 2px solid #9c27b0; background: #fdf7ff; padding: 15px; border-radius: 12px; margin-top: 15px;">
+                <strong style="color:#4a148c; display:block; margin-bottom:10px;">📦 Doporučená obecná výbava:</strong>`;
+                    plant.aiProducts.forEach(prod => {
+                        pHTML += `<div style="display:flex; gap:5px; margin-bottom:8px; align-items:center;">
+                    <span style="flex:1; font-size:0.9rem; font-weight:bold;">${prod}</span>
+                    <button class="btn-shop" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
+                    <button class="btn-shop" style="background:var(--p);" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
+                </div>`;
+                    });
+                    pHTML += `<button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn); margin-top:10px; width:100%;" onclick="deleteAIMemory('aiProducts')">🗑️ Smazat obecná doporučení</button></div>`;
+                    prodBox.innerHTML = pHTML;
+                    prodBox.style.display = 'block';
+                } else {
+                    prodBox.style.display = 'none';
+                }
+
+                // 6. Ostatní AI Paměť (Detektiv, Doktor)
                 const detBox = document.getElementById('ai-mem-detective');
                 if (plant.aiDetection) {
                     const jeToInstrukce = plant.aiDetection.length > 35;
-                    if (jeToInstrukce) {
-                        detBox.innerHTML = `<strong>📸 AI info:</strong> ${plant.aiDetection} <button onclick="callAI('detective')">🔄 Znovu</button>`;
-                    } else {
-                        detBox.innerHTML = `<strong>🔎 Odrůda:</strong> ${plant.aiDetection} <button onclick="updateProfileName('${plant.name} (${plant.aiDetection})')">Uložit</button>`;
-                    }
+                    detBox.innerHTML = jeToInstrukce ?
+                        `<strong>📸 AI info:</strong> ${plant.aiDetection} <button onclick="callAI('detective')">🔄 Znovu</button>` :
+                        `<strong>🔎 Odrůda:</strong> ${plant.aiDetection} <button onclick="updateProfileName('${plant.name} (${plant.aiDetection})')">Uložit</button>`;
                     detBox.style.display = 'block';
                 } else { detBox.style.display = 'none'; }
 
-                // Doktor a další boxy zůstávají... (případně doplň zbytek své logiky pro aiDiagnosis a aiProducts)
-
-                // Historie a zbytek...
+                // 7. Historie
                 const tl = document.getElementById('detail-timeline');
                 tl.innerHTML = '';
                 [...plant.careHistory].reverse().forEach((h, idx) => {
                     let realIndex = plant.careHistory.length - 1 - idx;
-                    tl.innerHTML += `<div class="timeline-item"><strong>${h.date}:</strong> ${h.text} <button onclick="deleteHistoryItem(${realIndex})">❌</button></div>`;
+                    tl.innerHTML += `<div class="timeline-item" style="display:flex; justify-content:space-between; align-items:center;">
+                <div><strong>${h.date}:</strong> ${h.text}</div>
+                <button onclick="deleteHistoryItem(${realIndex})" style="background:none; border:none; color:var(--warn); cursor:pointer;">❌</button>
+            </div>`;
                 });
 
                 document.getElementById('detail-view').style.display = 'block';
@@ -1225,25 +1250,27 @@
                 let prompt = "";
                 let isJSON = false;
 
+                // --- DEFINICE PROMPTŮ ---
                 if (type === 'doctor') {
                     prompt = `Jsi expert na zdraví rostlin. Analyzuj tuto rostlinu '${plant.name}'. Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou: {"hasProblem": true, "diagnosis": "název choroby nebo škůdce", "description": "stručný popis problému", "solution": "kroky k nápravě", "searchKeyword": "klíčové slovo pro vyhledávání (např. mšice)", "suggestedTask": "krátký název úkolu pro zahradníka"}. Pokud je rostlina zdravá, "hasProblem" bude false a ostatní pole budou prázdná nebo pozitivní.`;
                     isJSON = true;
                 }
                 else if (type === 'detective') {
-                    prompt = `Prohlédni si VŠECHNY přiložené fotky této rostliny a pokus se určit její přesnou odrůdu. Pokud přiložené fotky k přesnému určení nestačí (např. chybí detail plodu, květů nebo listů), nenapíšeš název odrůdy, ale napíšeš jasnou krátkou instrukci, co má uživatel dofotit (např. "Pro určení odrůdy potřebuji detail zralého plodu a listu."). Odpověz POUZE ve formátu JSON: {"exactName": "Název odrůdy NEBO žádost o další fotky"}`;
+                    prompt = `Prohlédni si VŠECHNY přiložené fotky této rostliny a pokus se určit její přesnou odrůdu. Pokud přiložené fotky k přesnému určení nestačí, nenapíšeš název odrůdy, ale napíšeš jasnou krátkou instrukci, co má uživatel dofotit. Odpověz POUZE ve formátu JSON: {"exactName": "Název odrůdy NEBO žádost o další fotky"}`;
                     isJSON = true;
                 }
                 else if (type === 'products') {
-                    prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
+                    // OBECNÉ PŘÍPRAVKY (Hnojiva, substráty, prevence)
+                    prompt = `Jsi zahradník. Doporuč 5 konkrétních obecných přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
                     isJSON = true;
                 }
                 else if (type === 'task-products') {
+                    // SPECIFICKÉ PŘÍPRAVKY PRO ÚKOL
                     prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků na českém trhu přímo pro vyřešení úkolu '${extraParam}' u rostliny '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
                     isJSON = true;
                 }
 
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
-
                 if (type !== 'products') {
                     payload.contents[0].parts.push(...imageParts);
                 }
@@ -1263,27 +1290,20 @@
                 }
 
                 const data = await resp.json();
-                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-                    throw new Error("NO_DATA");
-                }
-
                 const aiResponse = data.candidates[0].content.parts[0].text;
 
-                // --- Zpracování výsledků ---
+                // --- ZPRACOVÁNÍ VÝSLEDKŮ ---
                 if (type === 'doctor') {
                     const docData = JSON.parse(extractJSON(aiResponse));
                     plant.aiDiagnosis = docData;
-
                     if (docData.hasProblem) {
                         if (!plant.careHistory) plant.careHistory = [];
                         plant.careHistory.push({
                             date: new Date().toLocaleDateString('cs-CZ'),
-                            text: `⚠️ AI Diagnóza: Byl zjištěn problém - ${docData.searchKeyword}`
+                            text: `⚠️ AI Diagnóza: ${docData.diagnosis}`
                         });
-
                         const currentMonth = new Date().getMonth();
                         if (!plant.tasks) plant.tasks = [];
-                        // Přidání úkolu od doktora jako nového objektu do pole tasks
                         plant.tasks.push({
                             name: docData.suggestedTask,
                             description: docData.solution,
@@ -1295,10 +1315,11 @@
                     plant.aiDetection = JSON.parse(extractJSON(aiResponse)).exactName;
                 }
                 else if (type === 'products') {
+                    // Uložíme do obecného šuplíku rostliny
                     plant.aiProducts = JSON.parse(extractJSON(aiResponse));
                 }
                 else if (type === 'task-products') {
-                    // NOVINKA: Uložíme produkty přímo ke konkrétnímu úkolu
+                    // Uložíme přímo k danému úkolu
                     const products = JSON.parse(extractJSON(aiResponse));
                     if (plant.tasks && Array.isArray(plant.tasks)) {
                         const taskIndex = plant.tasks.findIndex(t => t.name === extraParam);
@@ -1309,9 +1330,7 @@
                 }
 
                 const saveTx = db.transaction('plants', 'readwrite');
-                const saveStore = saveTx.objectStore('plants');
-                saveStore.put(plant);
-
+                saveTx.objectStore('plants').put(plant);
                 saveTx.oncomplete = () => {
                     hideLoader();
                     renderPlants();
@@ -1320,11 +1339,7 @@
             } catch (e) {
                 hideLoader();
                 console.error(e);
-                if (e.message === "API_LIMIT") {
-                    alert("Zpomalte prosím. 🚦 API limit vyčerpán.");
-                } else {
-                    alert("Chyba AI analýzy.");
-                }
+                alert("Chyba AI analýzy: " + e.message);
             }
         }
 
@@ -1878,50 +1893,69 @@ Odpověz POUZE čistým JSON formátem bez dalších textů.`;
         });
     </script>
 
-    <div id="guide-modal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:3000; overflow-y:auto; padding:10px; box-sizing:border-box;">
-    <div style="background:white; max-width:650px; margin:10px auto; border-radius:20px; padding:25px; position:relative; font-family:sans-serif; line-height:1.6;">
-        <button onclick="closeGuide()" style="position:absolute; top:15px; right:15px; background:#eee; border:none; width:35px; height:35px; border-radius:50%; font-size:1.2rem; cursor:pointer;">❌</button>
-        
-        <h1 style="margin-top:0; color:#2e7d32; text-align:center; border-bottom:3px solid #4CAF50; padding-bottom:10px;">📖 Kompletní manuál PlantMaster</h1>
+    <div id="guide-modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:3000; overflow-y:auto; padding:10px; box-sizing:border-box;">
+        <div
+            style="background:white; max-width:650px; margin:10px auto; border-radius:20px; padding:25px; position:relative; font-family:sans-serif; line-height:1.6;">
+            <button onclick="closeGuide()"
+                style="position:absolute; top:15px; right:15px; background:#eee; border:none; width:35px; height:35px; border-radius:50%; font-size:1.2rem; cursor:pointer;">❌</button>
 
-        <div style="background:#f9f9f9; padding:15px; border-radius:12px; margin-bottom:20px;">
-            <h3 style="margin-top:0; color:#1b5e20;">➕ Jak přidat novou rostlinu</h3>
-            <p><strong>Akce:</strong> Klikni na velké zelené tlačítko se symbolem foťáku/plus na hlavní obrazovce.</p>
-            <p><strong>Co se stane:</strong> Otevře se foťák nebo galerie. Vyber fotku. AI okamžitě analyzuje obraz, určí název, kategorii a <strong>automaticky vygeneruje plán úkolů</strong> na celý rok.</p>
+            <h1
+                style="margin-top:0; color:#2e7d32; text-align:center; border-bottom:3px solid #4CAF50; padding-bottom:10px;">
+                📖 Kompletní manuál PlantMaster</h1>
+
+            <div style="background:#f9f9f9; padding:15px; border-radius:12px; margin-bottom:20px;">
+                <h3 style="margin-top:0; color:#1b5e20;">➕ Jak přidat novou rostlinu</h3>
+                <p><strong>Akce:</strong> Klikni na velké zelené tlačítko se symbolem foťáku/plus na hlavní obrazovce.
+                </p>
+                <p><strong>Co se stane:</strong> Otevře se foťák nebo galerie. Vyber fotku. AI okamžitě analyzuje obraz,
+                    určí název, kategorii a <strong>automaticky vygeneruje plán úkolů</strong> na celý rok.</p>
+            </div>
+
+            <div style="background:#e8f5e9; padding:15px; border-radius:12px; margin-bottom:20px;">
+                <h3 style="margin-top:0; color:#1b5e20;">💧 Zálivka a péče</h3>
+                <p><strong>Akce:</strong> V detailu rostliny klikni na modrou kapku nebo tlačítko "Zalito".</p>
+                <p><strong>Co se stane:</strong> Uloží se dnešní datum. Aplikace začne počítat dny. Příště uvidíš např.
+                    <em>"Naposledy: Před 3 dny"</em>. Zároveň se v <strong>Historii</strong> (dole) vytvoří záznam.
+                </p>
+                <p><strong>Zrušení akce (Undo):</strong> Pokud jsi klikl omylem, sjeď dolů do Historie a klikni na ❌ u
+                    záznamu o zálivce. Status nahoře se vrátí do původního stavu.</p>
+            </div>
+
+            <div style="background:#fff3e0; padding:15px; border-radius:12px; margin-bottom:20px;">
+                <h3 style="margin-top:0; color:#e65100;">🤖 Umělá inteligence (AI)</h3>
+                <p>V detailu najdeš tři experty:</p>
+                <ul style="padding-left:20px;">
+                    <li><strong>Rozpoznat odrůdu:</strong> Porovná všechny fotky v galerii. Pokud jich je málo, napíše
+                        ti: <em>"Vyfoť mi detail plodu"</em>. Jakmile odrůdu potvrdíš tlačítkem "Uložit", název kytky se
+                        přepíše a načtou se přesnější úkoly.</li>
+                    <li><strong>AI Doktor:</strong> Hledá nemoci. Pokud něco najde, popíše léčbu a <strong>rovnou přidá
+                            nový úkol</strong> do tvého kalendáře na tento měsíc.</li>
+                    <li><strong>Hledat přípravky:</strong> Najde konkrétní produkty na českém trhu. Kliknutím na 🛒 tě
+                        hodí přímo na Heureku, kliknutím na 📖 otevře návod na Agromanual.cz.</li>
+                </ul>
+            </div>
+
+            <div style="background:#f3e5f5; padding:15px; border-radius:12px; margin-bottom:20px;">
+                <h3 style="margin-top:0; color:#4a148c;">📅 Správa úkolů</h3>
+                <p><strong>Splnění:</strong> Klikni na "✓ Splnit". Úkol zmizí z aktuálního seznamu a přesune se do
+                    Historie.</p>
+                <p><strong>Vrácení úkolu:</strong> Pokud úkol smažeš z Historie (dole), <strong>znovu se objeví</strong>
+                    v seznamu aktivních úkolů k dodělání.</p>
+            </div>
+
+            <div style="background:#e1f5fe; padding:15px; border-radius:12px; margin-bottom:20px;">
+                <h3 style="margin-top:0; color:#01579b;">⚙️ Nastavení a YouTube</h3>
+                <p>Pod ozubeným kolečkem spravuješ svůj <strong>Gemini API klíč</strong>. Bez něj AI nefunguje.</p>
+                <p><strong>Videa:</strong> U každé kytky máš štítky (Hnojení, Řez...). Kliknutím na ně se vyhledají
+                    nejlepší česká návodná videa přímo pro tvou rostlinu.</p>
+            </div>
+
+            <button onclick="closeGuide()"
+                style="width:100%; padding:15px; background:#2e7d32; color:white; border:none; border-radius:10px; font-size:1.1rem; font-weight:bold; cursor:pointer;">Vše
+                chápu, jdeme pěstovat! 🌱</button>
         </div>
-
-        <div style="background:#e8f5e9; padding:15px; border-radius:12px; margin-bottom:20px;">
-            <h3 style="margin-top:0; color:#1b5e20;">💧 Zálivka a péče</h3>
-            <p><strong>Akce:</strong> V detailu rostliny klikni na modrou kapku nebo tlačítko "Zalito".</p>
-            <p><strong>Co se stane:</strong> Uloží se dnešní datum. Aplikace začne počítat dny. Příště uvidíš např. <em>"Naposledy: Před 3 dny"</em>. Zároveň se v <strong>Historii</strong> (dole) vytvoří záznam.</p>
-            <p><strong>Zrušení akce (Undo):</strong> Pokud jsi klikl omylem, sjeď dolů do Historie a klikni na ❌ u záznamu o zálivce. Status nahoře se vrátí do původního stavu.</p>
-        </div>
-
-        <div style="background:#fff3e0; padding:15px; border-radius:12px; margin-bottom:20px;">
-            <h3 style="margin-top:0; color:#e65100;">🤖 Umělá inteligence (AI)</h3>
-            <p>V detailu najdeš tři experty:</p>
-            <ul style="padding-left:20px;">
-                <li><strong>Rozpoznat odrůdu:</strong> Porovná všechny fotky v galerii. Pokud jich je málo, napíše ti: <em>"Vyfoť mi detail plodu"</em>. Jakmile odrůdu potvrdíš tlačítkem "Uložit", název kytky se přepíše a načtou se přesnější úkoly.</li>
-                <li><strong>AI Doktor:</strong> Hledá nemoci. Pokud něco najde, popíše léčbu a <strong>rovnou přidá nový úkol</strong> do tvého kalendáře na tento měsíc.</li>
-                <li><strong>Hledat přípravky:</strong> Najde konkrétní produkty na českém trhu. Kliknutím na 🛒 tě hodí přímo na Heureku, kliknutím na 📖 otevře návod na Agromanual.cz.</li>
-            </ul>
-        </div>
-
-        <div style="background:#f3e5f5; padding:15px; border-radius:12px; margin-bottom:20px;">
-            <h3 style="margin-top:0; color:#4a148c;">📅 Správa úkolů</h3>
-            <p><strong>Splnění:</strong> Klikni na "✓ Splnit". Úkol zmizí z aktuálního seznamu a přesune se do Historie.</p>
-            <p><strong>Vrácení úkolu:</strong> Pokud úkol smažeš z Historie (dole), <strong>znovu se objeví</strong> v seznamu aktivních úkolů k dodělání.</p>
-        </div>
-
-        <div style="background:#e1f5fe; padding:15px; border-radius:12px; margin-bottom:20px;">
-            <h3 style="margin-top:0; color:#01579b;">⚙️ Nastavení a YouTube</h3>
-            <p>Pod ozubeným kolečkem spravuješ svůj <strong>Gemini API klíč</strong>. Bez něj AI nefunguje.</p>
-            <p><strong>Videa:</strong> U každé kytky máš štítky (Hnojení, Řez...). Kliknutím na ně se vyhledají nejlepší česká návodná videa přímo pro tvou rostlinu.</p>
-        </div>
-
-        <button onclick="closeGuide()" style="width:100%; padding:15px; background:#2e7d32; color:white; border:none; border-radius:10px; font-size:1.1rem; font-weight:bold; cursor:pointer;">Vše chápu, jdeme pěstovat! 🌱</button>
     </div>
-</div>
 
 </body>
 
