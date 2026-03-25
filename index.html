@@ -1377,52 +1377,61 @@
             const key = localStorage.getItem('G_KEY');
             showLoader("Aktualizuji profil...");
 
-            const db = await getDB();
-            const tx = db.transaction('plants', 'readwrite');
-            const store = tx.objectStore('plants');
-            const req = store.get(currentPlantId);
+            try {
+                // --- 1. KROK: Čas na přemýšlení (voláme AI PŘED otevřením databáze) ---
+                const prompt = `Jsi botanik. Pro rostlinu '${newName}' vygeneruj JSON s návodem a úkoly: {"water":"Detailní instrukce zálivky","light":"Nároky na světlo","tasks":[{"name":"Název úkolu","description":"Krátký popis, jak úkol provést","months":[2, 3]}]} (kde "months" je pole čísel měsíců 0-11). Odpověz POUZE čistým JSON formátem bez dalších textů.`;
 
-            req.onsuccess = async () => {
-                let plant = req.result;
-                try {
-                    // --- OPRAVA: Nový prompt se správným formátem úkolů ---
-                    const prompt = `Jsi botanik. Pro rostlinu '${newName}' vygeneruj JSON s návodem a úkoly: {"water":"Detailní instrukce zálivky","light":"Nároky na světlo","tasks":[{"name":"Název úkolu","description":"Krátký popis, jak úkol provést","months":[2, 3]}]} (kde "months" je pole čísel měsíců 0-11). Odpověz POUZE čistým JSON formátem bez dalších textů.`;
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { response_mime_type: "application/json" }
+                    })
+                });
+                const rawResponse = await resp.json();
+                const aiText = rawResponse.candidates[0].content.parts[0].text;
 
-                    const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-                        method: 'POST',
-                        body: JSON.stringify({
-                            contents: [{ parts: [{ text: prompt }] }],
-                            generationConfig: { response_mime_type: "application/json" }
-                        })
-                    });
-                    const rawResponse = await resp.json();
-                    const aiText = rawResponse.candidates[0].content.parts[0].text;
-                    const aiData = JSON.parse(extractJSON(aiText));
+                // Získáme čistá data od AI
+                const aiData = JSON.parse(extractJSON(aiText));
 
-                    // Uložíme nový název
+                // --- 2. KROK: Bleskový zápis (rychlé otevření a uložení do DB) ---
+                const db = await getDB();
+                const tx = db.transaction('plants', 'readwrite');
+                const store = tx.objectStore('plants');
+                const req = store.get(currentPlantId);
+
+                req.onsuccess = () => {
+                    let plant = req.result;
+
+                    // Přepíšeme stará data novými od AI
                     plant.name = newName;
-
-                    // Přepíšeme data jen pokud je AI opravdu vygenerovala
                     if (aiData.water) plant.water = aiData.water;
                     if (aiData.light) plant.light = aiData.light;
                     if (aiData.tasks) plant.tasks = aiData.tasks;
 
-                    delete plant.aiDetection; // Smažeme tip, už je to oficiální název
+                    delete plant.aiDetection; // Smažeme tip s odrůdou, už je to oficiální jméno
 
                     store.put(plant);
 
-                    // Až se to uloží, překreslíme obrazovku
+                    // Jakmile je bezpečně uloženo, překreslíme obrazovku
                     tx.oncomplete = () => {
                         hideLoader();
                         renderPlants();
                         openDetail(currentPlantId);
                     };
-                } catch (e) {
+                };
+
+                // Pojistka pro případ, že by databáze přece jen zazlobila
+                tx.onerror = () => {
                     hideLoader();
-                    alert("Chyba při aktualizaci profilu.");
-                    console.error(e); // Vypíše detail chyby do konzole pro jistotu
-                }
-            };
+                    alert("Chyba při ukládání do databáze.");
+                };
+
+            } catch (e) {
+                hideLoader();
+                alert("Chyba při aktualizaci profilu.");
+                console.error("Detail chyby:", e); // V konzoli teď případně uvidíš přesný důvod
+            }
         }
 
         // --- 8. IZOLOVANÝ PINCH-TO-ZOOM (Lightbox) ---
