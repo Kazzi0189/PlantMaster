@@ -1153,11 +1153,29 @@
                 // --- TRVALÁ PAMĚŤ AI (Nové bezpečné boxy) ---
                 const detBox = document.getElementById('ai-mem-detective');
                 if (plant.aiDetection) {
-                    detBox.innerHTML = `<strong>🔎 Tip na odrůdu:</strong> ${plant.aiDetection}
-                    <button class="btn-sm-action" style="background:var(--det); color:white; border:none;" onclick="updateProfileName('${plant.name} (${plant.aiDetection})')">Přidat odrůdu k názvu</button>
-                    <button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDetection')">🗑️ Smazat tip</button>`;
+                    // Změříme délku textu. Pokud je delší než 35 znaků, je to zřejmě instrukce od AI a ne jen název.
+                    const jeToInstrukce = plant.aiDetection.length > 35;
+
+                    if (jeToInstrukce) {
+                        // VARIANTA A: AI chce další fotky (Dlouhý text)
+                        detBox.innerHTML = `<strong>📸 AI potřebuje více detailů:</strong> <span style="font-size:0.95rem;">${plant.aiDetection}</span>
+                        <div style="margin-top:8px; display:flex; gap:5px; flex-wrap:wrap;">
+                            <button class="btn-sm-action" style="background:var(--p); color:white; border:none;" onclick="document.querySelector('input[onchange*=\\'addPhotoToCurrentPlant\\']').click()">📷 Dofotit detail</button>
+                            <button class="btn-sm-action" style="background:var(--det); color:white; border:none;" onclick="callAI('detective')">🔄 Zkusit znovu</button>
+                            <button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDetection')">🗑️ Smazat zprávu</button>
+                        </div>`;
+                    } else {
+                        // VARIANTA B: AI s jistotou našla odrůdu (Krátký text)
+                        detBox.innerHTML = `<strong>🔎 Tip na odrůdu:</strong> ${plant.aiDetection}
+                        <div style="margin-top:8px; display:flex; gap:5px; flex-wrap:wrap;">
+                            <button class="btn-sm-action" style="background:var(--det); color:white; border:none;" onclick="updateProfileName('${plant.name} (${plant.aiDetection})')">Přidat odrůdu k názvu</button>
+                            <button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDetection')">🗑️ Smazat tip</button>
+                        </div>`;
+                    }
                     detBox.style.display = 'block';
-                } else { detBox.style.display = 'none'; }
+                } else {
+                    detBox.style.display = 'none';
+                }
 
                 const docBox = document.getElementById('ai-mem-doctor');
                 if (plant.aiDiagnosis) {
