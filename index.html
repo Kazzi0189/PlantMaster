@@ -1086,9 +1086,11 @@
             };
         }
         // --- 💧 CHYTRÁ ZÁLIVKA: Nastavení a Pauza ---
-        async function editWateringInterval(id, currentInterval) {
+        // --- 💧 CHYTRÁ ZÁLIVKA: Nastavení a Pauza ---
+        async function editWateringInterval(id, currentInterval, event) {
+            event.stopPropagation(); // 🛡️ Zastaví propadnutí kliku na tlačítko zálivky pod tím
             const newVal = prompt("Zadejte počet dní pro interval zálivky:", currentInterval || 7);
-            if (newVal === null || newVal.trim() === "") return; // Uživatel klikl na Zrušit
+            if (newVal === null || newVal.trim() === "") return;
 
             const days = parseInt(newVal, 10);
             if (isNaN(days) || days <= 0) return alert("Prosím zadejte platné číslo větší než 0.");
@@ -1103,12 +1105,13 @@
                 plant.wateringInterval = days;
                 store.put(plant);
                 tx.oncomplete = () => {
-                    openDetail(id); // Rovnou obnovíme detail, abys viděl změnu
+                    openDetail(id);
                 };
             };
         }
 
-        async function toggleWateringPause(id, isPaused) {
+        async function toggleWateringPause(id, isPaused, event) {
+            event.stopPropagation(); // 🛡️ Zastaví propadnutí kliku
             const db = await getDB();
             const tx = db.transaction('plants', 'readwrite');
             const store = tx.objectStore('plants');
@@ -1116,10 +1119,10 @@
 
             req.onsuccess = () => {
                 const plant = req.result;
-                plant.wateringPaused = !isPaused; // Přepne z pravdy na nepravdu a naopak
+                plant.wateringPaused = !isPaused;
                 store.put(plant);
                 tx.oncomplete = () => {
-                    openDetail(id); // Obnovíme detail
+                    openDetail(id);
                 };
             };
         }
@@ -1178,11 +1181,11 @@
                         
                         <div style="font-size:0.9rem; color:#333; display:flex; align-items:center; gap:8px;">
                             <span>⏱️ Zalévat každých: <strong>${interval} dní</strong></span>
-                            <button onclick="editWateringInterval(${plant.id}, ${interval})" style="background:white; border:1px solid #ccc; border-radius:4px; cursor:pointer; font-size:0.9rem; padding:2px 6px;" title="Upravit interval">✏️</button>
+                            <button onclick="editWateringInterval(${plant.id}, ${interval}, event)" style="background:white; border:1px solid #ccc; border-radius:4px; cursor:pointer; font-size:0.9rem; padding:2px 6px;" title="Upravit interval">✏️</button>
                         </div>
 
                         <div>
-                            <button onclick="toggleWateringPause(${plant.id}, ${isPaused})" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid ${isPaused ? '#4caf50' : '#ff9800'}; background:${isPaused ? '#e8f5e9' : '#fff3e0'}; color:${isPaused ? '#2e7d32' : '#e65100'}; font-size:0.9rem; font-weight:bold; cursor:pointer;">
+                            <button onclick="toggleWateringPause(${plant.id}, ${isPaused}, event)" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid ${isPaused ? '#4caf50' : '#ff9800'}; background:${isPaused ? '#e8f5e9' : '#fff3e0'}; color:${isPaused ? '#2e7d32' : '#e65100'}; font-size:0.9rem; font-weight:bold; cursor:pointer;">
                                 ${isPaused ? '▶️ Sledování pozastaveno - ZAPNOUT' : '⏸️ Zapnout režim "Dovolená/Sklizeno"'}
                             </button>
                         </div>
@@ -1951,24 +1954,32 @@ Odpověz POUZE čistým JSON formátem bez dalších textů.`;
 
             req.onsuccess = () => {
                 let plant = req.result;
-
-                // --- NOVÁ LOGIKA PRO VRÁCENÍ ÚKOLU ZPĚT ---
                 const smazanaPolozka = plant.careHistory[index];
 
-                // Pokud mažeme úkol, musíme ho "odškrtnout" i v kalendáři
+                // --- VRÁCENÍ ÚKOLU ZPĚT ---
                 if (smazanaPolozka && smazanaPolozka.text.includes('Splněn úkol:')) {
                     const currentMonth = new Date().getMonth();
-
                     if (plant.tasks && Array.isArray(plant.tasks)) {
-                        // Najdeme úkol, jehož název je zmíněný v textu smazané historie
                         const task = plant.tasks.find(t => smazanaPolozka.text.includes(t.name));
                         if (task && task.completedMonths) {
-                            // Odstraníme aktuální měsíc ze seznamu splněných (tím se úkol vrátí na obrazovku)
                             task.completedMonths = task.completedMonths.filter(m => m !== currentMonth);
                         }
                     }
                 }
-                // ------------------------------------------
+
+                // --- 💧 ZRUŠENÍ OMYLEM ZADANÉ ZÁLIVKY ---
+                if (smazanaPolozka && (smazanaPolozka.text.toLowerCase().includes('zalit') || smazanaPolozka.text.toLowerCase().includes('zálivk'))) {
+                    // Najdeme v historii další nejčerstvější zálivku (kromě té, kterou zrovna mažeme)
+                    const ostatniZalivky = plant.careHistory.filter((h, i) => i !== index && (h.text.toLowerCase().includes('zalit') || h.text.toLowerCase().includes('zálivk')));
+
+                    if (ostatniZalivky.length > 0) {
+                        // Vezmeme tu nejnovější (jsou řazené postupně) a obnovíme její datum
+                        plant.lastWatered = ostatniZalivky[ostatniZalivky.length - 1].date;
+                    } else {
+                        // Pokud nezbyla žádná, vymažeme zálivku úplně
+                        plant.lastWatered = "";
+                    }
+                }
 
                 // Následně záznam trvale smažeme z historie péče
                 plant.careHistory.splice(index, 1);
