@@ -1119,39 +1119,49 @@
                             let productsHTML = '';
                             if (task.taskProducts && task.taskProducts.length > 0) {
                                 productsHTML = `<div style="margin-top:10px; padding:10px; background:#f0f7f0; border-radius:8px; border:1px solid #c8e6c9;">
-                            <div style="font-size:0.8rem; font-weight:bold; color:#2e7d32; margin-bottom:5px;">💡 Doporučené přípravky pro tento úkol:</div>`;
+                    <div style="font-size:0.8rem; font-weight:bold; color:#2e7d32; margin-bottom:5px;">💡 Doporučené přípravky pro tento úkol:</div>`;
                                 task.taskProducts.forEach(prod => {
                                     productsHTML += `
-                                <div style="display:flex; gap:5px; margin-bottom:5px; align-items:center;">
-                                    <span style="flex:1; font-size:0.85rem;">${prod}</span>
-                                    <button class="btn-shop" style="padding:4px 8px; font-size:0.75rem;" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
-                                    <button class="btn-shop" style="padding:4px 8px; font-size:0.75rem; background:var(--p);" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
-                                </div>`;
+                        <div style="display:flex; gap:5px; margin-bottom:5px; align-items:center;">
+                            <span style="flex:1; font-size:0.85rem;">${prod}</span>
+                            <button class="btn-shop" style="padding:4px 8px; font-size:0.75rem;" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
+                            <button class="btn-shop" style="padding:4px 8px; font-size:0.75rem; background:var(--p);" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
+                        </div>`;
                                 });
                                 productsHTML += `</div>`;
                             }
 
                             tasksDiv.innerHTML += `
-                        <div class="task-item" style="border: 1px solid #ccc; flex-direction: column; align-items: stretch; margin-bottom:10px; padding:10px;">
-                            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                                <strong style="font-size: 1.05rem; color: var(--p);">${task.name}</strong>
-                                <button class="btn-complete" onclick="completeTask(${plant.id}, '${task.name}', event)">✓ Splnit</button>
-                            </div>
-                            <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">
-                                ${task.desc || task.description || 'Popis úkolu chybí.'}
-                            </div>
-                            <button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${task.name}')">💡 Hledat přípravky</button>
-                            ${productsHTML} 
-                        </div>`;
+                <div class="task-item" style="border: 1px solid #ccc; flex-direction: column; align-items: stretch; margin-bottom:10px; padding:10px;">
+                    <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <strong style="font-size: 1.05rem; color: var(--p);">${task.name}</strong>
+                        <button class="btn-complete" onclick="completeTask(${plant.id}, '${task.name}', event)">✓ Splnit</button>
+                    </div>
+                    <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">
+                        ${task.desc || task.description || 'Popis úkolu chybí.'}
+                    </div>
+                    <button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${task.name}')">💡 Hledat přípravky k úkolu</button>
+                    ${productsHTML} 
+                </div>`;
                         }
                     });
                 }
 
+                // --- STÁLÉ TLAČÍTKO PRO OBECNOU PÉČI ---
+                const generalBtnHTML = `
+            <div style="text-align:center; margin-top:15px; padding-top:10px; border-top:1px dashed #ccc;">
+                <button class="btn-sm-action" style="background:#f3e5f5; border-color:#9c27b0; color:#4a148c; font-weight:bold; width:100%; padding:10px;" onclick="callAI('products')">✨ Doporučit obecnou péči (hnojiva, substráty)</button>
+            </div>`;
+
                 if (!hasVisibleTasks) {
-                    tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666; text-align:center;">Všechny úkoly jsou hotové! 🎉</p>';
+                    tasksDiv.innerHTML = '<p style="font-size:0.9rem; color:#666; text-align:center;">Všechny úkoly jsou hotové! 🎉</p>' + generalBtnHTML;
+                } else {
+                    tasksDiv.innerHTML += generalBtnHTML;
                 }
 
-                // AI Paměť (Rámečky Detektiv, Doktor atd.)
+
+                // --- AI PAMĚŤ (Rozšířená o nový oddělený box pro produkty) ---
+                // 1. Detektiv
                 const detBox = document.getElementById('ai-mem-detective');
                 if (plant.aiDetection) {
                     const jeToInstrukce = plant.aiDetection.length > 35;
@@ -1163,14 +1173,46 @@
                     detBox.style.display = 'block';
                 } else { detBox.style.display = 'none'; }
 
-                // Doktor a další boxy zůstávají... (případně doplň zbytek své logiky pro aiDiagnosis a aiProducts)
+                // 2. Doktor
+                const docBox = document.getElementById('ai-mem-doctor');
+                if (plant.aiDiagnosis) {
+                    let docContent = `<strong>🩺 Zdraví:</strong> ${plant.aiDiagnosis.description || plant.aiDiagnosis}`;
+                    if (plant.aiDiagnosis.hasProblem && plant.aiDiagnosis.searchKeyword) {
+                        docContent += `<button class="btn-sm-action" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${plant.aiDiagnosis.searchKeyword}'), '_blank')">🔍 Ověřit na Agromanual.cz</button>`;
+                    }
+                    docContent += `<button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteAIMemory('aiDiagnosis')">🗑️ Smazat diagnózu</button>`;
+                    docBox.innerHTML = docContent;
+                    docBox.style.display = 'block';
+                } else { docBox.style.display = 'none'; }
 
-                // Historie a zbytek...
+                // 3. OBECNÉ PŘÍPRAVKY (Nezávislý šuplík dole)
+                const prodBox = document.getElementById('ai-mem-products');
+                if (plant.aiProducts && plant.aiProducts.length > 0) {
+                    let pHTML = `<div style="border: 2px solid #9c27b0; background: #fdf7ff; padding: 15px; border-radius: 12px; margin-top: 15px;">
+                <strong style="color:#4a148c; display:block; margin-bottom:10px;">📦 Doporučená obecná péče:</strong>`;
+                    plant.aiProducts.forEach(prod => {
+                        pHTML += `<div style="display:flex; gap:5px; margin-bottom:8px; align-items:center;">
+                    <span style="flex:1; font-size:0.9rem; font-weight:bold;">${prod}</span>
+                    <button class="btn-shop" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
+                    <button class="btn-shop" style="background:var(--p);" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
+                </div>`;
+                    });
+                    pHTML += `<button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn); margin-top:10px; width:100%;" onclick="deleteAIMemory('aiProducts')">🗑️ Smazat doporučení</button></div>`;
+                    prodBox.innerHTML = pHTML;
+                    prodBox.style.display = 'block';
+                } else {
+                    prodBox.style.display = 'none';
+                }
+
+                // --- Historie ---
                 const tl = document.getElementById('detail-timeline');
                 tl.innerHTML = '';
                 [...plant.careHistory].reverse().forEach((h, idx) => {
                     let realIndex = plant.careHistory.length - 1 - idx;
-                    tl.innerHTML += `<div class="timeline-item"><strong>${h.date}:</strong> ${h.text} <button onclick="deleteHistoryItem(${realIndex})">❌</button></div>`;
+                    tl.innerHTML += `<div class="timeline-item" style="display:flex; justify-content:space-between; align-items:center;">
+                <div><strong>${h.date}:</strong> ${h.text}</div>
+                <button onclick="deleteHistoryItem(${realIndex})" style="background:none; border:none; color:var(--warn); cursor:pointer;">❌</button>
+            </div>`;
                 });
 
                 document.getElementById('detail-view').style.display = 'block';
@@ -1234,10 +1276,12 @@
                     isJSON = true;
                 }
                 else if (type === 'products') {
-                    prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
+                    // OBECNÉ PŘÍPRAVKY: Ptáme se na péči o celou rostlinu
+                    prompt = `Jsi zahradník. Doporuč 5 konkrétních obecných přípravků, hnojiv nebo substrátů dostupných na českém trhu pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
                     isJSON = true;
                 }
                 else if (type === 'task-products') {
+                    // SPECIFICKÉ PŘÍPRAVKY: Ptáme se čistě jen na vyřešení jednoho úkolu
                     prompt = `Jsi zahradník. Doporuč 5 konkrétních přípravků na českém trhu přímo pro vyřešení úkolu '${extraParam}' u rostliny '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
                     isJSON = true;
                 }
@@ -1257,53 +1301,68 @@
                     body: JSON.stringify(payload)
                 });
 
+                // POJISTKA 1: Kontrola sítě
                 if (!resp.ok) {
                     if (resp.status === 429) throw new Error("API_LIMIT");
                     throw new Error(`HTTP_ERROR_${resp.status}`);
                 }
 
                 const data = await resp.json();
-                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+
+                // POJISTKA 2: Vrátil Google vůbec nějaký text?
+                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts || !data.candidates[0].content.parts[0]) {
                     throw new Error("NO_DATA");
                 }
 
                 const aiResponse = data.candidates[0].content.parts[0].text;
+                let parsedData;
 
-                // --- Zpracování výsledků ---
+                // POJISTKA 3: Bezpečné rozbalení JSONu
+                if (isJSON) {
+                    try {
+                        parsedData = JSON.parse(extractJSON(aiResponse));
+                    } catch (parseError) {
+                        console.error("Chyba při čtení JSON od AI:", aiResponse);
+                        throw new Error("JSON_ERROR");
+                    }
+                }
+
+                // --- TŘÍDĚNÍ DO ŠUPLÍKŮ ---
                 if (type === 'doctor') {
-                    const docData = JSON.parse(extractJSON(aiResponse));
-                    plant.aiDiagnosis = docData;
+                    plant.aiDiagnosis = parsedData;
 
-                    if (docData.hasProblem) {
+                    if (parsedData.hasProblem) {
                         if (!plant.careHistory) plant.careHistory = [];
                         plant.careHistory.push({
                             date: new Date().toLocaleDateString('cs-CZ'),
-                            text: `⚠️ AI Diagnóza: Byl zjištěn problém - ${docData.searchKeyword}`
+                            text: `⚠️ AI Diagnóza: Byl zjištěn problém - ${parsedData.searchKeyword || parsedData.diagnosis}`
                         });
 
                         const currentMonth = new Date().getMonth();
                         if (!plant.tasks) plant.tasks = [];
-                        // Přidání úkolu od doktora jako nového objektu do pole tasks
-                        plant.tasks.push({
-                            name: docData.suggestedTask,
-                            description: docData.solution,
-                            months: [currentMonth]
-                        });
+
+                        if (Array.isArray(plant.tasks)) {
+                            plant.tasks.push({
+                                name: parsedData.suggestedTask || "Léčba rostliny",
+                                description: parsedData.solution || "Postupujte dle doporučení.",
+                                months: [currentMonth]
+                            });
+                        }
                     }
                 }
                 else if (type === 'detective') {
-                    plant.aiDetection = JSON.parse(extractJSON(aiResponse)).exactName;
+                    plant.aiDetection = parsedData.exactName;
                 }
                 else if (type === 'products') {
-                    plant.aiProducts = JSON.parse(extractJSON(aiResponse));
+                    // ŠUPLÍK A: Ukládáme jako OBECNOU výbavu k rostlině
+                    plant.aiProducts = parsedData;
                 }
                 else if (type === 'task-products') {
-                    // NOVINKA: Uložíme produkty přímo ke konkrétnímu úkolu
-                    const products = JSON.parse(extractJSON(aiResponse));
+                    // ŠUPLÍK B: Hledáme úkol a ukládáme přípravky jen do něj
                     if (plant.tasks && Array.isArray(plant.tasks)) {
                         const taskIndex = plant.tasks.findIndex(t => t.name === extraParam);
                         if (taskIndex > -1) {
-                            plant.tasks[taskIndex].taskProducts = products;
+                            plant.tasks[taskIndex].taskProducts = parsedData;
                         }
                     }
                 }
@@ -1319,11 +1378,15 @@
                 };
             } catch (e) {
                 hideLoader();
-                console.error(e);
+                console.error("Detail chyby callAI:", e);
                 if (e.message === "API_LIMIT") {
-                    alert("Zpomalte prosím. 🚦 API limit vyčerpán.");
+                    alert("Zpomalte prosím. 🚦 Překročili jsme chvilkový limit dotazů na AI.");
+                } else if (e.message === "NO_DATA") {
+                    alert("Umělá inteligence nevrátila žádnou odpověď. Zkuste to prosím znovu.");
+                } else if (e.message === "JSON_ERROR") {
+                    alert("Odpověď od AI byla ve špatném formátu. Zkuste to prosím znovu.");
                 } else {
-                    alert("Chyba AI analýzy.");
+                    alert("Chyba AI analýzy: Zkontrolujte API klíč nebo připojení.");
                 }
             }
         }
