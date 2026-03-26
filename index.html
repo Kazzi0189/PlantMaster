@@ -809,16 +809,27 @@
                     }
                 });
 
-                // 5. Odeslání systémového upozornění
+                // 5. Odeslání systémového upozornění (Připraveno pro mobily)
                 if (zizniveKytky.length > 0) {
                     const text = zizniveKytky.length === 1
                         ? `${zizniveKytky[0]} potřebuje zalít! 💧`
                         : `${zizniveKytky.length} rostlin potřebuje zalít! 💧 (${zizniveKytky.slice(0, 3).join(', ')}${zizniveKytky.length > 3 ? '...' : ''})`;
 
-                    new Notification("PlantMaster: Zálivka", {
-                        body: text,
-                        icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png"
-                    });
+                    // Bezpečné odeslání přes Service Workera (nutné pro mobily)
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.ready.then(function (registration) {
+                            registration.showNotification("PlantMaster: Zálivka", {
+                                body: text,
+                                icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png"
+                            });
+                        });
+                    } else {
+                        // Záloha pro starší počítačové prohlížeče
+                        new Notification("PlantMaster: Zálivka", {
+                            body: text,
+                            icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png"
+                        });
+                    }
 
                     // Zaznamenáme si, že pro dnešek máme splněno
                     localStorage.setItem('lastWateringAlert', dnes);

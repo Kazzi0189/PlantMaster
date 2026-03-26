@@ -1,5 +1,6 @@
-const CACHE_NAME = 'plantmaster-v22'; // ZMĚNA: Tady musí být v21
+const CACHE_NAME = 'plantmaster-v23'; // Zvýšená verze vynutí aktualizaci v mobilu
 const ASSETS_TO_CACHE = [
+  './',
   './index.html',
   './manifest.json',
   'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js',
@@ -7,17 +8,17 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (e) => {
+  self.skipWaiting(); // Vynutí okamžitou instalaci
   e.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS_TO_CACHE))
   );
-  self.skipWaiting(); // Vynutí okamžitou instalaci nové verze
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys().then((keyList) => {
       return Promise.all(keyList.map((key) => {
-        // Smaže všechny staré cache (v19 a starší)
+        // Smaže všechny staré verze aplikace v telefonu
         if (key !== CACHE_NAME) return caches.delete(key);
       }));
     })
@@ -25,14 +26,15 @@ self.addEventListener('activate', (e) => {
   self.clients.claim();
 });
 
+// VYLEPŠENÍ: Nejdřív stahuje z internetu novou verzi, až při chybě použije cache
 self.addEventListener('fetch', (e) => {
   if (e.request.url.includes('generativelanguage.googleapis.com')) return;
 
   e.respondWith(
-    caches.match(e.request).then((response) => {
-      return response || fetch(e.request);
-    }).catch(() => {
-      return new Response('Aplikace je offline.');
+    fetch(e.request).catch(() => {
+      return caches.match(e.request).then((response) => {
+        return response || new Response('Aplikace je offline.');
+      });
     })
   );
 });
