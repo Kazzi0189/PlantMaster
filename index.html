@@ -1052,6 +1052,44 @@
                 };
             };
         }
+        // --- 💧 CHYTRÁ ZÁLIVKA: Nastavení a Pauza ---
+        async function editWateringInterval(id, currentInterval) {
+            const newVal = prompt("Zadejte počet dní pro interval zálivky:", currentInterval || 7);
+            if (newVal === null || newVal.trim() === "") return; // Uživatel klikl na Zrušit
+
+            const days = parseInt(newVal, 10);
+            if (isNaN(days) || days <= 0) return alert("Prosím zadejte platné číslo větší než 0.");
+
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(id);
+
+            req.onsuccess = () => {
+                const plant = req.result;
+                plant.wateringInterval = days;
+                store.put(plant);
+                tx.oncomplete = () => {
+                    openDetail(id); // Rovnou obnovíme detail, abys viděl změnu
+                };
+            };
+        }
+
+        async function toggleWateringPause(id, isPaused) {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(id);
+
+            req.onsuccess = () => {
+                const plant = req.result;
+                plant.wateringPaused = !isPaused; // Přepne z pravdy na nepravdu a naopak
+                store.put(plant);
+                tx.oncomplete = () => {
+                    openDetail(id); // Obnovíme detail
+                };
+            };
+        }
 
         async function openDetail(id) {
             currentPlantId = id;
@@ -1084,8 +1122,8 @@
                     gal.innerHTML += `<img src="${imgData}" onclick="openLightbox('${imgData}')">`;
                 });
 
-                // Zálivka status
-                let wText = " (Zatím nezalito)";
+                // --- 💧 CHYTRÁ ZÁLIVKA (Zobrazení, výpočet dnů, tužka a pauza) ---
+                let wText = "Zatím nezalito";
                 if (plant.lastWatered) {
                     const parts = plant.lastWatered.split('.').map(p => p.trim());
                     if (parts.length === 3) {
@@ -1094,10 +1132,30 @@
                         const dneska = new Date();
                         dneska.setHours(0, 0, 0, 0);
                         const diff = Math.floor(Math.abs(dneska - dateWatered) / (1000 * 60 * 60 * 24));
-                        wText = ` (Naposledy: ${diff === 0 ? "Dnes" : (diff === 1 ? "Včera" : `Před ${diff} dny`)})`;
+                        wText = `Naposledy: ${diff === 0 ? "Dnes" : (diff === 1 ? "Včera" : `Před ${diff} dny`)}`;
                     }
                 }
-                document.getElementById('water-status').innerText = wText;
+
+                const interval = plant.wateringInterval || 7; // Pokud uživatel nezadá jinak, počítáme se 7 dny
+                const isPaused = plant.wateringPaused || false;
+
+                let waterHTML = `
+                    <div style="display:flex; flex-direction:column; gap:8px; margin-top:5px; padding:10px; background:#e3f2fd; border-radius:8px; border:1px solid #bbdefb;">
+                        <div style="font-size:0.95rem; color:#1565c0; font-weight:bold;">💧 ${wText}</div>
+                        
+                        <div style="font-size:0.9rem; color:#333; display:flex; align-items:center; gap:8px;">
+                            <span>⏱️ Zalévat každých: <strong>${interval} dní</strong></span>
+                            <button onclick="editWateringInterval(${plant.id}, ${interval})" style="background:white; border:1px solid #ccc; border-radius:4px; cursor:pointer; font-size:0.9rem; padding:2px 6px;" title="Upravit interval">✏️</button>
+                        </div>
+
+                        <div>
+                            <button onclick="toggleWateringPause(${plant.id}, ${isPaused})" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid ${isPaused ? '#4caf50' : '#ff9800'}; background:${isPaused ? '#e8f5e9' : '#fff3e0'}; color:${isPaused ? '#2e7d32' : '#e65100'}; font-size:0.9rem; font-weight:bold; cursor:pointer;">
+                                ${isPaused ? '▶️ Sledování pozastaveno - ZAPNOUT' : '⏸️ Zapnout režim "Dovolená/Sklizeno"'}
+                            </button>
+                        </div>
+                    </div>
+                `;
+                document.getElementById('water-status').innerHTML = waterHTML;
 
                 // --- ÚKOLY (S vylepšeným zobrazením přípravků) ---
                 const tasksDiv = document.getElementById('detail-tasks');
