@@ -761,11 +761,75 @@
                 request.onerror = (e) => reject(e.target.error);
             });
         }
+        // --- 🔔 CHYTRÉ NOTIFIKACE (Ranní budíček) ---
+        async function checkWateringAlerts() {
+            // 1. Zkontrolujeme, jestli prohlížeč vůbec notifikace umí
+            if (!("Notification" in window)) return;
 
+            // 2. Zeptáme se na povolení (pokud se nás ještě neptal)
+            if (Notification.permission === "default") {
+                await Notification.requestPermission();
+            }
+
+            // Pokud uživatel notifikace zakázal, rovnou končíme
+            if (Notification.permission !== "granted") return;
+
+            // 3. Ochrana proti spamu: Zjistíme, jestli jsme dnes už neupozorňovali
+            const dnes = new Date().toLocaleDateString('cs-CZ');
+            if (localStorage.getItem('lastWateringAlert') === dnes) return;
+
+            // 4. Jdeme zkontrolovat kytky
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const store = tx.objectStore('plants');
+            const req = store.getAll();
+
+            req.onsuccess = () => {
+                const plants = req.result;
+                let zizniveKytky = [];
+
+                plants.forEach(p => {
+                    if (!p.wateringPaused) {
+                        const interval = p.wateringInterval || 7;
+                        if (p.lastWatered) {
+                            const parts = p.lastWatered.split('.').map(part => part.trim());
+                            if (parts.length === 3) {
+                                const dateWatered = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                                dateWatered.setHours(0, 0, 0, 0);
+                                const dneska = new Date();
+                                dneska.setHours(0, 0, 0, 0);
+                                const diff = Math.floor((dneska - dateWatered) / (1000 * 60 * 60 * 24));
+
+                                if (diff >= interval) zizniveKytky.push(p.name);
+                            }
+                        } else {
+                            // Ještě nikdy nezalito = rovnou žízeň
+                            zizniveKytky.push(p.name);
+                        }
+                    }
+                });
+
+                // 5. Odeslání systémového upozornění
+                if (zizniveKytky.length > 0) {
+                    const text = zizniveKytky.length === 1
+                        ? `${zizniveKytky[0]} potřebuje zalít! 💧`
+                        : `${zizniveKytky.length} rostlin potřebuje zalít! 💧 (${zizniveKytky.slice(0, 3).join(', ')}${zizniveKytky.length > 3 ? '...' : ''})`;
+
+                    new Notification("PlantMaster: Zálivka", {
+                        body: text,
+                        icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png"
+                    });
+
+                    // Zaznamenáme si, že pro dnešek máme splněno
+                    localStorage.setItem('lastWateringAlert', dnes);
+                }
+            };
+        }
         window.onload = async () => {
             document.getElementById('api-key').value = localStorage.getItem('G_KEY') || '';
             checkShareTarget();
             await renderPlants();
+            checkWateringAlerts(); // <--- Spuštění hlídače po načtení
         };
 
         // --- 3. YOUTUBE INBOX (SCHRÁNKA) ---
