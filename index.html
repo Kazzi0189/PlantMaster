@@ -863,12 +863,45 @@
                         }
                     }
 
+                    // --- 💧 CHYTRÁ ZÁLIVKA: Výpočet žízně pro kartičku ---
+                    let waterWarning = '';
+                    let needsWater = false;
+
+                    if (!p.wateringPaused) {
+                        const interval = p.wateringInterval || 7;
+                        if (p.lastWatered) {
+                            const parts = p.lastWatered.split('.').map(part => part.trim());
+                            if (parts.length === 3) {
+                                const dateWatered = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                                dateWatered.setHours(0, 0, 0, 0);
+                                const dneska = new Date();
+                                dneska.setHours(0, 0, 0, 0);
+                                const diff = Math.floor((dneska - dateWatered) / (1000 * 60 * 60 * 24));
+
+                                // Pokud je počet dní od poslední zálivky větší nebo roven intervalu
+                                if (diff >= interval) {
+                                    needsWater = true;
+                                }
+                            }
+                        } else {
+                            // Pokud ještě nikdy nebyla zalitá, určitě potřebuje vodu
+                            needsWater = true;
+                        }
+
+                        if (needsWater) {
+                            waterWarning = `<span style="background-color: #f44336; color: white; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; vertical-align: middle; margin-left: 8px;">💧 ŽÍZEŇ</span>`;
+                        }
+                    } else {
+                        // Pokud je zapnutá pauza (Dovolená)
+                        waterWarning = `<span style="color: #e65100; font-size: 0.75rem; margin-left: 8px;" title="Zálivka pozastavena">⏸️ Pauza</span>`;
+                    }
+
                     if (matchName && matchCat) {
                         list.innerHTML += `
             <div class="card" onclick="openDetail(${p.id})">
                 <img src="${mainImage}" loading="lazy">
                 <div class="card-info">
-                    <h3>${p.name}</h3>
+                    <h3>${p.name} ${waterWarning}</h3>
                     <div style="margin-bottom: 5px;">${badgesHTML}</div>
                     <p>Zalito: ${p.lastWatered || 'Nikdy'}</p>
                 </div>
