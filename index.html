@@ -574,17 +574,27 @@
 
     <div class="container">
 
-        <div style="text-align: center; margin-bottom: 15px;">
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; margin-top: 10px;">
             <button onclick="openGlobalPlanner()"
-                style="background: var(--doc, #2196F3); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 1rem; width: 100%; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                📋 Přehled úkolů celé zahrady
+                style="flex: 1; background: var(--p); color: white; border: none; padding: 12px 10px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                📋 Plánovač
+            </button>
+
+            <button id="btn-bulk-water" onclick="showBulkWaterModal()"
+                style="flex: 1; background: #2196F3; color: white; border: none; padding: 12px 10px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                🌧️ Zálivka
+            </button>
+
+            <button id="btn-undo-bulk" onclick="undoBulkWatering()"
+                style="flex: 1; display: none; background: #ff9800; color: white; border: none; padding: 12px 10px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                ↩️ Vzít zpět
             </button>
         </div>
+
         <div style="position: sticky; top: 0; background: var(--bg); z-index: 90; padding: 10px 0; margin-top: -10px;">
-            <div style="display: flex; gap: 10px; margin-bottom: 8px;">
+            <div style="display: flex; gap: 10px;">
                 <input type="text" id="search-box" placeholder="Hledat..." oninput="renderPlants()"
                     style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.95rem; outline: none; box-sizing: border-box;">
-
                 <select class="filter-select" id="filter-category" onchange="renderPlants()"
                     style="flex: 1; padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.95rem; outline: none; background: white; color: #444; box-sizing: border-box; margin: 0;">
                     <option value="all">Všechny kategorie</option>
@@ -596,10 +606,6 @@
                     <option value="Keře">Keře</option>
                 </select>
             </div>
-            <button id="btn-bulk-water" onclick="showBulkWaterModal()" class="btn-full"
-                style="margin: 0; background: var(--doc); display: none; font-size: 0.9rem; padding: 10px;">
-                💧 Zalít vyfiltrované (<span id="filtered-count">0</span>)
-            </button>
         </div>
 
         <div id="inbox-section">
@@ -707,17 +713,6 @@
             <h3>📝 Historie péče</h3>
             <div class="timeline" id="detail-timeline"></div>
 
-            <h3>🎥 YouTube Návody</h3>
-            <div id="yt-dynamic-tags" style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;"></div>
-            <div style="display:flex; gap:8px; margin-bottom:20px;">
-                <input type="text" id="yt-custom-query" placeholder="Vlastní dotaz na YT..."
-                    style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc;">
-                <button onclick="searchYT(document.getElementById('yt-custom-query').value)"
-                    style="background:var(--yt); color:white; border:none; padding:0 15px; border-radius:8px; font-weight:bold;">Hledat</button>
-            </div>
-
-            <div id="saved-videos" style="margin-bottom: 30px;"></div>
-
             <button class="btn-full btn-danger" style="margin-top:40px;" onclick="deleteCurrentPlant()">⚠️ Smazat
                 rostlinu</button>
         </div>
@@ -773,7 +768,7 @@
     </div>
 
     <div id="global-planner-modal"
-        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1500; justify-content:center; align-items:center;">
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1500; justify-content:center; align-items:flex-start; padding-top: 8vh;">
         <div
             style="background:var(--bg); padding:0; border-radius:16px; width:90%; max-width:500px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
 
@@ -829,7 +824,7 @@
                         dbInstance = null;
                     }
                 }
-                const request = indexedDB.open('PlantMasterDB', 2);
+                const request = indexedDB.open('PlantMasterDB_TEST', 2);
                 request.onupgradeneeded = (e) => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains('plants')) {
@@ -1157,7 +1152,7 @@
             }
         }
 
-        // --- 5. LOGIKA ÚKOLŮ S DOPTÁVÁNÍM ---
+        // --- 5. LOGIKA ÚKOLŮ S DOPTÁVÁNÍM (VYČIŠTĚNÁ VERZE) ---
         async function completeTask(plantId, taskName, event) {
             if (event) event.stopPropagation();
 
@@ -1182,30 +1177,67 @@
 
             req.onsuccess = () => {
                 let plant = req.result;
-                const currentMonth = new Date().getMonth();
+                if (!plant) return; // Pojistka, kdyby rostlina neexistovala
 
-                // 1. ZAZNAMENÁME SPLNĚNÍ (aby úkol zmizel z aktivních)
+                const dnes = new Date();
+                const currentStamp = `${dnes.getFullYear()}-${dnes.getMonth()}`;
+
+                // 1. ZAZNAMENÁME SPLNĚNÍ (do skryté logiky pro kalendář)
                 if (plant.tasks && Array.isArray(plant.tasks)) {
                     const task = plant.tasks.find(t => t.name === taskName);
                     if (task) {
                         if (!task.completedMonths) task.completedMonths = [];
-                        if (!task.completedMonths.includes(currentMonth)) {
-                            task.completedMonths.push(currentMonth);
+                        if (!task.completedMonths.includes(currentStamp)) {
+                            task.completedMonths.push(currentStamp);
                         }
                     }
                 }
 
-                // 2. ZAPÍŠEME DO HISTORIE
+                // 2. ZAPÍŠEME DO HISTORIE (viditelný text pro uživatele)
                 if (!plant.careHistory) plant.careHistory = [];
                 plant.careHistory.push({
                     date: new Date().toLocaleDateString('cs-CZ'),
                     text: `✅ Splněn úkol: ${taskName}${details}`
                 });
 
+                // 3. ULOŽENÍ A OBNOVA (vše musí být uvnitř onsuccess)
                 store.put(plant);
                 tx.oncomplete = () => {
                     renderPlants();
-                    if (currentPlantId === plantId) openDetail(plantId);
+                    // Pokud je otevřený detail kytky, hned ho překreslíme
+                    if (typeof currentPlantId !== 'undefined' && currentPlantId === plantId) {
+                        openDetail(plantId);
+                    }
+                };
+            };
+        }
+        async function undoTask(plantId, taskName) {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(plantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                if (!plant) return;
+
+                const dnes = new Date();
+                const currentStamp = `${dnes.getFullYear()}-${dnes.getMonth()}`;
+
+                if (plant.tasks && Array.isArray(plant.tasks)) {
+                    const task = plant.tasks.find(t => t.name === taskName);
+                    if (task && task.completedMonths) {
+                        // Odstraní naše nové razítko ze seznamu
+                        task.completedMonths = task.completedMonths.filter(m => m !== currentStamp);
+                    }
+                }
+
+                store.put(plant);
+                tx.oncomplete = () => {
+                    renderPlants();
+                    if (typeof currentPlantId !== 'undefined' && currentPlantId === plantId) {
+                        renderTasksForMonth(plantId); // Ihned překreslí kalendář
+                    }
                 };
             };
         }
@@ -1286,21 +1318,31 @@
 
         // --- 🗓️ GLOBÁLNÍ PROMĚNNÁ PRO KALENDÁŘ ---
         let viewedMonth = new Date().getMonth(); // Začínáme vždy na aktuálním měsíci
+        let viewedYear = new Date().getFullYear();
         const monthNames = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
 
-        // --- 🗓️ FUNKCE PRO POSUN MĚSÍCE ---
+        // --- 🗓️ FUNKCE PRO POSUN MĚSÍCE (OPRAVENÁ O ROKY) ---
         function changeViewedMonth(offset, plantId) {
             viewedMonth += offset;
-            // Ošetření přechodu roku (pokud klikneš dozadu v lednu, hodí tě to na prosinec a naopak)
-            if (viewedMonth < 0) viewedMonth = 11;
-            if (viewedMonth > 11) viewedMonth = 0;
 
-            // Znovu vykreslíme úkoly pro nově vybraný měsíc
+            // Pokud klikneš dozadu v lednu, skočíš na prosinec MINULÉHO roku
+            if (viewedMonth < 0) {
+                viewedMonth = 11;
+                viewedYear--;
+            }
+            // Pokud klikneš dopředu v prosinci, skočíš na leden DALŠÍHO roku
+            else if (viewedMonth > 11) {
+                viewedMonth = 0;
+                viewedYear++;
+            }
+
             renderTasksForMonth(plantId);
         }
 
         function resetViewedMonth(plantId) {
-            viewedMonth = new Date().getMonth();
+            const dnes = new Date();
+            viewedMonth = dnes.getMonth();
+            viewedYear = dnes.getFullYear(); // 🟢 Resetuje i rok na aktuální
             renderTasksForMonth(plantId);
         }
 
@@ -1318,6 +1360,7 @@
                 tasksDiv.innerHTML = ''; // Vyčistíme staré úkoly z obrazovky
 
                 const currentRealMonth = new Date().getMonth();
+                const currentRealYear = new Date().getFullYear(); // 🟢 PŘIDÁNO
                 const today = new Date();
                 const todayString = `${today.getDate()}. ${today.getMonth() + 1}. ${today.getFullYear()}`;
 
@@ -1327,7 +1370,7 @@
                 <div style="font-size: 0.85rem; color: #2e7d32; margin-bottom: 5px;">Dnes je ${todayString}</div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <button onclick="changeViewedMonth(-1, ${plant.id})" style="background: white; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight:bold;">⬅️</button>
-                    <strong style="font-size: 1.1rem; color: #1b5e20; text-transform: uppercase;">${monthNames[viewedMonth]}</strong>
+                    <strong style="font-size: 1.1rem; color: #1b5e20; text-transform: uppercase;">${monthNames[viewedMonth]} ${viewedYear}</strong>
                     <button onclick="changeViewedMonth(1, ${plant.id})" style="background: white; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight:bold;">➡️</button>
                 </div>
         `;
@@ -1347,10 +1390,14 @@
                         const isForViewedMonth = Array.isArray(task.months) ? task.months.includes(viewedMonth) : task.month === viewedMonth;
 
                         if (isForViewedMonth) {
-                            const isDone = Array.isArray(task.completedMonths) && task.completedMonths.includes(viewedMonth);
+                            // 🟢 NOVÁ LOGIKA: Kontroluje razítko "Rok-Měsíc" a pro letošek uznává i starý formát (jen číslo)
+                            const isDone = Array.isArray(task.completedMonths) && (
+                                task.completedMonths.includes(`${viewedYear}-${viewedMonth}`) ||
+                                (viewedYear === 2026 && task.completedMonths.includes(viewedMonth))
+                            );
 
                             // Pokud jsme v současnosti a úkol je hotový, v aktuálním měsíci ho už normálně neukazujeme (aby nezavazel)
-                            if (viewedMonth === currentRealMonth && isDone) return;
+                            //if (viewedMonth === currentRealMonth && isDone) return;
 
                             hasVisibleTasks = true;
 
@@ -1359,36 +1406,55 @@
                             let buttonHTML = "";
                             let statusText = "";
 
-                            if (viewedMonth < currentRealMonth) {
+                            // Tady kód konečně porovnává i roky, ne jen měsíce
+                            const isPast = viewedYear < currentRealYear || (viewedYear === currentRealYear && viewedMonth < currentRealMonth);
+                            const isFuture = viewedYear > currentRealYear || (viewedYear === currentRealYear && viewedMonth > currentRealMonth);
+                            const isCurrent = viewedYear === currentRealYear && viewedMonth === currentRealMonth;
+
+                            if (isPast) {
                                 // MINULOST
                                 if (!isDone) {
                                     taskStyle = "border: 2px solid #f44336; background: #ffebee;";
                                     statusText = "<div style='color: #d32f2f; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px;'>❗ Nesplněno z minulosti</div>";
-                                    buttonHTML = `<button class="btn-complete" style="background: #ccc; cursor: not-allowed; opacity: 0.7;" disabled>Uzamčeno</button>`;
+                                    buttonHTML = `<button class="btn-complete" style="background: #ccc; cursor: not-allowed; opacity: 0.7;" disabled>Propásnuto</button>`;
                                 } else {
                                     statusText = "<div style='color: #4caf50; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px;'>✓ Splněno v termínu</div>";
-                                    buttonHTML = `<button class="btn-complete" style="background: #4caf50; opacity: 0.7;" disabled>Hotovo</button>`;
+                                    buttonHTML = `<button class="btn-undo" onclick="undoTask(${plant.id}, '${task.name}')">Zrušit</button>`;
                                 }
-                            } else if (viewedMonth > currentRealMonth) {
+                            } else if (isFuture) {
                                 // BUDOUCNOST
                                 buttonHTML = `<button class="btn-complete" style="background: #ccc; cursor: not-allowed; opacity: 0.7;" disabled>Čeká na měsíc</button>`;
-                            } else {
-                                // SOUČASNOST (Dnešek) - klasické tlačítko
-                                buttonHTML = `<button class="btn-complete" onclick="completeTask(${plant.id}, '${task.name}', event)">✓ Splnit</button>`;
+                            } else if (isCurrent) {
+                                // SOUČASNOST
+                                if (isDone) {
+                                    statusText = "<div style='color: #4caf50; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px;'>✓ Splněno dnes</div>";
+                                    buttonHTML = `<button class="btn-undo" onclick="undoTask(${plant.id}, '${task.name}')">Zrušit</button>`;
+                                } else {
+                                    buttonHTML = `<button class="btn-complete" onclick="completeTask(${plant.id}, '${task.name}', event)">✓ Splnit</button>`;
+                                }
                             }
+                            // --- TADY KONČÍ ÚPRAVA ---
 
                             // Sestavení boxíku pro produkty k úkolu (jen pokud úkol čeká na splnění)
                             let productsHTML = '';
                             if (task.taskProducts && task.taskProducts.length > 0 && viewedMonth === currentRealMonth) {
                                 productsHTML = `<div style="margin-top:10px; padding:10px; background:#f0f7f0; border-radius:8px; border:1px solid #c8e6c9;">
                             <div style="font-size:0.8rem; font-weight:bold; color:#2e7d32; margin-bottom:5px;">💡 Doporučené přípravky pro tento úkol:</div>`;
+
                                 task.taskProducts.forEach(prod => {
                                     productsHTML += `
-                            <div style="display:flex; gap:5px; margin-bottom:5px; align-items:center;">
-                                <span style="flex:1; font-size:0.85rem;">${prod}</span>
-                                <button class="btn-shop" style="padding:4px 8px; font-size:0.75rem;" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
+                            <div style="margin-bottom:8px; border-bottom:1px dashed #ccc; padding-bottom:8px;">
+                                <div style="font-size:0.85rem; font-weight:bold; margin-bottom:5px;">${prod}</div>
+                                <div style="display:flex; gap:5px;">
+                                    <button class="btn-shop" style="flex:1; padding:4px 8px; font-size:0.75rem;" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
+                                    <button class="btn-shop" style="flex:1; background:var(--p); color:white; padding:4px 8px; font-size:0.75rem; border:none; border-radius:4px;" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
+                                </div>
                             </div>`;
                                 });
+
+                                // --- NOVÉ TLAČÍTKO PRO SMAZÁNÍ DOPORUČENÍ ---
+                                productsHTML += `<button class="btn-sm-action" style="color:var(--warn, #d32f2f); border-color:var(--warn, #d32f2f); margin-top:10px; width:100%;" onclick="deleteTaskProducts('${task.name}')">🗑️ Smazat doporučení</button>`;
+
                                 productsHTML += `</div>`;
                             }
 
@@ -1565,10 +1631,12 @@
                     let pHTML = `<div style="border: 2px solid #9c27b0; background: #fdf7ff; padding: 15px; border-radius: 12px; margin-top: 15px;">
         <strong style="color:#4a148c; display:block; margin-bottom:10px;">📦 Doporučená obecná péče:</strong>`;
                     plant.aiProducts.forEach(prod => {
-                        pHTML += `<div style="display:flex; gap:5px; margin-bottom:8px; align-items:center;">
-            <span style="flex:1; font-size:0.9rem; font-weight:bold;">${prod}</span>
-            <button class="btn-shop" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
-            <button class="btn-shop" style="background:var(--p);" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
+                        pHTML += `<div style="margin-bottom:12px; border-bottom:1px dashed #ce93d8; padding-bottom:8px;">
+            <div style="font-size:0.9rem; font-weight:bold; margin-bottom:6px; color:#333;">${prod}</div>
+            <div style="display:flex; gap:5px;">
+                <button class="btn-shop" style="flex:1;" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
+                <button class="btn-shop" style="flex:1; background:var(--p);" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${prod}'), '_blank')">📖 Návod</button>
+            </div>
         </div>`;
                     });
                     pHTML += `<button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn); margin-top:10px; width:100%;" onclick="deleteAIMemory('aiProducts')">🗑️ Smazat doporučení</button></div>`;
@@ -2461,39 +2529,6 @@ Odpověz POUZE čistým JSON formátem bez dalších textů.`;
         </div>
     </div>
 
-    <div id="global-planner-modal"
-        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; flex-direction:column; justify-content:flex-end;">
-        <div
-            style="background:#fff; width:100%; height:90%; border-radius:20px 20px 0 0; padding:20px; box-sizing:border-box; overflow-y:auto; position:relative; display:flex; flex-direction:column;">
-
-            <button onclick="closeGlobalPlanner()"
-                style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">✖</button>
-
-            <h2
-                style="margin-top:0; color:var(--p); font-size:1.5rem; border-bottom:2px solid #eee; padding-bottom:10px;">
-                📋 Plánovač zahrady</h2>
-
-            <div
-                style="background: #e8f5e9; padding: 15px; border-radius: 8px; border: 1px solid #c8e6c9; text-align: center; margin-bottom: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <button onclick="changeGlobalMonth(-1)"
-                        style="background: white; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight:bold; font-size:1.2rem;">⬅️</button>
-                    <strong id="global-month-name"
-                        style="font-size: 1.2rem; color: #1b5e20; text-transform: uppercase;">MĚSÍC</strong>
-                    <button onclick="changeGlobalMonth(1)"
-                        style="background: white; border: 1px solid #ccc; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-weight:bold; font-size:1.2rem;">➡️</button>
-                </div>
-                <button id="global-today-btn" onclick="resetGlobalMonth()"
-                    style="width:100%; margin-top: 15px; font-size: 0.9rem; background: #fff; border: 1px dashed #2e7d32; color: #2e7d32; padding: 8px; border-radius: 4px; cursor: pointer; display:none;">📅
-                    Vrátit se na dnešek</button>
-            </div>
-
-            <div id="global-planner-content" style="flex:1; overflow-y:auto; padding-bottom: 30px;">
-                <p style="text-align:center; color:#666;">Načítám úkoly...</p>
-            </div>
-        </div>
-    </div>
-
     <script>
         // --- 1. MOZEK: HYBRIDNÍ AI DOKTOR ---
         function openAIDoctorModal() {
@@ -2919,9 +2954,193 @@ Odpověz POUZE čistým JSON formátem bez dalších textů.`;
             // 🟢 Změněno: Už nekliká na 'camera-input', ale na náš nový 'doctor-camera-input'
             document.getElementById('doctor-camera-input').click();
         }
+        // --- 🟢 HROMADNÁ ZÁLIVKA (S POJISTKOU PROTI ZTRÁTĚ DAT) ---
 
+        // 1. Zobrazení a skrytí okénka
+        function showBulkWaterModal() {
+            document.getElementById('bulk-water-modal').style.display = 'flex';
+        }
+
+        function closeBulkWaterModal() {
+            document.getElementById('bulk-water-modal').style.display = 'none';
+        }
+
+        // 2. Samotné provedení zálivky
+        async function confirmBulkWatering() {
+            const category = document.getElementById('bulk-category-select').value;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.getAll();
+
+            req.onsuccess = () => {
+                let plants = req.result;
+                let updatedCount = 0;
+
+                // Použijeme už jen jeden správný formát s tečkami, který aplikace vyžaduje pro výpočty
+                const dnesZobrazeni = new Date().toLocaleDateString('cs-CZ');
+
+                plants.forEach(p => {
+                    // Pokud je kategorie 'all' (vše), nebo se shoduje s výběrem
+                    if (category === 'all' || p.category === category) {
+
+                        // 🛑 POJISTKA: Uložíme staré datum zálivky (i když byla nová a prázdná)
+                        p.previousWatered = p.lastWatered;
+
+                        // Zapsání nového data (nyní správně s tečkami)
+                        p.lastWatered = dnesZobrazeni;
+
+                        // Zápis do historie s tajnou značkou (isBulk), abychom to uměli smazat
+                        if (!p.careHistory) p.careHistory = [];
+                        p.careHistory.push({
+                            date: dnesZobrazeni,
+                            text: '🌧️ Hromadná zálivka',
+                            isBulk: true
+                        });
+
+                        store.put(p);
+                        updatedCount++;
+                    }
+                });
+
+                tx.oncomplete = () => {
+                    closeBulkWaterModal();
+                    if (updatedCount > 0) {
+                        // Vyměníme zálivku za Vzít zpět
+                        document.getElementById('btn-bulk-water').style.display = 'none';
+                        document.getElementById('btn-undo-bulk').style.display = 'block';
+
+                        // Uložíme si do prohlížeče, co jsme zalili (pro případ, že by uživatel obnovil stránku)
+                        localStorage.setItem('bulkWateringCategory', category);
+
+                        alert(`Úspěšně zalito ${updatedCount} rostlin.`);
+                        renderPlants(); // Překreslení hlavní obrazovky
+                    } else {
+                        alert("V této kategorii aktuálně nemáte žádné rostliny.");
+                    }
+                };
+            };
+        }
+
+        // 3. Záchranná brzda (Vzít zpět)
+        async function undoBulkWatering() {
+            if (!confirm("Opravdu chcete zrušit poslední hromadnou zálivku? Datum zálivky se vrátí na původní hodnoty.")) return;
+
+            const category = localStorage.getItem('bulkWateringCategory');
+            if (!category) return;
+
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.getAll();
+
+            req.onsuccess = () => {
+                let plants = req.result;
+
+                plants.forEach(p => {
+                    if (category === 'all' || p.category === category) {
+                        // 🛑 OBNOVA: Bezpečně vrátíme starý stav a vyčistíme pojistku
+                        if ('previousWatered' in p) {
+                            p.lastWatered = p.previousWatered;
+                            delete p.previousWatered;
+                        }
+
+                        // BEZPEČNÉ SMAZÁNÍ Z HISTORIE: Zkontrolujeme jen ÚPLNĚ POSLEDNÍ záznam
+                        if (p.careHistory && p.careHistory.length > 0) {
+                            const lastRecord = p.careHistory[p.careHistory.length - 1];
+                            // Pokud byl poslední záznam vytvořen hromadnou zálivkou, odstraníme ho
+                            if (lastRecord.isBulk) {
+                                p.careHistory.pop();
+                            }
+                        }
+
+                        store.put(p);
+                    }
+                });
+
+                tx.oncomplete = () => {
+                    // Vrátíme zpět modré tlačítko zálivky a schováme oranžové
+                    document.getElementById('btn-undo-bulk').style.display = 'none';
+                    document.getElementById('btn-bulk-water').style.display = 'block';
+
+                    localStorage.removeItem('bulkWateringCategory');
+
+                    alert("Hromadná zálivka byla úspěšně zrušena a data vrácena zpět.");
+                    renderPlants(); // Překreslení hlavní obrazovky
+                };
+            };
+        }
+        async function deleteTaskProducts(taskName) {
+            if (!confirm("Opravdu chcete smazat doporučené přípravky pro tento úkol?")) return;
+
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                if (!plant) return;
+
+                let wasDeleted = false;
+
+                // Najdeme úkol podle jména a smažeme mu přípravky z paměti
+                if (plant.tasks) {
+                    let targetTask = plant.tasks.find(t => t.name === taskName);
+                    if (targetTask && targetTask.taskProducts) {
+                        delete targetTask.taskProducts;
+                        wasDeleted = true;
+                    }
+                }
+
+                // Pojistka, kdyby to byl náhodou vlastní úkol (pokud používáš pole customTasks)
+                if (!wasDeleted && plant.customTasks) {
+                    let targetCustomTask = plant.customTasks.find(t => t.name === taskName);
+                    if (targetCustomTask && targetCustomTask.taskProducts) {
+                        delete targetCustomTask.taskProducts;
+                    }
+                }
+
+                store.put(plant);
+
+                tx.oncomplete = () => {
+                    // Okamžité překreslení okna, aby vizuální smog zmizel hned
+                    openDetail(currentPlantId);
+                };
+            };
+        }
 
     </script>
+    <div id="bulk-water-modal" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
+        <div class="modal-content"
+            style="background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: #2196F3; font-size: 1.4rem;">🌧️ Hromadná zálivka</h3>
+            <p style="font-size: 0.95rem; color: #555; margin-bottom: 20px;">
+                Vyberte kategorii rostlin, kterou chcete hromadně zalít (např. po dešti na zahradě). Všem rostlinám v
+                této kategorii se nastaví zálivka na dnešek.
+            </p>
+
+            <select id="bulk-category-select"
+                style="width: 100%; padding: 12px; margin-bottom: 25px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; outline: none; background: #f9f9f9;">
+                <option value="all">Všechny rostliny napříč kategoriemi</option>
+                <option value="Pokojové">Pokojové</option>
+                <option value="Zelenina">Zelenina</option>
+                <option value="Ovoce">Ovoce</option>
+                <option value="Bylinky">Bylinky</option>
+                <option value="Stromy">Stromy</option>
+                <option value="Keře">Keře</option>
+            </select>
+
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="closeBulkWaterModal()"
+                    style="flex: 1; padding: 12px; border-radius: 8px; border: none; background: #e0e0e0; color: #333; font-weight: bold; font-size: 1rem; cursor: pointer;">Zrušit</button>
+                <button onclick="confirmBulkWatering()"
+                    style="flex: 1; padding: 12px; border-radius: 8px; border: none; background: #2196F3; color: white; font-weight: bold; font-size: 1rem; cursor: pointer;">Zalít
+                    vybrané</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>
