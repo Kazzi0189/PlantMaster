@@ -1,0 +1,3555 @@
+<!DOCTYPE html>
+<html lang="cs">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PlantMaster AI v22.0</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2e7d32">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png">
+    <link rel="icon" href="https://cdn-icons-png.flaticon.com/512/628/628283.png" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <style>
+        /* Původní a nezkrácené CSS styly z verze 19.0 */
+        :root {
+            --p: #2e7d32;
+            --bg: #f4f7f6;
+            --text: #333;
+            --card: #ffffff;
+            --warn: #d32f2f;
+            --safe: #388e3c;
+            --doc: #1976d2;
+            --det: #8e24aa;
+            --yt: #f44336;
+        }
+
+        body {
+            font-family: -apple-system, system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            padding-bottom: 90px;
+        }
+
+        header {
+            background: var(--p);
+            color: white;
+            padding: 20px 15px;
+            border-radius: 0 0 20px 20px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+
+        .version-tag {
+            font-size: 0.75rem;
+            opacity: 0.8;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .header-btns {
+            position: absolute;
+            right: 15px;
+            top: 20px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-header {
+            background: transparent;
+            border: none;
+            font-size: 1.4rem;
+            cursor: pointer;
+            color: white;
+            padding: 5px;
+        }
+
+        .container {
+            padding: 0 15px;
+        }
+
+        #inbox-section {
+            display: none;
+            background: #fff3e0;
+            border-left: 5px solid #ff9800;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        #inbox-section h3 {
+            margin: 0 0 10px 0;
+            color: #e65100;
+            font-size: 1.1rem;
+        }
+
+        .inbox-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .inbox-controls select {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 0.9rem;
+        }
+
+        #search-box {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            font-size: 1rem;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            outline: none;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .filter-select {
+            flex: 1;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 0.9rem;
+            outline: none;
+            background: white;
+            color: #444;
+        }
+
+        .calendar-section {
+            background: #e8f5e9;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 5px solid var(--p);
+        }
+
+        .calendar-section h3 {
+            margin: 0 0 10px 0;
+            color: var(--p);
+            font-size: 1.1rem;
+        }
+
+        #calendar-tasks {
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+
+        #calendar-tasks::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        #calendar-tasks::-webkit-scrollbar-track {
+            background: #e8f5e9;
+            border-radius: 8px;
+        }
+
+        #calendar-tasks::-webkit-scrollbar-thumb {
+            background: #a5d6a7;
+            border-radius: 8px;
+        }
+
+        .task-item {
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            padding: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .task-item.completed {
+            text-decoration: line-through;
+            opacity: 0.6;
+        }
+
+        .task-content {
+            flex: 1;
+            font-size: 0.95rem;
+        }
+
+        .task-content strong {
+            color: var(--p);
+            margin-right: 5px;
+        }
+
+        .btn-complete {
+            background: var(--safe);
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-undo {
+            background: #9e9e9e;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* NOVÁ TLAČÍTKA PRO ÚKOLY V DETAILU */
+        .btn-splnit {
+            background: var(--warn);
+            /* Použije tvou červenou barvu */
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .btn-hotovo {
+            background: var(--safe);
+            /* Použije tvou zelenou barvu */
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 5px;
+            font-weight: bold;
+            cursor: not-allowed;
+            /* Kurzor ukáže, že už nejde kliknout */
+            opacity: 0.8;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .card img {
+            width: 70px;
+            height: 70px;
+            border-radius: 12px;
+            object-fit: cover;
+            margin-right: 15px;
+            border: 1px solid #eee;
+        }
+
+        .card-info h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.1rem;
+            color: var(--p);
+        }
+
+        .card-info p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: #666;
+        }
+
+        .cat-badge-small {
+            display: inline-block;
+            font-size: 0.7rem;
+            background: #e0f2f1;
+            color: #00695c;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-bottom: 5px;
+            font-weight: bold;
+            margin-right: 4px;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 25px;
+            right: 25px;
+            width: 65px;
+            height: 65px;
+            background: var(--p);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            box-shadow: 0 6px 16px rgba(46, 125, 50, 0.4);
+            border: none;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        #loader {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.9);
+            z-index: 2000;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: var(--p);
+            font-weight: bold;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ddd;
+            border-top-color: var(--p);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 15px;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Detail a Lightbox vrstvy */
+        #detail-view,
+        #settings-view {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: var(--bg);
+            z-index: 500;
+            overflow-y: auto;
+            padding-bottom: 50px;
+        }
+
+        .detail-header {
+            position: sticky;
+            top: 0;
+            background: var(--p);
+            color: white;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            z-index: 10;
+        }
+
+        .detail-header button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        .gallery-wrapper {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            scroll-snap-type: x mandatory;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+        }
+
+        .gallery-wrapper img {
+            width: 85%;
+            flex-shrink: 0;
+            scroll-snap-align: center;
+            border-radius: 12px;
+            object-fit: cover;
+            height: 250px;
+            border: 1px solid #ccc;
+        }
+
+        #lightbox {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        #lightbox img {
+            max-width: 100%;
+            max-height: 100%;
+            transition: transform 0.1s ease-out;
+            transform-origin: center center;
+        }
+
+        #lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 35px;
+            background: none;
+            border: none;
+            z-index: 3010;
+            cursor: pointer;
+        }
+
+        .btn-full {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            background: var(--p);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 12px;
+            cursor: pointer;
+        }
+
+        .btn-danger {
+            background: var(--warn);
+        }
+
+        .btn-secondary {
+            background: #757575;
+        }
+
+        /* Historie péče */
+        .timeline {
+            border-left: 3px solid var(--p);
+            padding-left: 15px;
+            margin-top: 15px;
+            margin-bottom: 25px;
+        }
+
+        .timeline-item {
+            position: relative;
+            margin-bottom: 12px;
+            font-size: 0.95rem;
+            background: white;
+            padding: 10px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .timeline-item::before {
+            content: "";
+            position: absolute;
+            left: -24px;
+            top: 12px;
+            width: 12px;
+            height: 12px;
+            background: var(--p);
+            border-radius: 50%;
+        }
+
+        .settings-box {
+            background: white;
+            padding: 25px;
+            border-radius: 16px;
+            margin: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* NOVÉ STYLY PRO AI BOXY A TLAČÍTKA */
+        .ai-mem-box {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-sm-action {
+            background: transparent;
+            border: 1px solid #ccc;
+            padding: 8px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .btn-shop {
+            background: #ff9800;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-size: 0.8rem;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        /* --- OPRAVA ZOBRAZENÍ INBOXU NA MOBILU --- */
+        #inbox-section {
+            width: 100%;
+            box-sizing: border-box;
+            overflow: hidden;
+            /* Zabrání přetékání čehokoliv ven */
+        }
+
+        .inbox-controls {
+            display: flex;
+            flex-wrap: wrap;
+            /* Dovolí prvkům odskočit na další řádek */
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        #inbox-plant-select {
+            flex: 1 1 100%;
+            /* Roletka zabere celou šířku 100% */
+            padding: 12px;
+        }
+
+        .inbox-controls button {
+            flex: 1;
+            /* Tlačítka se rovnoměrně rozdělí o zbytek místa pod roletkou */
+            margin: 0;
+            /* Vyresetování případných mezer z jiných stylů */
+        }
+
+        /* --- STYLY PRO MANUÁL (AKORDEON) --- */
+        .manual-modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            /* Musí být nad vším ostatním */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(3px);
+        }
+
+        .manual-content {
+            background-color: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 650px;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .accordion-btn {
+            background-color: #f1f8e9;
+            color: #2e7d32;
+            cursor: pointer;
+            padding: 15px;
+            width: 100%;
+            text-align: left;
+            border: 1px solid #c8e6c9;
+            outline: none;
+            font-size: 1.05rem;
+            font-weight: bold;
+            border-radius: 8px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            transition: background-color 0.3s;
+        }
+
+        .accordion-btn:hover {
+            background-color: #dcedc8;
+        }
+
+        .accordion-panel {
+            padding: 15px;
+            background-color: white;
+            display: none;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            color: #444;
+            border-left: 3px solid #8bc34a;
+            border-right: 1px solid #eee;
+            border-bottom: 1px solid #eee;
+            border-bottom-left-radius: 8px;
+            border-bottom-right-radius: 8px;
+            margin-bottom: 5px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <h1>PlantMaster AI</h1>
+        <span class="version-tag">Verze 22.0 (Stabilní a Kompletní)</span>
+        <div class="header-btns">
+            <button class="btn-header" onclick="openManual()" title="Návod k aplikaci"
+                style="padding: 15px; margin: -10px 5px -10px -10px; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; color: white;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </button>
+
+            <button class="btn-header" onclick="openSettings()" title="Nastavení"
+                style="padding: 15px; margin: -10px; display: flex; align-items: center; justify-content: center; background: none; border: none; cursor: pointer; color: white;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path
+                        d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                    </path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <div style="display: flex; gap: 10px; margin-bottom: 15px; margin-top: 10px;">
+            <button onclick="openGlobalPlanner()"
+                style="flex: 1; background: var(--p); color: white; border: none; padding: 12px 10px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                📋 Plánovač
+            </button>
+
+            <button id="btn-bulk-water" onclick="showBulkWaterModal()"
+                style="flex: 1; background: #2196F3; color: white; border: none; padding: 12px 10px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                🌧️ Zálivka
+            </button>
+
+            <button id="btn-undo-bulk" onclick="undoBulkWatering()"
+                style="flex: 1; display: none; background: #ff9800; color: white; border: none; padding: 12px 10px; border-radius: 8px; font-weight: bold; font-size: 1rem; cursor: pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                ↩️ Vzít zpět
+            </button>
+        </div>
+
+        <div style="position: sticky; top: 0; background: var(--bg); z-index: 90; padding: 10px 0; margin-top: -10px;">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%;">
+                <input type="text" id="search-box" placeholder="Hledat rostlinu..."
+                    oninput="renderPlants(); renderGlobalPlannerContent()"
+                    style="padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.95rem; outline: none; width: 100%; box-sizing: border-box;">
+
+                <select class="filter-select" id="filter-category"
+                    onchange="renderPlants(); renderGlobalPlannerContent()"
+                    style="padding: 12px; border-radius: 8px; border: 1px solid #ccc; font-size: 0.95rem; outline: none; background: white; color: #444; width: 100%; box-sizing: border-box;">
+                    <option value="all">Všechny kategorie</option>
+                    <option value="Pokojové">Pokojové</option>
+                    <option value="Zelenina">Zelenina</option>
+                    <option value="Ovoce">Ovoce</option>
+                    <option value="Bylinky">Bylinky</option>
+                    <option value="Stromy">Stromy</option>
+                    <option value="Keře">Keře</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="inbox-section">
+            <h3>📥 Nové video z YouTube</h3>
+            <p id="inbox-url-display" style="font-size: 0.85rem; word-break: break-all; color: #555;"></p>
+            <div class="inbox-controls">
+                <select id="inbox-plant-select">
+                    <option value="">Vyber rostlinu...</option>
+                </select>
+                <button class="btn-complete" onclick="saveInboxVideo()">Uložit</button>
+                <button class="btn-undo" style="background:var(--warn);" onclick="clearInbox()">Zahodit</button>
+            </div>
+        </div>
+
+        <div class="calendar-section">
+            <h3 id="main-calendar-header">📅 Úkoly na tento měsíc</h3>
+            <div id="calendar-tasks"></div>
+        </div>
+
+        <div id="plant-list"></div>
+    </div>
+
+    <button class="fab" style="font-size: 24px;" onclick="document.getElementById('gallery-input').click()">🖼️</button>
+    <input type="file" id="gallery-input" accept="image/*" style="display:none;" onchange="handleNewPlantPhoto(event)">
+
+    <button class="fab" style="bottom: 90px; background: var(--doc); font-size: 24px;"
+        onclick="document.getElementById('camera-input').click()">📷</button>
+    <input type="file" id="camera-input" accept="image/*" capture="environment" style="display:none;"
+        onchange="handleNewPlantPhoto(event)">
+
+    <div id="detail-view">
+        <div class="detail-header">
+            <button onclick="closeDetail()">←</button>
+            <h2 id="detail-title" style="margin:0; font-size:1.3rem;">Detail</h2>
+        </div>
+        <div style="padding: 15px;">
+
+            <div class="gallery-wrapper" id="detail-gallery"></div>
+            <div style="display:flex; gap:10px; margin-bottom:15px;">
+                <button class="btn-full btn-secondary" style="flex: 1; margin: 0;"
+                    onclick="document.getElementById('add-photo-camera').click()">📷 Vyfotit</button>
+                <button class="btn-full btn-secondary" style="flex: 1; background: #555; margin: 0; border-color: #555;"
+                    onclick="document.getElementById('add-photo-gallery').click()">🖼️ Z galerie</button>
+            </div>
+
+            <input type="file" id="add-photo-camera" accept="image/*" capture="environment" style="display:none;"
+                onchange="addPhotoToCurrentPlant(event)">
+            <input type="file" id="add-photo-gallery" accept="image/*" style="display:none;"
+                onchange="addPhotoToCurrentPlant(event)">
+            <input type="file" id="add-photo-camera" accept="image/*" capture="environment" style="display:none;"
+                onchange="addPhotoToCurrentPlant(event)">
+            <input type="file" id="add-photo-gallery" accept="image/*" style="display:none;"
+                onchange="addPhotoToCurrentPlant(event)">
+
+            <input type="file" id="doctor-camera-input" accept="image/*" capture="environment" style="display:none;"
+                onchange="processDoctorPhoto(event)">
+            <div id="plant-info-card"
+                style="background:#e8f5e9; border-left:4px solid var(--safe); padding:15px; border-radius:12px; margin-bottom:15px; display:none;">
+                <p id="plant-desc" style="margin:0 0 10px 0; font-size:0.95rem; line-height:1.4; color:#333;"></p>
+                <p id="plant-water-info" style="margin:0; font-size:0.9rem; color:#00695c;"><strong>💧 Zálivka:</strong>
+                    <span></span>
+                </p>
+                <p id="plant-light-info" style="margin:5px 0 0 0; font-size:0.9rem; color:#f57f17;"><strong>☀️
+                        Světlo:</strong> <span></span></p>
+            </div>
+
+            <button class="btn-full" onclick="waterPlant()">💧 Zalít dnes <span id="water-status"
+                    style="font-weight:normal; font-size:0.9rem;"></span></button>
+
+            <div style="display: flex; gap: 10px; margin-bottom: 25px;">
+                <input type="text" id="note-input" placeholder="Hlasová / textová poznámka..."
+                    style="flex:1; padding:12px; border-radius:8px; border:1px solid #ccc; font-size:1rem;">
+                <button id="btn-mic" onclick="startDictation()"
+                    style="background:var(--p); color:white; border:none; padding:0 20px; border-radius:8px; font-size:1.2rem; cursor:pointer;">🎤</button>
+            </div>
+
+            <h3>🛠 Specifické úkoly</h3>
+            <div id="detail-tasks" style="margin-bottom: 25px;"></div>
+
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                <button class="btn-full" style="background:var(--det); margin:0;" onclick="callAI('detective')">🔎 Určit
+                    odrůdu</button>
+                <button class="btn-full" style="background:var(--doc); margin:0;" onclick="openAIDoctorModal()">🩺
+                    Zdraví</button>
+            </div>
+
+            <div id="ai-mem-detective" class="ai-mem-box" style="display:none; border-left: 4px solid var(--det);">
+            </div>
+            <div id="ai-mem-doctor" class="ai-mem-box" style="display:none; border-left: 4px solid var(--doc);"></div>
+            <div id="ai-mem-products" class="ai-mem-box" style="display:none; border-left: 4px solid #673ab7;"></div>
+
+            <div id="medical-archive-section"
+                style="margin-top: 20px; margin-bottom: 25px; border: 2px solid #ffebee; border-radius: 12px; overflow: hidden; background: #fff;">
+                <button onclick="toggleMedicalArchive()"
+                    style="width: 100%; padding: 15px; background: #ffebee; border: none; text-align: left; font-size: 1.1rem; font-weight: bold; color: var(--warn, #d32f2f); cursor: pointer; display: flex; justify-content: space-between; align-items: center;">
+                    <span>🗂️ Lékařská karta (Historie diagnóz)</span>
+                    <span id="archive-chevron" style="transition: transform 0.3s;">▼</span>
+                </button>
+
+                <div id="medical-archive-content" style="display: none; padding: 15px; background: #fff;">
+                    <p style="text-align:center; color:#888; font-size: 0.95rem; margin: 10px 0;">Zatím žádné záznamy v
+                        historii.</p>
+                </div>
+            </div>
+            <h3>📝 Historie péče</h3>
+            <div class="timeline" id="detail-timeline"></div>
+
+            <button class="btn-full btn-danger" style="margin-top:40px;" onclick="deleteCurrentPlant()">⚠️ Smazat
+                rostlinu</button>
+        </div>
+    </div>
+
+    <div id="lightbox">
+        <button id="lightbox-close" onclick="closeLightbox()">✖</button>
+        <button onclick="deleteCurrentPhoto()"
+            style="position: absolute; bottom: 30px; background: var(--warn); color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; font-size: 1.1rem; z-index: 3010; cursor: pointer;">🗑️
+            Smazat fotku</button>
+        <img id="lightbox-img" src="">
+    </div>
+
+    <div id="settings-view">
+        <div class="detail-header">
+            <button onclick="closeSettings()">←</button>
+            <h2 style="margin:0;">Nastavení</h2>
+        </div>
+        <div class="settings-box">
+            <label style="display:block; text-align:left; font-weight:bold; margin-bottom:8px;">Gemini API Klíč:</label>
+            <input type="text" id="api-key"
+                style="width:100%; padding:12px; margin-bottom:20px; box-sizing:border-box; border-radius:8px; border:1px solid #ccc;">
+            <button class="btn-full" onclick="saveSettings()">Uložit nastavení</button>
+
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+
+            <h3 style="text-align:left; color:var(--p); margin-top:0;">Zálohování (JSZip)</h3>
+            <button class="btn-full" style="background:#1976d2;" onclick="exportZip()">⬇️ Stáhnout Zálohu
+                (.zip)</button>
+            <input type="file" id="import-file" accept=".zip" style="display:none;" onchange="handleImport(event)">
+            <button class="btn-full" style="background:#ff9800;"
+                onclick="document.getElementById('import-file').click()">⬆️ Nahrát Zálohu</button>
+
+            <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+            <button class="btn-full btn-danger" onclick="deleteAll()">⚠️ Smazat VŠE</button>
+        </div>
+    </div>
+
+    <div id="import-modal"
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:4000; justify-content:center; align-items:center;">
+        <div
+            style="background:white; padding:25px; border-radius:16px; width:85%; text-align:center; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            <h3 style="color:var(--p); margin-top:0;">Způsob importu</h3>
+            <p style="font-size:0.9rem; color:#555; margin-bottom:20px;">Vyberte, jak si přejete nahrát data ze zálohy.
+            </p>
+            <button class="btn-full btn-danger" onclick="executeImport('overwrite')">⚠️ PŘEPSAT VŠE (Smaže
+                současné)</button>
+            <button class="btn-full" style="background:var(--safe);" onclick="executeImport('merge')">➕ PŘIDAT K
+                EXISTUJÍCÍM</button>
+            <button class="btn-full btn-secondary"
+                onclick="document.getElementById('import-modal').style.display='none'">Zrušit</button>
+        </div>
+    </div>
+
+    <div id="global-planner-modal"
+        style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:1500; justify-content:center; align-items:flex-start; padding-top: 8vh;">
+        <div
+            style="background:var(--bg); padding:0; border-radius:16px; width:90%; max-width:500px; max-height:85vh; display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+
+            <div style="background:var(--p); color:white; padding:15px; text-align:center; position:relative;">
+                <button onclick="closeGlobalPlanner()"
+                    style="position:absolute; right:15px; top:15px; background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">×</button>
+                <h2 style="margin:0 0 10px 0; font-size:1.2rem;">Plánovač zahrady</h2>
+
+                <div
+                    style="display:flex; justify-content:space-between; align-items:center; background:rgba(255,255,255,0.2); border-radius:8px; padding:5px 10px;">
+                    <button onclick="changeGlobalMonth(-1)"
+                        style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">⬅️</button>
+                    <strong id="global-month-name" style="font-size:1.1rem; text-transform:uppercase;">MĚSÍC
+                        ROK</strong>
+                    <button onclick="changeGlobalMonth(1)"
+                        style="background:none; border:none; color:white; font-size:1.5rem; cursor:pointer;">➡️</button>
+                </div>
+
+                <button id="global-today-btn" onclick="resetGlobalMonth()"
+                    style="display:none; background:white; color:var(--p); border:none; padding:5px 15px; border-radius:15px; font-weight:bold; margin-top:10px; font-size:0.85rem; cursor:pointer; margin-left:auto; margin-right:auto;">
+                    📅 Zpět na dnešek
+                </button>
+            </div>
+
+            <div id="global-planner-content" style="padding:15px; overflow-y:auto; flex:1;">
+            </div>
+
+        </div>
+    </div>
+
+    <div id="loader">
+        <div class="spinner"></div><span id="loader-text">Zpracovávám...</span>
+    </div>
+    <div id="manual-modal" class="manual-modal">
+        <div class="manual-content">
+            <div
+                style="display:flex; justify-content:space-between; align-items:center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 15px;">
+                <h2 style="margin:0; color:#1b5e20;">📖 Rádce PlantMaster</h2>
+                <button onclick="closeManual()"
+                    style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:#f44336; outline:none;">✖</button>
+            </div>
+
+            <button class="accordion-btn" onclick="toggleAccordion(this)">🌱 Základy a Přehled úkolů <span
+                    class="acc-icon">▼</span></button>
+            <div class="accordion-panel">
+                <strong>Přidání rostliny:</strong> Pomocí plovoucích tlačítek (fotoaparát/galerie) vpravo dole můžete
+                rychle vyfotit nebo nahrát novou rostlinu.<br><br>
+                <strong>Dynamický kalendář:</strong> Na úvodní obrazovce vidíte úkoly na aktuální měsíc. Úkoly se do
+                kalendáře propisují z detailu každé rostliny podle toho, na který měsíc jsou naplánovány.<br><br>
+                <strong>Plánovač a výhledy:</strong> Pomocí šipek v kalendáři (v detailu rostliny) můžete listovat do
+                budoucích měsíců a plánovat si práce dopředu, nebo se naopak podívat do historie na úkoly z
+                minulosti.<br><br>
+                <strong>Specifické úkoly:</strong> V detailu rostliny můžete plnit naplánované úkoly. Zeleně svítí
+                splněné, červeně ty, které jste v minulosti propásli.
+            </div>
+
+            <button class="accordion-btn" onclick="toggleAccordion(this)">💧 Zálivka a Historie péče <span
+                    class="acc-icon">▼</span></button>
+            <div class="accordion-panel">
+                <strong>Kalendář na zalévání:</strong> Aplikace obsahuje specializovaný kalendář zálivky, díky kterému
+                máte jasný a přehledný plán, kdy má která rostlina dostat vodu.<br><br>
+                <strong>Chytrá zálivka:</strong> V detailu rostliny si můžete nastavit interval zálivky (např. každých 7
+                dní). Aplikace bude sama odpočítávat dny a upozorní vás červeným štítkem "ŽÍZEŇ", když je čas.<br><br>
+                <strong>Hromadná zálivka:</strong> Na úvodní obrazovce (modré tlačítko Zálivka) můžete zalít více
+                rostlin najednou podle kategorie. Pokud se spletete, můžete ihned využít oranžové tlačítko "Vzít
+                zpět".<br><br>
+                <strong>Režim Dovolená/Pozastaveno:</strong> Pokud rostlina dočasně nepotřebuje péči (např. v zimě),
+                můžete jí v detailu zapnout pauzu zálivky.<br><br>
+                <strong>Historie péče:</strong> Každý úkon se propisuje do deníku na konci detailu rostliny. Chybné
+                záznamy lze pomocí křížku jednoduše smazat.
+            </div>
+
+            <button class="accordion-btn" onclick="toggleAccordion(this)">🤖 Umělá inteligence (Váš asistent) <span
+                    class="acc-icon">▼</span></button>
+            <div class="accordion-panel">
+                <strong>🔎 AI Detektiv:</strong> Nevíte, jakou odrůdu pěstujete? Vyfoťte ji a nechte umělou inteligenci
+                rostlinu identifikovat a uložit do profilu.<br><br>
+                <strong>🩺 AI Doktor a Lékařská karta:</strong> Pokud rostlina chřadne, vyfoťte problém. AI provede
+                diagnostiku a navrhne řešení. Výsledek se pro budoucí referenci natrvalo uloží do vaší Lékařské karty
+                (Historie diagnóz).<br><br>
+                <strong>💡 Doporučení produktů:</strong> U každého úkolu si můžete nechat poradit vhodnou chemii či
+                hnojiva. U každého doporučení najdete přímý proklik pro nákup (Heureka) nebo ověření dávkování v
+                profesionální databázi (Agromanuál).
+            </div>
+
+            <button class="accordion-btn" onclick="toggleAccordion(this)">🎥 Vzdělávání a YouTube Návody <span
+                    class="acc-icon">▼</span></button>
+            <div class="accordion-panel">
+                <strong>Chytré vyhledávání:</strong> V detailu rostliny využijte rychlá tlačítka (Řez, Hnojení,
+                Škůdci...), která automaticky vyhledají relevantní YouTube návody pro váš konkrétní druh
+                rostliny.<br><br>
+                <strong>Ukládání videí:</strong> Narazili jste na skvělý video návod? Přímo v aplikaci YouTube (nebo v
+                prohlížeči) klikněte na tlačítko "Sdílet" a vyberte PlantMaster. Aplikace tento odkaz zachytí do své
+                schránky a nabídne vám jeho trvalé uložení do profilu dané rostliny.
+            </div>
+        </div>
+    </div>
+    <script>
+        // --- 1. REGISTRACE SERVICE WORKERU ---
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js').catch(err => console.error('SW Chyba', err));
+        }
+
+        let dbInstance = null;
+        let currentPlantId = null;
+        let importedData = [];
+
+        // --- 2. BEZPEČNÝ INDEXEDDB WRAPPER ---
+        async function getDB() {
+            return new Promise((resolve, reject) => {
+                if (dbInstance) {
+                    try {
+                        const testTx = dbInstance.transaction('plants', 'readonly');
+                        resolve(dbInstance);
+                        return;
+                    } catch (e) {
+                        dbInstance = null;
+                    }
+                }
+                const request = indexedDB.open('PlantMasterDB_TEST', 2);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains('plants')) {
+                        db.createObjectStore('plants', { keyPath: 'id', autoIncrement: true });
+                    }
+                };
+                request.onsuccess = (e) => {
+                    dbInstance = e.target.result;
+                    resolve(dbInstance);
+                };
+                request.onerror = (e) => reject(e.target.error);
+            });
+        }
+        // --- 🔔 CHYTRÉ NOTIFIKACE (Ranní budíček) ---
+        async function checkWateringAlerts() {
+            // 1. Zkontrolujeme, jestli prohlížeč vůbec notifikace umí
+            if (!("Notification" in window)) return;
+
+            // 2. Zeptáme se na povolení (pokud se nás ještě neptal)
+            if (Notification.permission === "default") {
+                await Notification.requestPermission();
+            }
+
+            // Pokud uživatel notifikace zakázal, rovnou končíme
+            if (Notification.permission !== "granted") return;
+
+            // 3. Ochrana proti spamu: Zjistíme, jestli jsme dnes už neupozorňovali
+            const dnes = new Date().toLocaleDateString('cs-CZ');
+            if (localStorage.getItem('lastWateringAlert') === dnes) return;
+
+            // 4. Jdeme zkontrolovat kytky
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const store = tx.objectStore('plants');
+            const req = store.getAll();
+
+            req.onsuccess = () => {
+                const plants = req.result;
+                let zizniveKytky = [];
+
+                plants.forEach(p => {
+                    if (!p.wateringPaused) {
+                        const interval = p.wateringInterval || 7;
+                        if (p.lastWatered) {
+                            const parts = p.lastWatered.split('.').map(part => part.trim());
+                            if (parts.length === 3) {
+                                const dateWatered = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                                dateWatered.setHours(0, 0, 0, 0);
+                                const dneska = new Date();
+                                dneska.setHours(0, 0, 0, 0);
+                                const diff = Math.floor((dneska - dateWatered) / (1000 * 60 * 60 * 24));
+
+                                if (diff >= interval) zizniveKytky.push(p.name);
+                            }
+                        } else {
+                            // Ještě nikdy nezalito = rovnou žízeň
+                            zizniveKytky.push(p.name);
+                        }
+                    }
+                });
+
+                // 5. Odeslání systémového upozornění (Připraveno pro mobily)
+                if (zizniveKytky.length > 0) {
+                    const text = zizniveKytky.length === 1
+                        ? `${zizniveKytky[0]} potřebuje zalít! 💧`
+                        : `${zizniveKytky.length} rostlin potřebuje zalít! 💧 (${zizniveKytky.slice(0, 3).join(', ')}${zizniveKytky.length > 3 ? '...' : ''})`;
+
+                    // Bezpečné odeslání přes Service Workera (nutné pro mobily)
+                    if ('serviceWorker' in navigator) {
+                        navigator.serviceWorker.ready.then(function (registration) {
+                            registration.showNotification("PlantMaster: Zálivka", {
+                                body: text,
+                                icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png"
+                            });
+                        });
+                    } else {
+                        // Záloha pro starší počítačové prohlížeče
+                        new Notification("PlantMaster: Zálivka", {
+                            body: text,
+                            icon: "https://cdn-icons-png.flaticon.com/512/628/628283.png"
+                        });
+                    }
+
+                    // Zaznamenáme si, že pro dnešek máme splněno
+                    localStorage.setItem('lastWateringAlert', dnes);
+                }
+            };
+        }
+        window.onload = async () => {
+            document.getElementById('api-key').value = localStorage.getItem('G_KEY') || '';
+            checkShareTarget();
+            await renderPlants();
+            checkWateringAlerts(); // <--- Spuštění hlídače po načtení
+        };
+
+        // --- 3. YOUTUBE INBOX (SCHRÁNKA) ---
+        function checkShareTarget() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const sharedUrl = urlParams.get('url') || urlParams.get('text');
+            if (sharedUrl && (sharedUrl.includes('youtube.com') || sharedUrl.includes('youtu.be'))) {
+                localStorage.setItem('pendingVideo', sharedUrl);
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
+            const pending = localStorage.getItem('pendingVideo');
+            if (pending) {
+                document.getElementById('inbox-section').style.display = 'block';
+                document.getElementById('inbox-url-display').innerText = pending;
+                populateInboxSelect();
+            }
+        }
+
+        async function populateInboxSelect() {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const req = tx.objectStore('plants').getAll();
+            req.onsuccess = () => {
+                const select = document.getElementById('inbox-plant-select');
+                select.innerHTML = '<option value="">Vyber rostlinu...</option>';
+                req.result.forEach(p => select.innerHTML += `<option value="${p.id}">${p.name}</option>`);
+            };
+        }
+
+        async function saveInboxVideo() {
+            const plantId = document.getElementById('inbox-plant-select').value;
+            if (!plantId) return alert('Vyber rostlinu!');
+            const videoUrl = localStorage.getItem('pendingVideo');
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(Number(plantId));
+            req.onsuccess = () => {
+                let plant = req.result;
+                if (!plant.savedVideos) plant.savedVideos = [];
+                plant.savedVideos.push(videoUrl);
+                store.put(plant);
+                clearInbox();
+                alert("Video úspěšně přiřazeno!");
+            };
+        }
+
+        function clearInbox() {
+            localStorage.removeItem('pendingVideo');
+            document.getElementById('inbox-section').style.display = 'none';
+        }
+
+        // --- 4. HLAVNÍ VYKRESLOVÁNÍ (S ochranou dat) ---
+        // --- 4. HLAVNÍ VYKRESLOVÁNÍ (S ochranou dat) ---
+        // --- 4. HLAVNÍ VYKRESLOVÁNÍ (S ochranou dat) ---
+        async function renderPlants() {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const req = tx.objectStore('plants').getAll();
+            req.onsuccess = () => {
+                const search = document.getElementById('search-box').value.toLowerCase();
+                const cat = document.getElementById('filter-category').value;
+
+                const list = document.getElementById('plant-list');
+                const tasksDiv = document.getElementById('calendar-tasks');
+
+                list.innerHTML = '';
+                tasksDiv.innerHTML = '';
+
+                [...req.result].reverse().forEach(p => {
+                    const mainImage = (p.images && p.images.length > 0) ? p.images[0] : 'https://cdn-icons-png.flaticon.com/512/628/628283.png';
+
+                    const matchName = p.name.toLowerCase().includes(search);
+
+                    // --- OPRAVA FILTROVÁNÍ PRO VÍCE KATEGORIÍ ---
+                    // Kontroluje, zda p.category je pole (nové rostliny) nebo jen text (staré rostliny)
+                    let matchCat = false;
+                    if (cat === 'all') {
+                        matchCat = true;
+                    } else if (Array.isArray(p.category)) {
+                        matchCat = p.category.includes(cat); // Najde kategorii v seznamu
+                    } else {
+                        matchCat = p.category === cat; // Zpětná kompatibilita pro staré uložení
+                    }
+
+                    // --- OPRAVA VYKRESLENÍ ŠTÍTKŮ ---
+                    let badgesHTML = '';
+                    if (p.category) {
+                        if (Array.isArray(p.category)) {
+                            // Vytvoří štítek pro každou kategorii v seznamu a oddělí je mezerou
+                            badgesHTML = p.category.map(c => `<span class="cat-badge-small">${c}</span>`).join(' ');
+                        } else {
+                            // Pro staré rostliny vykreslí jen jeden
+                            badgesHTML = `<span class="cat-badge-small">${p.category}</span>`;
+                        }
+                    }
+
+                    // --- 💧 CHYTRÁ ZÁLIVKA: Výpočet žízně pro kartičku ---
+                    let waterWarning = '';
+                    let needsWater = false;
+
+                    if (!p.wateringPaused) {
+                        const interval = p.wateringInterval || 7;
+                        if (p.lastWatered) {
+                            const parts = p.lastWatered.split('.').map(part => part.trim());
+                            if (parts.length === 3) {
+                                const dateWatered = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                                dateWatered.setHours(0, 0, 0, 0);
+                                const dneska = new Date();
+                                dneska.setHours(0, 0, 0, 0);
+                                const diff = Math.floor((dneska - dateWatered) / (1000 * 60 * 60 * 24));
+
+                                // Pokud je počet dní od poslední zálivky větší nebo roven intervalu
+                                if (diff >= interval) {
+                                    needsWater = true;
+                                }
+                            }
+                        } else {
+                            // Pokud ještě nikdy nebyla zalitá, určitě potřebuje vodu
+                            needsWater = true;
+                        }
+
+                        if (needsWater) {
+                            waterWarning = `<span style="background-color: #f44336; color: white; font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; vertical-align: middle; margin-left: 8px;">💧 ŽÍZEŇ</span>`;
+                        }
+                    } else {
+                        // Pokud je zapnutá pauza (Dovolená)
+                        waterWarning = `<span style="color: #e65100; font-size: 0.75rem; margin-left: 8px;" title="Zálivka pozastavena">⏸️ Pauza</span>`;
+                    }
+
+                    if (matchName && matchCat) {
+                        list.innerHTML += `
+            <div class="card" onclick="openDetail(${p.id})">
+                <img src="${mainImage}" loading="lazy">
+                <div class="card-info">
+                    <h3>${p.name} ${waterWarning}</h3>
+                    <div style="margin-bottom: 5px;">${badgesHTML}</div>
+                    <p>Zalito: ${p.lastWatered || 'Nikdy'}</p>
+                </div>
+            </div>
+        `;
+                    }
+                });
+
+                if (list.innerHTML === '') list.innerHTML = '<p style="text-align:center; color:#666; margin-top:20px;">Zatím nemáš žádné rostliny.</p>';
+
+                renderGroupedTasks(req.result);
+            };
+        }
+
+        function renderGroupedTasks(plants) {// --- DYNAMICKÝ NADPIS KALENDÁŘE ---
+            const dnesniDatum = new Date();
+            const nazevMesice = dnesniDatum.toLocaleDateString('cs-CZ', { month: 'long' });
+            const mesicVelkePismeno = nazevMesice.charAt(0).toUpperCase() + nazevMesice.slice(1);
+            const formatDnes = dnesniDatum.toLocaleDateString('cs-CZ');
+
+            const hlavickaEl = document.getElementById('main-calendar-header');
+            if (hlavickaEl) {
+                hlavickaEl.innerText = `🗓️ Úkoly na měsíc ${mesicVelkePismeno} (Dnes je ${formatDnes})`;
+            }
+            // ----------------------------------
+            const calendarContainer = document.getElementById('calendar-tasks');
+            calendarContainer.innerHTML = '';
+
+            const currentMonth = new Date().getMonth();
+            const groupedTasks = {};
+            let hasAnyTask = false;
+
+            // 🟢 1. NAČTENÍ AKTUÁLNÍHO STAVU FILTRŮ (Vyhazovač)
+            const filterEl = document.getElementById('filter-category');
+            const searchEl = document.getElementById('search-box');
+            const currentCategory = filterEl ? filterEl.value : 'all';
+            const currentSearch = searchEl ? searchEl.value.toLowerCase().trim() : '';
+
+            // --- 2. SDÍLENÁ CHYTRÁ ČISTIČKA NÁZVŮ ---
+            function getOfficialTaskName(name) {
+                const n = name.toLowerCase();
+                if (n.includes('hnoj') || n.includes('přihnoj') || n.includes('npk')) return 'Hnojení';
+                if (n.includes('škůdc') || n.includes('chorob') || n.includes('postřik') || n.includes('ošetř') || n.includes('kontrol') || n.includes('nemoc')) return 'Ochrana a postřiky';
+                if (n.includes('řez') || n.includes('stříh') || n.includes('tvarov') || n.includes('průklest')) return 'Řez a tvarování';
+                if (n.includes('sadb') || n.includes('sáz') || n.includes('přesaz')) return 'Přesazování / Výsadba';
+                if (n.includes('skliz') || n.includes('sběr')) return 'Sklizeň';
+                if (n.includes('záliv') || n.includes('zalév') || n.includes('vod')) return 'Zálivka';
+                return 'Ostatní péče';
+            }
+
+            plants.forEach(plant => {
+                if (!plant.tasks || !Array.isArray(plant.tasks)) return;
+
+                // 🟢 3. PŘÍSNÁ KONTROLA FILTRŮ
+                if (currentCategory !== 'all') {
+                    const plantCat = String(plant.category || "");
+                    if (!plantCat.includes(currentCategory)) return; // Přeskočit rostlinu
+                }
+                if (currentSearch !== '') {
+                    if (!plant.name || !plant.name.toLowerCase().includes(currentSearch)) return; // Přeskočit rostlinu
+                }
+
+                plant.tasks.forEach(task => {
+                    // Ponechána tvá zmírněná logika měsíců
+                    let isForThisMonth = true;
+                    if (task.months !== undefined) {
+                        isForThisMonth = Array.isArray(task.months) ? task.months.includes(currentMonth) : task.months === currentMonth;
+                    } else if (task.month !== undefined) {
+                        isForThisMonth = task.month === currentMonth;
+                    }
+
+                    if (isForThisMonth) {
+                        // Normalizace názvu
+                        const officialTaskName = getOfficialTaskName(task.name || 'Neznámý úkol');
+                        const groupKey = `${officialTaskName}|${plant.category || 'Neznámá'}`;
+
+                        if (!groupedTasks[groupKey]) {
+                            groupedTasks[groupKey] = {
+                                taskName: officialTaskName,
+                                taskDesc: task.desc || task.description || '',
+                                category: plant.category || 'Neznámá',
+                                plantsTotal: [],
+                                plantsCompleted: []
+                            };
+                        } else {
+                            // Slučování popisků pro podúkoly
+                            const currentDesc = task.desc || task.description || '';
+                            if (currentDesc && !groupedTasks[groupKey].taskDesc.includes(currentDesc)) {
+                                groupedTasks[groupKey].taskDesc += `<br><br><strong>Další tipy:</strong> ${currentDesc}`;
+                            }
+                        }
+
+                        // Ponechána tvá kontrola splnění
+                        let isCompleted = false;
+                        if (Array.isArray(task.completedMonths) && task.completedMonths.includes(currentMonth)) {
+                            isCompleted = true;
+                        } else if (task.completed === true) {
+                            isCompleted = true;
+                        }
+
+                        // Ochrana proti duplicitám ("Jabloň, Jabloň")
+                        if (!groupedTasks[groupKey].plantsTotal.includes(plant.name)) {
+                            groupedTasks[groupKey].plantsTotal.push(plant.name);
+                            if (isCompleted) {
+                                groupedTasks[groupKey].plantsCompleted.push(plant.name);
+                            }
+                        } else {
+                            // Rostlina je tam, ale tento pod-úkol ještě nemá hotový -> vyhodíme ji ze splněných
+                            if (!isCompleted) {
+                                groupedTasks[groupKey].plantsCompleted = groupedTasks[groupKey].plantsCompleted.filter(n => n !== plant.name);
+                            }
+                        }
+                    }
+                });
+            });
+
+            for (const key in groupedTasks) {
+                const group = groupedTasks[key];
+
+                if (group.plantsCompleted.length < group.plantsTotal.length) {
+                    hasAnyTask = true;
+
+                    const remainingPlants = group.plantsTotal.filter(p => !group.plantsCompleted.includes(p));
+
+                    const taskEl = document.createElement('div');
+                    taskEl.className = 'task-item';
+                    taskEl.style.flexDirection = 'column';
+                    taskEl.style.alignItems = 'flex-start';
+
+                    taskEl.innerHTML = `
+                <div style="width: 100%; margin-bottom: 5px; display: flex; justify-content: space-between;">
+                    <strong style="font-size: 1.05rem; color: var(--warn);">${group.taskName}</strong> 
+                    <span style="font-size: 0.8rem; background: #e0e0e0; padding: 2px 6px; border-radius: 4px;">${group.category}</span>
+                </div>
+                <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px; font-style: italic;">
+                    ${group.taskDesc}
+                </div>
+                <div style="font-size: 0.85rem; color: var(--p); background: #e8f5e9; padding: 6px; border-radius: 4px; width: 100%; box-sizing: border-box;">
+                    <strong>Chybí u:</strong> ${remainingPlants.join(', ')}
+                </div>
+            `;
+                    calendarContainer.appendChild(taskEl);
+                }
+            }
+
+            if (!hasAnyTask) {
+                calendarContainer.innerHTML = '<p style="color: #666; font-size: 0.95rem; padding: 10px; text-align: center;">Všechny úkoly na tento měsíc jsou hotové! 🎉</p>';
+            }
+        }
+
+        // --- 5. LOGIKA ÚKOLŮ S DOPTÁVÁNÍM (VYČIŠTĚNÁ VERZE) ---
+        async function completeTask(plantId, taskName, event) {
+            if (event) event.stopPropagation();
+
+            // Nová chytrá logika - ptáme se jen u relevantních úkolů
+            const keywords = ['hnoj', 'výživ', 'postřik', 'škůdc', 'nemoc', 'příprav', 'substrát'];
+            const nameLower = taskName.toLowerCase();
+            const needsProduct = keywords.some(kw => nameLower.includes(kw));
+
+            let details = '';
+            if (needsProduct) {
+                const product = prompt(`Splněn úkol: ${taskName}\nJaký přípravek nebo substrát jste použili?\n(Pokud žádný, nechte prázdné a dejte OK)`);
+                if (product && product.trim() !== "") {
+                    const ratio = prompt(`V jakém poměru nebo množství jste '${product}' aplikovali?`);
+                    details = ` [Přípravek: ${product}${ratio ? ', Poměr: ' + ratio : ''}]`;
+                }
+            }
+
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(plantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                if (!plant) return; // Pojistka, kdyby rostlina neexistovala
+
+                const dnes = new Date();
+                const currentStamp = `${dnes.getFullYear()}-${dnes.getMonth()}`;
+
+                // 1. ZAZNAMENÁME SPLNĚNÍ (do skryté logiky pro kalendář)
+                if (plant.tasks && Array.isArray(plant.tasks)) {
+                    const task = plant.tasks.find(t => t.name === taskName);
+                    if (task) {
+                        if (!task.completedMonths) task.completedMonths = [];
+                        if (!task.completedMonths.includes(currentStamp)) {
+                            task.completedMonths.push(currentStamp);
+                        }
+                    }
+                }
+
+                // 2. ZAPÍŠEME DO HISTORIE (viditelný text pro uživatele)
+                if (!plant.careHistory) plant.careHistory = [];
+                plant.careHistory.push({
+                    date: new Date().toLocaleDateString('cs-CZ'),
+                    text: `✅ Splněn úkol: ${taskName}${details}`
+                });
+
+                // 3. ULOŽENÍ A OBNOVA (vše musí být uvnitř onsuccess)
+                store.put(plant);
+                tx.oncomplete = () => {
+                    renderPlants();
+                    // Pokud je otevřený detail kytky, hned ho překreslíme
+                    if (typeof currentPlantId !== 'undefined' && currentPlantId === plantId) {
+                        openDetail(plantId);
+                    }
+                };
+            };
+        }
+        async function undoTask(plantId, taskName) {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(plantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                if (!plant) return;
+
+                const dnes = new Date();
+                const currentStamp = `${dnes.getFullYear()}-${dnes.getMonth()}`;
+
+                if (plant.tasks && Array.isArray(plant.tasks)) {
+                    const task = plant.tasks.find(t => t.name === taskName);
+                    if (task && task.completedMonths) {
+                        // Odstraní naše nové razítko ze seznamu
+                        task.completedMonths = task.completedMonths.filter(m => m !== currentStamp);
+                    }
+                }
+
+                store.put(plant);
+                tx.oncomplete = () => {
+                    renderPlants();
+                    if (typeof currentPlantId !== 'undefined' && currentPlantId === plantId) {
+                        renderTasksForMonth(plantId); // Ihned překreslí kalendář
+                    }
+                };
+            };
+        }
+
+        async function waterPlant() {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+
+            // Použijeme currentPlantId, abychom věděli, kterou kytku právě máme otevřenou
+            const req = store.get(currentPlantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                const dnes = new Date().toLocaleDateString('cs-CZ');
+
+                // 1. Aktualizace data posledního zalití
+                plant.lastWatered = dnes;
+
+                // 2. Zápis do historie péče
+                if (!plant.careHistory) plant.careHistory = []; // Pojistka, kdyby historie neexistovala
+                plant.careHistory.push({
+                    date: dnes,
+                    text: '💧 Zalito'
+                });
+
+                // 3. Uložení zpět do databáze
+                store.put(plant);
+                tx.oncomplete = () => {
+                    // Překreslíme detail, aby tam naskočila ta nová zpráva v historii
+                    openDetail(currentPlantId);
+                    // Překreslíme i hlavní obrazovku, aby se aktualizoval nápis "Zalito: dnes"
+                    renderPlants();
+                };
+            };
+        }
+        // --- 💧 CHYTRÁ ZÁLIVKA: Nastavení a Pauza ---
+        // --- 💧 CHYTRÁ ZÁLIVKA: Nastavení a Pauza ---
+        async function editWateringInterval(id, currentInterval, event) {
+            event.stopPropagation(); // 🛡️ Zastaví propadnutí kliku na tlačítko zálivky pod tím
+            const newVal = prompt("Zadejte počet dní pro interval zálivky:", currentInterval || 7);
+            if (newVal === null || newVal.trim() === "") return;
+
+            const days = parseInt(newVal, 10);
+            if (isNaN(days) || days <= 0) return alert("Prosím zadejte platné číslo větší než 0.");
+
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(id);
+
+            req.onsuccess = () => {
+                const plant = req.result;
+                plant.wateringInterval = days;
+                store.put(plant);
+                tx.oncomplete = () => {
+                    openDetail(id);
+                };
+            };
+        }
+
+        async function toggleWateringPause(id, isPaused, event) {
+            event.stopPropagation(); // 🛡️ Zastaví propadnutí kliku
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(id);
+
+            req.onsuccess = () => {
+                const plant = req.result;
+                plant.wateringPaused = !isPaused;
+                store.put(plant);
+                tx.oncomplete = () => {
+                    openDetail(id);
+                };
+            };
+        }
+
+        // --- 🗓️ GLOBÁLNÍ PROMĚNNÁ PRO KALENDÁŘ ---
+        let viewedMonth = new Date().getMonth(); // Začínáme vždy na aktuálním měsíci
+        let viewedYear = new Date().getFullYear();
+        const monthNames = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
+
+        // --- 🗓️ FUNKCE PRO POSUN MĚSÍCE (OPRAVENÁ O ROKY) ---
+        function changeViewedMonth(offset, plantId) {
+            viewedMonth += offset;
+
+            // Pokud klikneš dozadu v lednu, skočíš na prosinec MINULÉHO roku
+            if (viewedMonth < 0) {
+                viewedMonth = 11;
+                viewedYear--;
+            }
+            // Pokud klikneš dopředu v prosinci, skočíš na leden DALŠÍHO roku
+            else if (viewedMonth > 11) {
+                viewedMonth = 0;
+                viewedYear++;
+            }
+
+            renderTasksForMonth(plantId);
+        }
+
+        function resetViewedMonth(plantId) {
+            const dnes = new Date();
+            viewedMonth = dnes.getMonth();
+            viewedYear = dnes.getFullYear(); // 🟢 Resetuje i rok na aktuální
+            renderTasksForMonth(plantId);
+        }
+
+        // --- 🗓️ HLAVNÍ FUNKCE PRO VYKRESLENÍ ÚKOLŮ ---
+        async function renderTasksForMonth(plantId) {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const req = tx.objectStore('plants').get(plantId);
+
+            req.onsuccess = () => {
+                const plant = req.result;
+                if (!plant) return;
+
+                const tasksDiv = document.getElementById('detail-tasks');
+                tasksDiv.innerHTML = ''; // Vyčistíme staré úkoly z obrazovky
+
+                const currentRealMonth = new Date().getMonth();
+                const currentRealYear = new Date().getFullYear(); // 🟢 PŘIDÁNO
+                const today = new Date();
+                const todayString = `${today.getDate()}. ${today.getMonth() + 1}. ${today.getFullYear()}`;
+
+                // 1. VYKRESLENÍ NAVIGAČNÍHO PANELU (HLAVIČKY KALENDÁŘE)
+                let headerHTML = `
+            <div style="background: #e8f5e9; padding: 10px; border-radius: 8px; border: 1px solid #c8e6c9; text-align: center; margin-bottom: 15px;">
+                <div style="font-size: 0.85rem; color: #2e7d32; margin-bottom: 5px;">Dnes je ${todayString}</div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <button onclick="changeViewedMonth(-1, ${plant.id})" style="background: white; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight:bold;">⬅️</button>
+                    <strong style="font-size: 1.1rem; color: #1b5e20; text-transform: uppercase;">${monthNames[viewedMonth]} ${viewedYear}</strong>
+                    <button onclick="changeViewedMonth(1, ${plant.id})" style="background: white; border: 1px solid #ccc; padding: 5px 10px; border-radius: 5px; cursor: pointer; font-weight:bold;">➡️</button>
+                </div>
+        `;
+
+                // Pokud nejsme v aktuálním měsíci, přidáme tlačítko pro rychlý návrat
+                if (viewedMonth !== currentRealMonth) {
+                    headerHTML += `<button onclick="resetViewedMonth(${plant.id})" style="width:100%; margin-top: 10px; font-size: 0.85rem; background: #fff; border: 1px dashed #2e7d32; color: #2e7d32; padding: 6px 8px; border-radius: 4px; cursor: pointer;">📅 Vrátit se na dnešek</button>`;
+                }
+                headerHTML += `</div>`;
+
+                let tasksHTML = headerHTML;
+                let hasVisibleTasks = false;
+
+                // 2. FILTRACE A VYKRESLENÍ ÚKOLŮ PODLE VYBRANÉHO MĚSÍCE
+
+                // --- NOVÉ: CHYTRÁ ČISTIČKA (Normalizace názvů) ---
+                function getOfficialTaskName(name) {
+                    const n = name.toLowerCase();
+                    if (n.includes('hnoj') || n.includes('přihnoj')) return 'Hnojení';
+                    if (n.includes('škůdc') || n.includes('chorob') || n.includes('postřik') || n.includes('ošetř')) return 'Ochrana a postřiky';
+                    if (n.includes('řez') || n.includes('stříh') || n.includes('tvarov')) return 'Řez a tvarování';
+                    if (n.includes('sadb') || n.includes('sáz') || n.includes('přesaz')) return 'Přesazování / Výsadba';
+                    if (n.includes('skliz') || n.includes('sběr')) return 'Sklizeň';
+                    if (n.includes('záliv') || n.includes('zalév') || n.includes('vod')) return 'Zálivka';
+                    return 'Ostatní péče';
+                }
+
+                const tasksForThisMonth = {}; // Zde si seskupíme úkoly bez duplicit
+
+                if (plant.tasks && Array.isArray(plant.tasks)) {
+                    // KROK A: Seskupení a sloučení
+                    plant.tasks.forEach(task => {
+                        const isForViewedMonth = Array.isArray(task.months) ? task.months.includes(viewedMonth) : task.month === viewedMonth;
+                        if (isForViewedMonth) {
+                            const officialName = getOfficialTaskName(task.name);
+                            const currentDesc = task.desc || task.description || '';
+
+                            if (!tasksForThisMonth[officialName]) {
+                                // První výskyt - vytvoříme virtuální úkol
+                                tasksForThisMonth[officialName] = JSON.parse(JSON.stringify(task)); // Hluboká kopie, abychom neměnili DB
+                                tasksForThisMonth[officialName].name = officialName; // Vnutíme oficiální název
+                                tasksForThisMonth[officialName].description = currentDesc;
+                            } else {
+                                // Duplicita nalezena - pouze připojíme popis k existujícímu úkolu
+                                if (currentDesc && !tasksForThisMonth[officialName].description.includes(currentDesc)) {
+                                    tasksForThisMonth[officialName].description += `<br><br><strong style="color:var(--p);">Další doporučení:</strong><br>${currentDesc}`;
+                                }
+                            }
+                        }
+                    });
+
+                    // KROK B: Vykreslení už vyčištěných úkolů
+                    Object.values(tasksForThisMonth).forEach(task => {
+                        // 🟢 NOVÁ LOGIKA: Kontroluje razítko "Rok-Měsíc" a pro letošek uznává i starý formát (jen číslo)
+                        const isDone = Array.isArray(task.completedMonths) && (
+                            task.completedMonths.includes(`${viewedYear}-${viewedMonth}`) ||
+                            (viewedYear === 2026 && task.completedMonths.includes(viewedMonth))
+                        );
+
+                        hasVisibleTasks = true;
+
+                        // Logika barev a zámků (Minulost / Přítomnost / Budoucnost)
+                        let taskStyle = "border: 1px solid #ccc; background: white;";
+                        let buttonHTML = "";
+                        let statusText = "";
+
+                        const isPast = viewedYear < currentRealYear || (viewedYear === currentRealYear && viewedMonth < currentRealMonth);
+                        const isFuture = viewedYear > currentRealYear || (viewedYear === currentRealYear && viewedMonth > currentRealMonth);
+                        const isCurrent = viewedYear === currentRealYear && viewedMonth === currentRealMonth;
+
+                        if (isPast) {
+                            if (!isDone) {
+                                taskStyle = "border: 2px solid #f44336; background: #ffebee;";
+                                statusText = "<div style='color: #d32f2f; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px;'>❗ Nesplněno z minulosti</div>";
+                                buttonHTML = `<button class="btn-complete" style="background: #ccc; cursor: not-allowed; opacity: 0.7;" disabled>Propásnuto</button>`;
+                            } else {
+                                statusText = "<div style='color: #4caf50; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px;'>✓ Splněno v termínu</div>";
+                                buttonHTML = `<button class="btn-undo" onclick="undoTask(${plant.id}, '${task.name}')">Zrušit</button>`;
+                            }
+                        } else if (isFuture) {
+                            buttonHTML = `<button class="btn-complete" style="background: #ccc; cursor: not-allowed; opacity: 0.7;" disabled>Čeká na měsíc</button>`;
+                        } else if (isCurrent) {
+                            if (isDone) {
+                                statusText = "<div style='color: #4caf50; font-weight: bold; font-size: 0.85rem; margin-bottom: 5px;'>✓ Splněno dnes</div>";
+                                buttonHTML = `<button class="btn-undo" onclick="undoTask(${plant.id}, '${task.name}')">Zrušit</button>`;
+                            } else {
+                                buttonHTML = `<button class="btn-complete" onclick="completeTask(${plant.id}, '${task.name}', event)">✓ Splnit</button>`;
+                            }
+                        }
+
+                        // Sestavení boxíku pro produkty k úkolu
+                        let productsHTML = '';
+                        if (task.taskProducts && task.taskProducts.length > 0 && viewedMonth === currentRealMonth) {
+                            productsHTML = `<div style="margin-top:10px; padding:10px; background:#f0f7f0; border-radius:8px; border:1px solid #c8e6c9;">
+                                <div style="font-size:0.8rem; font-weight:bold; color:#2e7d32; margin-bottom:5px;">💡 Doporučené přípravky pro tento úkol:</div>`;
+
+                            task.taskProducts.forEach(prod => {
+                                productsHTML += `
+                                <div style="margin-bottom:8px; border-bottom:1px dashed #ccc; padding-bottom:8px;">
+                                    <div style="font-size:0.85rem; font-weight:bold; margin-bottom:5px;">${prod}</div>
+                                    <div style="display:flex; gap:5px;">
+                                        <button class="btn-shop" style="flex:1; padding:4px 8px; font-size:0.75rem;" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
+                                        <button class="btn-shop" style="flex:1; background:var(--p); color:white; padding:4px 8px; font-size:0.75rem; border:none; border-radius:4px;" onclick="window.open('https://www.google.com/search?q=' + encodeURIComponent('agromanual OR návod k použití ${prod}'), '_blank')">📖 Návod</button>
+                                    </div>
+                                </div>`;
+                            });
+
+                            productsHTML += `<button class="btn-sm-action" style="color:var(--warn, #d32f2f); border-color:var(--warn, #d32f2f); margin-top:10px; width:100%;" onclick="deleteTaskProducts('${task.name}')">🗑️ Smazat doporučení</button></div>`;
+                        }
+
+                        tasksHTML += `
+                        <div class="task-item" style="${taskStyle} flex-direction: column; align-items: stretch; margin-bottom:10px; padding:10px;">
+                            ${statusText}
+                            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                                <strong style="font-size: 1.05rem; color: var(--p);">${task.name}</strong>
+                                ${buttonHTML}
+                            </div>
+                            <div style="font-size: 0.9rem; color: #555; margin-bottom: 8px;">
+                                ${task.description || 'Popis úkolu chybí.'}
+                            </div>
+                            ${viewedMonth === currentRealMonth && !isDone ? `<button class="btn-sm-action" style="margin-top:0; border-color:#673ab7; color:#673ab7;" onclick="callAI('task-products', '${task.name}')">💡 Hledat přípravky k úkolu</button>` : ''}
+                            ${productsHTML}
+                        </div>`;
+                    });
+                }
+
+                // Pokud je měsíc prázdný a vše je hotovo
+                if (!hasVisibleTasks) {
+                    tasksHTML += `<p style="font-size:0.9rem; color:#666; text-align:center;">${viewedMonth === currentRealMonth ? 'Všechny úkoly jsou hotové! 🎉' : 'Žádné úkoly pro tento měsíc.'}</p>`;
+                }
+
+                // STÁLÉ TLAČÍTKO PRO OBECNOU PÉČI (Ukazuje se jen v aktuálním měsíci dole)
+                if (viewedMonth === currentRealMonth) {
+                    tasksHTML += `
+            <div style="text-align:center; margin-top:15px; padding-top:10px; border-top:1px dashed #ccc;">
+                <button class="btn-sm-action" style="background:#f3e5f5; border-color:#9c27b0; color:#4a148c; font-weight:bold; width:100%; padding:10px;" onclick="callAI('products')">✨ Doporučit obecnou péči (hnojiva, substráty)</button>
+            </div>`;
+                }
+
+                // Zapíšeme vše do HTML
+                tasksDiv.innerHTML = tasksHTML;
+            };
+        }
+        async function openDetail(id) {
+            currentPlantId = id;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const req = tx.objectStore('plants').get(id);
+
+            req.onsuccess = () => {
+                const plant = req.result;
+                if (!plant) return;
+
+                // Titulek
+                document.getElementById('detail-title').innerHTML = `${plant.name} <span onclick="editPlantName()" style="cursor:pointer; font-size:1.1rem; padding-left:8px; opacity:0.8;">✏️</span>`;
+
+                // Občanka
+                const infoCard = document.getElementById('plant-info-card');
+                if (plant.description || plant.water || plant.light) {
+                    // --- NOVÉ: Přidání varovného štítku o toxicitě ---
+                    let toxicityBadge = getToxicityBadge(plant.description || "");
+                    let descText = plant.description || "Charakteristika zatím chybí.";
+
+                    // Změnili jsme innerText na innerHTML, aby se štítek vykreslil jako grafika
+                    document.getElementById('plant-desc').innerHTML = toxicityBadge
+                        ? `${toxicityBadge}<div style="margin-top:5px; line-height: 1.5;">${descText}</div>`
+                        : descText;
+                    // ------------------------------------------------
+
+                    document.querySelector('#plant-water-info span').innerText = plant.water || "Neznámá";
+                    document.querySelector('#plant-light-info span').innerText = plant.light || "Neznámé";
+                    infoCard.style.display = 'block';
+                } else {
+                    infoCard.style.display = 'none';
+                }
+
+                // Galerie
+                const gal = document.getElementById('detail-gallery');
+                gal.innerHTML = '';
+                plant.images.forEach(imgData => {
+                    gal.innerHTML += `<img src="${imgData}" onclick="openLightbox('${imgData}')">`;
+                });
+
+                // --- NOVÉ: Tlačítko pro Časosběr (Předtím a Potom) ---
+                // Nejprve odstraníme staré tlačítko, pokud tam je, abychom ho neduplikovali
+                const oldBtn = document.getElementById('timelapse-dynamic-btn');
+                if (oldBtn) oldBtn.remove();
+
+                // Pokud má rostlina 2 a více fotek, ukážeme magické tlačítko
+                if (plant.images && plant.images.length >= 2) {
+                    const btnHTML = `<button id="timelapse-dynamic-btn" class="btn-sm-action" style="width:100%; margin-top:10px; margin-bottom:15px; background: #fff8e1; color: #f57f17; border: 1px solid #ffecb3; font-weight:bold; padding:10px; border-radius:8px; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);" onclick="openTimelapse(${plant.id})">⏳ Porovnat pokrok (Předtím a Potom)</button>`;
+                    gal.insertAdjacentHTML('afterend', btnHTML);
+                }
+                // --------------------------------------------------------
+
+                // --- 💧 CHYTRÁ ZÁLIVKA ---
+                let wText = "Zatím nezalito";
+                if (plant.lastWatered) {
+                    const parts = plant.lastWatered.split('.').map(p => p.trim());
+                    if (parts.length === 3) {
+                        const dateWatered = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+                        dateWatered.setHours(0, 0, 0, 0);
+                        const dneska = new Date();
+                        dneska.setHours(0, 0, 0, 0);
+                        const diff = Math.floor(Math.abs(dneska - dateWatered) / (1000 * 60 * 60 * 24));
+                        wText = `Naposledy: ${diff === 0 ? "Dnes" : (diff === 1 ? "Včera" : `Před ${diff} dny`)}`;
+                    }
+                }
+
+                const interval = plant.wateringInterval || 7;
+                const isPaused = plant.wateringPaused || false;
+
+                let waterHTML = `
+            <div style="display:flex; flex-direction:column; gap:8px; margin-top:5px; padding:10px; background:#e3f2fd; border-radius:8px; border:1px solid #bbdefb;">
+                <div style="font-size:0.95rem; color:#1565c0; font-weight:bold;">💧 ${wText}</div>
+                <div style="font-size:0.9rem; color:#333; display:flex; align-items:center; gap:8px;">
+                    <span>⏱️ Zalévat každých: <strong>${interval} dní</strong></span>
+                    <button onclick="editWateringInterval(${plant.id}, ${interval}, event)" style="background:white; border:1px solid #ccc; border-radius:4px; cursor:pointer; font-size:0.9rem; padding:2px 6px;" title="Upravit interval">✏️</button>
+                </div>
+                <div>
+                    <button onclick="toggleWateringPause(${plant.id}, ${isPaused}, event)" style="width:100%; padding:8px 12px; border-radius:8px; border:1px solid ${isPaused ? '#4caf50' : '#ff9800'}; background:${isPaused ? '#e8f5e9' : '#fff3e0'}; color:${isPaused ? '#2e7d32' : '#e65100'}; font-size:0.9rem; font-weight:bold; cursor:pointer;">
+                        ${isPaused ? '▶️ Sledování pozastaveno - ZAPNOUT' : '⏸️ Zapnout režim "Dovolená/Sklizeno"'}
+                    </button>
+                    <button onclick="exportToCalendar(${plant.id}, event)" style="width:100%; margin-top:8px; padding:8px 12px; border-radius:8px; border:1px solid #1976d2; background:#ffffff; color:#1565c0; font-size:0.9rem; font-weight:bold; cursor:pointer; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                        📅 Přidat do systémového kalendáře
+                    </button>
+                </div>
+            </div>
+        `;
+                document.getElementById('water-status').innerHTML = waterHTML;
+
+                // --- 🗓️ SPUŠTĚNÍ NOVÉHO KALENDÁŘE ÚKOLŮ ---
+                viewedMonth = new Date().getMonth(); // Resetujeme kalendář vždy na aktuální měsíc
+                renderTasksForMonth(plant.id); // Zde voláme naši novou funkci z Části 1
+
+                // --- 🎥 YOUTUBE NÁVODY A ULOŽENÁ VIDEA (V bezpečném obalu) ---
+                let ytContainer = document.getElementById('yt-container-dynamic');
+                if (!ytContainer) {
+                    ytContainer = document.createElement('div');
+                    ytContainer.id = 'yt-container-dynamic';
+                    document.getElementById('detail-tasks').after(ytContainer); // Vložíme ho až za úkoly
+                }
+
+                let ytHTML = `
+        <div style="margin-top:25px; border-top:1px solid #ccc; padding-top:15px;">
+            <h3 style="margin-top:0;">🎥 YouTube Návody</h3>
+            <div style="display:flex; gap:8px; margin-bottom:15px; flex-wrap:wrap;">
+                <button onclick="searchYT('${plant.name} Řez')" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; background:white; font-weight:bold; cursor:pointer;">✂️ Řez</button>
+                <button onclick="searchYT('${plant.name} Hnojení')" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; background:white; font-weight:bold; cursor:pointer;">🌱 Hnojení</button>
+                <button onclick="searchYT('${plant.name} Škůdci a postřiky')" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; background:white; font-weight:bold; cursor:pointer;">🐛 Škůdci</button>
+                <button onclick="searchYT('${plant.name} Přesazování')" style="padding:8px 12px; border-radius:8px; border:1px solid #ccc; background:white; font-weight:bold; cursor:pointer;">🪴 Přesazování</button>
+            </div>
+            <div style="display:flex; gap:8px; margin-bottom:20px;">
+                <input type="text" id="yt-custom-query" placeholder="Vlastní dotaz na YT..." style="flex:1; padding:10px; border-radius:8px; border:1px solid #ccc; outline:none;">
+                <button onclick="searchYT(document.getElementById('yt-custom-query').value)" style="background:var(--yt, #f44336); color:white; border:none; padding:0 15px; border-radius:8px; font-weight:bold; cursor:pointer;">Hledat</button>
+            </div>
+        </div>`;
+
+                if (plant.savedVideos && plant.savedVideos.length > 0) {
+                    ytHTML += `<div style="margin-bottom: 25px;">`;
+                    plant.savedVideos.forEach((v, idx) => {
+                        let vId = v.includes('v=') ? v.split('v=')[1].split('&')[0] : v.split('youtu.be/')[1]?.split('?')[0];
+                        if (vId) {
+                            ytHTML += `<div style="margin-bottom:15px;">
+                        <iframe width="100%" height="200" src="https://www.youtube.com/embed/${vId}" frameborder="0" allowfullscreen style="border-radius:12px;"></iframe>
+                        <button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn);" onclick="deleteVideo(${idx})">🗑️ Odebrat video</button>
+                    </div>`;
+                        }
+                    });
+                    ytHTML += `</div>`;
+                }
+                ytContainer.innerHTML = ytHTML;
+
+
+                // --- AI PAMĚŤ ---
+                const detBox = document.getElementById('ai-mem-detective');
+                if (plant.aiDetection) {
+                    const jeToInstrukce = plant.aiDetection.length > 35;
+                    if (jeToInstrukce) {
+                        detBox.innerHTML = `<strong>📸 AI info:</strong> ${plant.aiDetection} <button onclick="callAI('detective')">🔄 Znovu</button>`;
+                    } else {
+                        detBox.innerHTML = `<strong>🔎 Odrůda:</strong> ${plant.aiDetection} <button onclick="updateProfileName('${plant.name} (${plant.aiDetection})')">Uložit</button>`;
+                    }
+                    detBox.style.display = 'block';
+                } else { detBox.style.display = 'none'; }
+
+                const docBox = document.getElementById('ai-mem-doctor');
+                if (plant.aiDiagnosis) {
+                    let docContent = `<strong>🩺 Zdraví:</strong> ${plant.aiDiagnosis.description || plant.aiDiagnosis}`;
+                    if (plant.aiDiagnosis.hasProblem && plant.aiDiagnosis.searchKeyword) {
+                        // Tlačítko 1: Agromanuál (Léčba a chemie)
+                        docContent += `<button class="btn-sm-action" onclick="window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent('${plant.aiDiagnosis.searchKeyword}'), '_blank')">💊 Čím stříkat (Agromanuál.cz)</button>`;
+
+                        // --- FINÁLNÍ OPRAVA: Tlačítko 2: Obecné Google Obrázky ---
+                        // Ochrana proti dlouhým textům: Vezmeme jen první část před čárkou
+                        let shortKeyword = plant.aiDiagnosis.searchKeyword.split(',')[0].trim();
+                        // Smazali jsme omezení na doménu, teď hledáme obrázky plošně všude
+                        docContent += `<button class="btn-sm-action" style="background:#e3f2fd; color:#1565c0; border-color:#90caf9; margin-top:5px;" onclick="window.open('https://www.google.com/search?tbm=isch&q=' + encodeURIComponent('${shortKeyword}'), '_blank')">📸 Porovnat fotky nemoci (Google)</button>`;
+                    }
+                    // Tlačítko 3: Smazání
+                    docContent += `<button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn); margin-top:10px; width:100%;" onclick="deleteAIMemory('aiDiagnosis')">🗑️ Smazat diagnózu</button>`;
+                    docBox.innerHTML = docContent;
+                    docBox.style.display = 'block';
+                } else { docBox.style.display = 'none'; }
+
+                const prodBox = document.getElementById('ai-mem-products');
+                if (plant.aiProducts && plant.aiProducts.length > 0) {
+                    let pHTML = `<div style="border: 2px solid #9c27b0; background: #fdf7ff; padding: 15px; border-radius: 12px; margin-top: 15px;">
+        <strong style="color:#4a148c; display:block; margin-bottom:10px;">📦 Doporučená obecná péče:</strong>`;
+                    plant.aiProducts.forEach(prod => {
+                        pHTML += `<div style="margin-bottom:12px; border-bottom:1px dashed #ce93d8; padding-bottom:8px;">
+            <div style="font-size:0.9rem; font-weight:bold; margin-bottom:6px; color:#333;">${prod}</div>
+            <div style="display:flex; gap:5px;">
+                <button class="btn-shop" style="flex:1;" onclick="window.open('https://www.heureka.cz/?h[fraze]=' + encodeURIComponent('${prod}'), '_blank')">🛒 Heureka</button>
+                <button class="btn-shop" style="flex:1; background:var(--p);" onclick="window.open('https://www.google.com/search?q=' + encodeURIComponent('agromanual OR návod k použití ${prod}'), '_blank')">📖 Návod</button>
+            </div>
+        </div>`;
+                    });
+                    pHTML += `<button class="btn-sm-action" style="color:var(--warn); border-color:var(--warn); margin-top:10px; width:100%;" onclick="deleteAIMemory('aiProducts')">🗑️ Smazat doporučení</button></div>`;
+                    prodBox.innerHTML = pHTML;
+                    prodBox.style.display = 'block';
+                } else {
+                    prodBox.style.display = 'none';
+                }
+
+                // --- Historie ---
+                const tl = document.getElementById('detail-timeline');
+                tl.innerHTML = '';
+                [...plant.careHistory].reverse().forEach((h, idx) => {
+                    let realIndex = plant.careHistory.length - 1 - idx;
+                    tl.innerHTML += `<div class="timeline-item" style="display:flex; justify-content:space-between; align-items:center;">
+        <div><strong>${h.date}:</strong> ${h.text}</div>
+        <button onclick="deleteHistoryItem(${realIndex})" style="background:none; border:none; color:var(--warn); cursor:pointer;">❌</button>
+    </div>`;
+                });
+
+                document.getElementById('detail-view').style.display = 'block';
+                if (typeof renderMedicalArchive === 'function') renderMedicalArchive();
+            };
+        }
+
+        function closeDetail() {
+            document.getElementById('detail-view').style.display = 'none';
+            currentPlantId = null;
+        }
+        // --- 7. KOMUNIKACE S GEMINI API (AI Doktor, Detektiv, Produkty) ---
+        // --- TUTO FUNKCI VLOŽ NAD FUNKCI callAI ---
+        function extractJSON(responseText) {
+            try {
+                const start = responseText.indexOf('{');
+                const end = responseText.lastIndexOf('}');
+                if (start === -1 || end === -1) return responseText;
+                return responseText.substring(start, end + 1);
+            } catch (e) {
+                return responseText;
+            }
+        }
+        async function callAI(type, extraParam = '') {
+            const key = localStorage.getItem('G_KEY');
+            if (!key) return alert("Zadejte Gemini API Klíč v nastavení (ozubené kolečko)!");
+
+            showLoader("AI analyzuje data...");
+
+            const db = await getDB();
+
+            // 🟢 OPRAVA: Vráceno tvé správné, nativní načítání z databáze
+            const plant = await new Promise((resolve, reject) => {
+                const tx = db.transaction('plants', 'readonly');
+                const req = tx.objectStore('plants').get(currentPlantId);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+
+            if (!plant) {
+                hideLoader();
+                return alert("Chyba: Rostlina nenalezena.");
+            }
+
+            const imageParts = plant.images.map(imgData => {
+                return {
+                    inline_data: { mime_type: "image/jpeg", data: imgData.split(',')[1] }
+                };
+            });
+
+            try {
+                let prompt = "";
+                let isJSON = false;
+
+                // --- 🩺 LOGIKA PRO DOKTORA & SROVNÁVAČ ---
+                if (type === 'doctor') {
+                    let evolutionContext = "";
+
+                    if (window.comparingWithEntryId && plant.medicalHistory) {
+                        const oldEntry = plant.medicalHistory.find(e => e.id === window.comparingWithEntryId);
+                        if (oldEntry) {
+                            evolutionContext = ` MINULÁ DIAGNÓZA BYLA: "${oldEntry.diagnosis}". Porovnej aktuální fotky s tímto minulým stavem a v poli "description" uveď, zda se stav lepší, horší, nebo se objevilo něco nového.`;
+                        }
+                    }
+
+                    prompt = `Jsi expert na zdraví rostlin. Analyzuj tuto rostlinu '${plant.name}'. Odpověz VÝHRADNĚ ve formátu JSON s touto strukturou: {"hasProblem": true, "diagnosis": "název choroby nebo škůdce", "description": "stručný popis problému", "solution": "kroky k nápravě", "searchKeyword": "klíčové slovo pro vyhledávání", "suggestedTask": "název úkolu"}.${evolutionContext} Pokud je rostlina zdravá, "hasProblem" bude false.`;
+                    isJSON = true;
+                }
+                else if (type === 'detective') {
+                    prompt = `Prohlédni si VŠECHNY přiložené fotky této rostliny a pokus se určit její přesnou odrůdu. Pokud fotky nestačí, napiš co dofotit. Odpověz POUZE ve formátu JSON: {"exactName": "Název odrůdy NEBO žádost o další fotky"}`;
+                    isJSON = true;
+                }
+                else if (type === 'products') {
+                    prompt = `Jsi zahradník. Doporuč 5 konkrétních produktů pro rostlinu '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů: ["Produkt 1", "Produkt 2", "Produkt 3", "Produkt 4", "Produkt 5"]`;
+                    isJSON = true;
+                }
+                else if (type === 'task-products') {
+                    prompt = `Jsi zahradník. Doporuč 5 konkrétních produktů pro úkol '${extraParam}' u rostliny '${plant.name}'. Odpověz POUZE ve formátu JSON pole stringů.`;
+                    isJSON = true;
+                }
+
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+
+                // POSÍLÁME TAJNOU FOTKU GOOGLU
+                if (type === 'doctor' && window.secretDoctorPhoto) {
+                    payload.contents[0].parts.push({
+                        inline_data: { mime_type: "image/jpeg", data: window.secretDoctorPhoto.split(',')[1] }
+                    });
+                } else if (type !== 'products') {
+                    payload.contents[0].parts.push(...imageParts);
+                }
+
+                if (isJSON) {
+                    payload.generationConfig = { response_mime_type: "application/json" };
+                }
+
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                if (!resp.ok) {
+                    if (resp.status === 429) throw new Error("API_LIMIT");
+                    throw new Error(`HTTP_ERROR_${resp.status}`);
+                }
+
+                const data = await resp.json();
+                const aiResponse = data.candidates[0].content.parts[0].text;
+                let parsedData = isJSON ? JSON.parse(extractJSON(aiResponse)) : aiResponse;
+
+                // --- 🗄️ TŘÍDĚNÍ DO ŠUPLÍKŮ & ARCHIVACE ---
+                if (type === 'doctor') {
+                    plant.aiDiagnosis = parsedData;
+
+                    if (!plant.medicalHistory) plant.medicalHistory = [];
+
+                    const newMedicalEntry = {
+                        id: Date.now(),
+                        date: new Date().toISOString(),
+                        diagnosis: parsedData.diagnosis + ": " + parsedData.description,
+                        photo: window.secretDoctorPhoto || ((plant.images && plant.images.length > 0) ? plant.images[plant.images.length - 1] : null),
+                        userNote: ""
+                    };
+
+                    plant.medicalHistory.push(newMedicalEntry);
+
+                    if (parsedData.hasProblem) {
+                        if (!plant.careHistory) plant.careHistory = [];
+                        plant.careHistory.push({
+                            date: new Date().toLocaleDateString('cs-CZ'),
+                            text: `⚠️ AI Diagnóza: ${parsedData.diagnosis}`
+                        });
+
+                        if (!plant.tasks) plant.tasks = [];
+                        plant.tasks.push({
+                            name: parsedData.suggestedTask || "Léčba",
+                            description: parsedData.solution,
+                            months: [new Date().getMonth()]
+                        });
+                    }
+
+                    window.comparingWithEntryId = null;
+                    window.secretDoctorPhoto = null;
+                }
+                else if (type === 'detective') {
+                    plant.aiDetection = parsedData.exactName;
+                }
+                else if (type === 'products') {
+                    plant.aiProducts = parsedData;
+                }
+                else if (type === 'task-products') {
+                    if (plant.tasks) {
+                        const tIdx = plant.tasks.findIndex(t => t.name === extraParam);
+                        if (tIdx > -1) plant.tasks[tIdx].taskProducts = parsedData;
+                    }
+                }
+
+                // 🟢 OPRAVA: Vráceno tvé správné, nativní ukládání do databáze
+                const saveTx = db.transaction('plants', 'readwrite');
+                const saveStore = saveTx.objectStore('plants');
+                saveStore.put(plant);
+
+                saveTx.oncomplete = () => {
+                    hideLoader();
+                    renderPlants();
+                    openDetail(currentPlantId);
+
+                    if (typeof renderMedicalArchive === 'function') {
+                        renderMedicalArchive();
+                    }
+                };
+
+            } catch (e) {
+                hideLoader();
+                console.error("Chyba AI:", e);
+                if (e.message === "API_LIMIT") {
+                    alert("Zpomalte prosím. 🚦 Překročili jsme chvilkový limit dotazů na AI.");
+                } else {
+                    alert("Chyba AI analýzy. Zkontrolujte připojení nebo API klíč.");
+                }
+            }
+        }
+
+        async function deleteAIMemory(field) {
+            if (!confirm("Opravdu smazat tento uložený záznam z paměti?")) return;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                delete plant[field];
+                store.put(plant);
+                // OPRAVA: Refresh až po uložení
+                tx.oncomplete = () => {
+                    openDetail(currentPlantId);
+                };
+            };
+        }
+
+        async function updateProfileName(newName) {
+            if (!confirm(`Chcete přejmenovat kartu na '${newName}' a načíst nové úkoly?`)) return;
+            const key = localStorage.getItem('G_KEY');
+            showLoader("Aktualizuji profil...");
+
+            try {
+                // --- 1. KROK: Čas na přemýšlení (voláme AI PŘED otevřením databáze) ---
+                const prompt = `Jsi botanik. Pro rostlinu '${newName}' vygeneruj JSON s návodem a úkoly: {"water":"Detailní instrukce zálivky","light":"Nároky na světlo","tasks":[{"name":"Název úkolu","description":"Krátký popis, jak úkol provést","months":[2, 3]}]} (kde "months" je pole čísel měsíců 0-11). Odpověz POUZE čistým JSON formátem bez dalších textů.`;
+
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { response_mime_type: "application/json" }
+                    })
+                });
+                const rawResponse = await resp.json();
+                const aiText = rawResponse.candidates[0].content.parts[0].text;
+
+                // Získáme čistá data od AI
+                const aiData = JSON.parse(extractJSON(aiText));
+
+                // --- 2. KROK: Bleskový zápis (rychlé otevření a uložení do DB) ---
+                const db = await getDB();
+                const tx = db.transaction('plants', 'readwrite');
+                const store = tx.objectStore('plants');
+                const req = store.get(currentPlantId);
+
+                req.onsuccess = () => {
+                    let plant = req.result;
+
+                    // Přepíšeme stará data novými od AI
+                    plant.name = newName;
+                    if (aiData.water) plant.water = aiData.water;
+                    if (aiData.light) plant.light = aiData.light;
+                    if (aiData.tasks) plant.tasks = aiData.tasks;
+
+                    delete plant.aiDetection; // Smažeme tip s odrůdou, už je to oficiální jméno
+
+                    store.put(plant);
+
+                    // Jakmile je bezpečně uloženo, překreslíme obrazovku
+                    tx.oncomplete = () => {
+                        hideLoader();
+                        renderPlants();
+                        openDetail(currentPlantId);
+                    };
+                };
+
+                // Pojistka pro případ, že by databáze přece jen zazlobila
+                tx.onerror = () => {
+                    hideLoader();
+                    alert("Chyba při ukládání do databáze.");
+                };
+
+            } catch (e) {
+                hideLoader();
+                alert("Chyba při aktualizaci profilu.");
+                console.error("Detail chyby:", e); // V konzoli teď případně uvidíš přesný důvod
+            }
+        }
+
+        // --- 8. IZOLOVANÝ PINCH-TO-ZOOM (Lightbox) ---
+        const lb = document.getElementById('lightbox');
+        const lbImg = document.getElementById('lightbox-img');
+        let curScale = 1, curX = 0, curY = 0, startX = 0, startY = 0, startDist = 0, startScale = 1;
+
+        function openLightbox(src) {
+            lbImg.src = src;
+            curScale = 1; curX = 0; curY = 0;
+            lbImg.style.transform = `translate(0px, 0px) scale(1)`;
+            lb.style.display = 'flex';
+        }
+
+        function closeLightbox() { lb.style.display = 'none'; }
+
+        async function deleteCurrentPhoto() {
+            if (!confirm("Opravdu chcete smazat tuto fotku?")) return;
+
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                // Ochrana, aby rostlině zůstala aspoň jedna fotka
+                if (plant.images.length <= 1) {
+                    alert("Nelze smazat poslední fotku rostliny.");
+                    return;
+                }
+
+                // Najdeme aktuální fotku a odstraníme ji z pole
+                const currentSrc = document.getElementById('lightbox-img').getAttribute('src');
+                plant.images = plant.images.filter(img => img !== currentSrc);
+
+                store.put(plant);
+                tx.oncomplete = () => {
+                    closeLightbox();
+                    openDetail(currentPlantId); // Překreslíme galerii
+                };
+            };
+        }
+
+        lb.addEventListener('touchstart', e => {
+            if (e.touches.length === 2) {
+                startDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                startScale = curScale;
+            } else {
+                startX = e.touches[0].clientX - curX;
+                startY = e.touches[0].clientY - curY;
+            }
+        });
+
+        lb.addEventListener('touchmove', e => {
+            e.preventDefault(); // Blokuje scroll pozadí pouze v lightboxu
+            if (e.touches.length === 2) {
+                let dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                curScale = Math.max(1, Math.min(startScale * (dist / startDist), 5));
+            } else {
+                curX = e.touches[0].clientX - startX;
+                curY = e.touches[0].clientY - startY;
+            }
+            lbImg.style.transform = `translate(${curX}px, ${curY}px) scale(${curScale})`;
+        }, { passive: false });
+
+        // --- 9. HLASOVÉ POZNÁMKY (Speech Recognition) ---
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        if (SpeechRec) {
+            recognition = new SpeechRec();
+            recognition.lang = 'cs-CZ';
+            recognition.onresult = (e) => {
+                const input = document.getElementById('note-input');
+                input.value = (input.value + " " + e.results[0][0].transcript).trim();
+            };
+            // NOVÉ: Vrací barvu na původní zelenou po skončení diktování
+            recognition.onend = () => {
+                document.getElementById('btn-mic').style.backgroundColor = "var(--p)";
+            };
+        }
+
+        function startDictation() {
+            if (!recognition) return alert("Hlasové zadávání není v tomto prohlížeči podporováno.");
+            // NOVÉ: Změní barvu na červenou (var--warn) při startu
+            document.getElementById('btn-mic').style.backgroundColor = "var(--warn)";
+            recognition.start();
+        }
+
+        async function saveNote() {
+            const text = document.getElementById('note-input').value.trim();
+            if (!text) return;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
+            req.onsuccess = () => {
+                let plantData = req.result;
+                plantData.careHistory.push({ date: new Date().toLocaleDateString('cs-CZ'), text: `📝 Poznámka: ${text}` });
+                store.put(plantData);
+                document.getElementById('note-input').value = "";
+                openDetail(currentPlantId);
+            };
+        }
+
+        // --- 10. YouTube A OSTATNÍ FUNKCE ---
+        function searchYT(query) { window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank'); }
+
+        async function deleteVideo(idx) {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
+            req.onsuccess = () => {
+                let plantData = req.result;
+                plantData.savedVideos.splice(idx, 1);
+                store.put(plantData);
+                openDetail(currentPlantId);
+            };
+        }
+
+        async function deleteCurrentPlant() {
+            if (!confirm("Opravdu smazat rostlinu i celou její historii?")) return;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            tx.objectStore('plants').delete(currentPlantId);
+            tx.oncomplete = () => { closeDetail(); renderPlants(); };
+        }
+
+
+        async function exportZip() {
+            showLoader('Připravuji pokročilou zálohu...');
+            const zip = new JSZip();
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const req = tx.objectStore('plants').getAll();
+
+            req.onsuccess = async () => {
+                const plants = req.result;
+
+                // 1. ZÁLOHA DAT
+                zip.file('databaze.json', JSON.stringify(plants));
+                zip.file('nastaveni.json', JSON.stringify({ key: localStorage.getItem('G_KEY') || "" }));
+
+                // 2. EXTRAKCE FOTEK DO SLOŽEK
+                let plantListTxt = "=== PŘEHLED ZAHRADY PLANTMASTER ===\n\n";
+
+                plants.forEach(plant => {
+                    const safeName = (plant.name || "Neznama_rostlina").replace(/[^a-zA-Z0-9áčďéěíňóřšťúůýžÁČĎÉĚÍŇÓŘŠŤÚŮÝŽ]/g, "_");
+                    const plantFolder = zip.folder(safeName);
+
+                    plantListTxt += `🌱 ${plant.name}\n`;
+                    plantListTxt += `   - Zálivka: ${plant.water || "Nezadáno"}\n`;
+
+                    if (plant.images && plant.images.length > 0) {
+                        plant.images.forEach((imgBase64, index) => {
+                            const base64Data = imgBase64.split(',')[1];
+                            if (base64Data) plantFolder.file(`galerie_${index + 1}.jpg`, base64Data, { base64: true });
+                        });
+                    }
+
+                    if (plant.medicalHistory && plant.medicalHistory.length > 0) {
+                        plantListTxt += `   - Zdravotních záznamů: ${plant.medicalHistory.length}\n`;
+                        plant.medicalHistory.forEach((entry, index) => {
+                            if (entry.photo) {
+                                const base64Data = entry.photo.split(',')[1];
+                                const dateStr = new Date(entry.date).toLocaleDateString('cs-CZ').replace(/\./g, '-').replace(/ /g, '');
+                                if (base64Data) plantFolder.file(`diagnoza_${dateStr}_${index + 1}.jpg`, base64Data, { base64: true });
+                            }
+                        });
+                    }
+                    plantListTxt += "\n";
+                });
+
+                zip.file('Prehled_zahrady.txt', plantListTxt);
+
+                // 3. ZABALENÍ A PŘÍMÉ STAŽENÍ (Bez zbytečných oken)
+                zip.generateAsync({ type: "blob" }).then(async (blob) => {
+                    const dnes = new Date();
+                    const den = String(dnes.getDate()).padStart(2, '0');
+                    const mesic = String(dnes.getMonth() + 1).padStart(2, '0');
+                    const rok = dnes.getFullYear();
+
+                    const fileName = `PlantMaster_Zaloha_${den}-${mesic}-${rok}.zip`;
+
+                    hideLoader(); // Schová načítací kolečko
+                    forceDownload(blob, fileName); // Předá soubor prohlížeči ke stažení
+
+                    // Upozornění, abys věděl, že se stahuje, i když se prohlížeč nezeptá
+                    setTimeout(() => alert("Záloha byla úspěšně připravena a stahuje se do vašeho zařízení!"), 500);
+                });
+            };
+        }
+        // Pomocná funkce pro fyzické stažení souboru do zařízení
+        function forceDownload(blob, fileName) {
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = fileName;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Zde je definitivně uzavřená celá funkce zálohování
+        // Zde je definitivně uzavřená celá funkce exportZip
+        async function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            showLoader('Načítám zálohu...');
+            try {
+                const zip = new JSZip();
+                const contents = await zip.loadAsync(file);
+                importedData = JSON.parse(await contents.file('databaze.json').async('string'));
+
+                // Obnova API klíče
+                if (contents.file('nastaveni.json')) {
+                    const settings = JSON.parse(await contents.file('nastaveni.json').async('string'));
+                    if (settings.key) localStorage.setItem('G_KEY', settings.key);
+                }
+
+                hideLoader();
+                closeSettings();
+                document.getElementById('import-modal').style.display = 'flex';
+                event.target.value = '';
+            } catch (e) {
+                hideLoader();
+                alert("Chyba: Toto není platný .zip soubor PlantMasteru.");
+            }
+        }
+
+        async function executeImport(mode) {
+            document.getElementById('import-modal').style.display = 'none';
+            showLoader('Importuji data...');
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+
+            if (mode === 'overwrite') store.clear();
+
+            // Přečteme si všechny existující kytky, ať můžeme kontrolovat jména
+            const reqAll = store.getAll();
+            reqAll.onsuccess = () => {
+                const existingPlants = reqAll.result;
+                const existingNames = existingPlants.map(p => p.name.toLowerCase());
+
+                importedData.forEach(p => {
+                    if (mode === 'merge') {
+                        // Pokud už kytka se stejným jménem existuje, přeskočíme ji
+                        if (p.name && existingNames.includes(p.name.toLowerCase())) {
+                            return;
+                        }
+                        delete p.id; // Jinak jí smažeme ID a přidáme jako novou
+                    }
+                    store.put(p);
+                });
+
+                tx.oncomplete = () => {
+                    hideLoader();
+                    location.reload();
+                };
+            };
+        }
+
+        // --- 12. PŘIDÁVÁNÍ FOTEK A AI START ---
+        async function handleNewPlantPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const key = localStorage.getItem('G_KEY');
+            if (!key) return alert("Nejprve zadejte API klíč v nastavení!");
+
+            showLoader("Analyzuji novou rostlinu...");
+
+            try {
+                // 1. ZMENŠENÍ FOTKY 
+                const resizedBase64 = await resizeImage(file);
+                const b64Data = resizedBase64.split(',')[1];
+
+                // 2. POŽADAVEK NA AI
+                const prompt = `Jsi botanik. Vrať JSON profil rostliny na fotce: {"name":"Název","category":["Kategorie 1", "Kategorie 2"],"description":"Základní charakteristika (max 3 věty). VŽDY zde na konci zmiň zemi původu a případnou toxicitu pro lidi/zvířata.","water":"Detailní instrukce: jak často zalévat","wateringInterval":7,"light":"Nároky na světlo","tasks":[{"name":"Název úkolu","description":"Krátký popis, jak úkol provést","months":[2, 3]}]} (kde "months" je pole čísel měsíců 0-11). 
+DŮLEŽITÉ PRAVIDLO PRO KATEGORIE: Vyber 1 až 2 nejvhodnější štítky z tohoto seznamu: Pokojové, Zelenina, Ovoce, Bylinky, Stromy, Keře. Například pro jabloň vrať ["Stromy", "Ovoce"].
+DŮLEŽITÉ PRAVIDLO PRO ÚKOLY: Pro název úkolu máš přísný ZÁKAZ vymýšlet vlastní názvy. Smíš použít POUZE jeden z těchto přesných názvů: "Řez a tvarování", "Hnojení", "Zálivka", "Přesazování / Výsadba", "Ochrana a postřiky", "Sklizeň", nebo "Ostatní péče".
+DŮLEŽITÉ PRAVIDLO PRO ZÁLIVKU: "wateringInterval" MUSÍ BÝT ČÍSLO (odhadovaný počet dní mezi zálivkami v běžných podmínkách, např. 7).
+Odpověz POUZE čistým JSON formátem bez dalších textů.`;
+
+
+                const payload = {
+                    contents: [{ parts: [{ text: prompt }, { inline_data: { mime_type: "image/jpeg", data: b64Data } }] }],
+                    generationConfig: { response_mime_type: "application/json" }
+                };
+
+                const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+                    method: 'POST',
+                    body: JSON.stringify(payload)
+                });
+
+                // --- ZÁCHRANNÁ BRZDA 1: Kontrola sítě ---
+                if (!resp.ok) {
+                    if (resp.status === 429) throw new Error("API_LIMIT");
+                    throw new Error(`HTTP_ERROR_${resp.status}`);
+                }
+
+                const data = await resp.json();
+
+                // --- ZÁCHRANNÁ BRZDA 2: Kontrola prázdných dat ---
+                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+                    throw new Error("NO_DATA");
+                }
+
+                const aiResponse = data.candidates[0].content.parts[0].text;
+
+                // --- NASAZENÍ CHYTRÉ ČTEČKY (Nahrazuje staré čištění pomocí replace) ---
+                const aiData = JSON.parse(extractJSON(aiResponse));
+
+                // 3. Uložení do databáze
+                const newPlant = {
+                    id: Date.now(),
+                    name: aiData.name || "Neznámá rostlina",
+                    category: aiData.category || "Ostatní",
+                    description: aiData.description || "",
+                    water: aiData.water || "",
+                    wateringInterval: aiData.wateringInterval || 7, // 🟢 TADY JSME PŘIDALI PŘÍJEM ČÍSELNÉHO INTERVALU
+                    light: aiData.light || "",
+                    images: [resizedBase64],
+                    tasks: aiData.tasks || {},
+                    careHistory: [{ date: new Date().toLocaleDateString('cs-CZ'), text: 'Rostlina přidána do systému.' }]
+                };
+
+                const db = await getDB();
+                const tx = db.transaction('plants', 'readwrite');
+                tx.objectStore('plants').put(newPlant);
+
+                tx.oncomplete = () => {
+                    hideLoader();
+                    renderPlants();
+                };
+
+            } catch (err) {
+                console.error(err);
+                hideLoader();
+
+                // --- SJEDNOCENÉ VAROVÁNÍ ---
+                if (err.message === "API_LIMIT") {
+                    alert("Zpomalte prosím. 🚦 Překročili jsme chvilkový limit dotazů na umělou inteligenci. Počkejte minutu a zkuste to znovu.");
+                } else if (err.message === "NO_DATA") {
+                    alert("Umělá inteligence nevrátila žádná data (zkontrolujte připojení k internetu).");
+                } else if (err.message.includes("503")) {
+                    // 🟢 NOVÁ POJISTKA PRO VÝPADKY GOOGLU
+                    alert("Omlouváme se, servery umělé inteligence jsou momentálně přetížené (Chyba 503). ⏳ Zkuste prosím fotku nahrát za pár minut znovu.");
+                } else {
+                    alert("Chyba při analýze rostliny: " + err.message);
+                }
+            }
+        }
+
+        async function addPhotoToCurrentPlant(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showLoader("Zpracovávám fotografii...");
+
+            try {
+                // 1. ZMENŠENÍ FOTKY (Zavoláme naši novou funkci)
+                const resizedBase64 = await resizeImage(file);
+
+                // 2. ULOŽENÍ DO DATABÁZE
+                const db = await getDB();
+                const tx = db.transaction('plants', 'readwrite');
+                const store = tx.objectStore('plants');
+                const req = store.get(currentPlantId);
+
+                req.onsuccess = () => {
+                    let plant = req.result;
+                    // Pro jistotu zkontrolujeme, zda má rostlina pole pro obrázky
+                    if (!plant.images) plant.images = [];
+
+                    // Přidáme naši novou, lehkou fotku
+                    plant.images.push(resizedBase64);
+
+                    store.put(plant);
+                    tx.oncomplete = () => {
+                        hideLoader();
+                        renderPlants();             // Aktualizuje hlavní seznam
+                        openDetail(currentPlantId); // Okamžitě obnoví galerii v detailu
+                    };
+                };
+            } catch (err) {
+                console.error(err);
+                alert("Chyba při zpracování fotky. Zkuste to prosím znovu.");
+                hideLoader();
+            }
+        }
+
+        // --- 13. OSTATNÍ SYSTÉMOVÉ FUNKCE ---
+        function openSettings() { document.getElementById('settings-view').style.display = 'block'; }
+        function closeSettings() { document.getElementById('settings-view').style.display = 'none'; }
+        function saveSettings() {
+            localStorage.setItem('G_KEY', document.getElementById('api-key').value.trim());
+            closeSettings();
+            alert("Nastavení uloženo.");
+        }
+        function showLoader(txt) {
+            document.getElementById('loader-text').innerText = txt;
+            document.getElementById('loader').style.display = 'flex';
+        }
+        function hideLoader() { document.getElementById('loader').style.display = 'none'; }
+
+        async function deleteAll() {
+            if (!confirm('VAROVÁNÍ: Opravdu chcete vymazat celou databázi rostlin? Akce je nevratná!')) return;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            tx.objectStore('plants').clear();
+            tx.oncomplete = () => { closeSettings(); renderPlants(); };
+        }
+
+        async function editPlantName() {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const req = tx.objectStore('plants').get(currentPlantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                const newName = prompt("Upravit název nebo odrůdu rostliny:", plant.name);
+
+                if (newName && newName.trim() !== "" && newName !== plant.name) {
+                    plant.name = newName.trim();
+                    const writeTx = db.transaction('plants', 'readwrite');
+                    writeTx.objectStore('plants').put(plant);
+                    writeTx.oncomplete = () => {
+                        renderPlants();
+                        openDetail(currentPlantId);
+                    };
+                }
+            };
+        }
+
+        // NOVÁ FUNKCE PRO VZETÍ ZPĚT (Smazání z historie a vrácení úkolu)
+        async function deleteHistoryItem(index) {
+            if (!confirm("Opravdu smazat tento záznam? (Tímto můžete vzít zpět zálivku nebo splněný úkol)")) return;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                const smazanaPolozka = plant.careHistory[index];
+
+                // --- VRÁCENÍ ÚKOLU ZPĚT ---
+                if (smazanaPolozka && smazanaPolozka.text.includes('Splněn úkol:')) {
+                    const currentMonth = new Date().getMonth();
+                    if (plant.tasks && Array.isArray(plant.tasks)) {
+                        const task = plant.tasks.find(t => smazanaPolozka.text.includes(t.name));
+                        if (task && task.completedMonths) {
+                            task.completedMonths = task.completedMonths.filter(m => m !== currentMonth);
+                        }
+                    }
+                }
+
+                // --- 💧 ZRUŠENÍ OMYLEM ZADANÉ ZÁLIVKY ---
+                if (smazanaPolozka && (smazanaPolozka.text.toLowerCase().includes('zalit') || smazanaPolozka.text.toLowerCase().includes('zálivk'))) {
+                    // Najdeme v historii další nejčerstvější zálivku (kromě té, kterou zrovna mažeme)
+                    const ostatniZalivky = plant.careHistory.filter((h, i) => i !== index && (h.text.toLowerCase().includes('zalit') || h.text.toLowerCase().includes('zálivk')));
+
+                    if (ostatniZalivky.length > 0) {
+                        // Vezmeme tu nejnovější (jsou řazené postupně) a obnovíme její datum
+                        plant.lastWatered = ostatniZalivky[ostatniZalivky.length - 1].date;
+                    } else {
+                        // Pokud nezbyla žádná, vymažeme zálivku úplně
+                        plant.lastWatered = "";
+                    }
+                }
+
+                // Následně záznam trvale smažeme z historie péče
+                plant.careHistory.splice(index, 1);
+
+                store.put(plant);
+                tx.oncomplete = () => {
+                    renderPlants();
+                    openDetail(currentPlantId);
+                };
+            };
+        }
+
+        // --- FUNKCE PRO ZMENŠENÍ FOTKY (Komprese) ---
+        function resizeImage(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = (e) => {
+                    const img = new Image();
+                    img.src = e.target.result;
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let w = img.width;
+                        let h = img.height;
+
+                        // LIMIT ROZLIŠENÍ: Pokud je fotka širší než 800px, zmenšíme ji
+                        if (w > 800) {
+                            h = Math.round((h * 800) / w);
+                            w = 800;
+                        }
+
+                        canvas.width = w;
+                        canvas.height = h;
+                        // Vykreslení na neviditelné plátno (canvas)
+                        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                        // KOMPRESE: Převedeme na JPEG s kvalitou 70%
+                        resolve(canvas.toDataURL('image/jpeg', 0.7));
+                    };
+                };
+            });
+        }
+
+        // --- 📖 LOGIKA PRO NÁVOD A UVÍTÁNÍ ---
+
+        // Automatické otevření pro nováčky
+        window.addEventListener('DOMContentLoaded', () => {
+            const hasSeenGuide = localStorage.getItem('guide_seen');
+            if (!hasSeenGuide) {
+                setTimeout(() => {
+                    openManual(); // Změněno na náš nový krásný manuál
+                    localStorage.setItem('guide_seen', 'true'); // POJISTKA: Zapisujeme, že uživatel už manuál viděl!
+                }, 1000);
+            }
+        });
+    </script>
+
+
+    <div id="ai-doctor-modal"
+        style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; flex-direction:column; justify-content:center; align-items:center; padding: 20px; box-sizing: border-box;">
+        <div
+            style="background:#fff; width:100%; max-width: 400px; border-radius:20px; padding:25px; box-sizing:border-box; position:relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+
+            <button onclick="closeAIDoctorModal()"
+                style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">✖</button>
+
+            <h2
+                style="margin-top:0; color:var(--warn, #d32f2f); font-size:1.5rem; border-bottom:2px solid #eee; padding-bottom:10px; text-align:center;">
+                🩺 AI Doktor</h2>
+            <p style="text-align:center; color:#555; font-size:0.95rem; margin-bottom: 20px;">Jak chcete postupovat při
+                diagnostice?</p>
+
+            <div style="display:flex; flex-direction:column; gap:15px;">
+                <button onclick="startQuickScan()"
+                    style="background:#fff; border:2px solid var(--doc, #1976d2); border-radius:12px; padding:15px; text-align:left; cursor:pointer; display:flex; align-items:center; gap:15px;">
+                    <div style="font-size:2rem;">📸</div>
+                    <div>
+                        <strong style="display:block; font-size:1.1rem; color:var(--doc, #1976d2);">Rychlý sken</strong>
+                        <span style="font-size:0.85rem; color:#666;">Mám fotku a chci okamžitou analýzu.</span>
+                    </div>
+                </button>
+
+                <button onclick="startGuidedDiagnosis()"
+                    style="background:#fff; border:2px solid var(--p, #2e7d32); border-radius:12px; padding:15px; text-align:left; cursor:pointer; display:flex; align-items:center; gap:15px;">
+                    <div style="font-size:2rem;">❓</div>
+                    <div>
+                        <strong style="display:block; font-size:1.1rem; color:var(--p, #2e7d32);">Popsat
+                            příznaky</strong>
+                        <span style="font-size:0.85rem; color:#666;">Problém neznám. Projít průvodce a nafotit
+                            detaily.</span>
+                    </div>
+                </button>
+
+                <button onclick="startManualDiagnosis()"
+                    style="background:#fff; border:2px solid #ff9800; border-radius:12px; padding:15px; text-align:left; cursor:pointer; display:flex; align-items:center; gap:15px;">
+                    <div style="font-size:2rem;">🔍</div>
+                    <div>
+                        <strong style="display:block; font-size:1.1rem; color:#f57c00;">Vím, co to je</strong>
+                        <span style="font-size:0.85rem; color:#666;">Rychlá záchrana a Agromanuál bez focení.</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. MOZEK: HYBRIDNÍ AI DOKTOR ---
+        function openAIDoctorModal() {
+            document.getElementById('ai-doctor-modal').style.display = 'flex';
+        }
+
+        function closeAIDoctorModal() {
+            document.getElementById('ai-doctor-modal').style.display = 'none';
+        }
+
+        function startQuickScan() {
+            closeAIDoctorModal();
+            // 🟢 Změněno: Už nekliká na 'camera-input', ale na náš nový 'doctor-camera-input'
+            document.getElementById('doctor-camera-input').click();
+        }
+
+        // ==========================================
+        // 📸 ZPRACOVÁNÍ TAJNÉ FOTKY PRO DOKTORA
+        // ==========================================
+        function processDoctorPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            showLoader("Zpracovávám zdravotní snímek...");
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const img = new Image();
+                img.onload = function () {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                    } else {
+                        if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // 1. Uložíme zmenšenou fotku JEN do dočasné paměti
+                    window.secretDoctorPhoto = canvas.toDataURL('image/jpeg', 0.8);
+
+                    // 2. A rovnou voláme Doktora!
+                    callAI('doctor');
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+
+            // Vyčistíme paměť inputu, abys mohl fotit znovu
+            event.target.value = '';
+        }
+        function startManualDiagnosis() {
+            closeAIDoctorModal();
+            const query = prompt("Zadejte název škůdce nebo nemoci (např. Mšice, Strupovitost):");
+            if (query && query.trim() !== "") {
+                window.open('https://www.google.com/search?q=site:agromanual.cz ' + encodeURIComponent(query), '_blank');
+            }
+        }
+
+        function startGuidedDiagnosis() {
+            const modalInner = document.querySelector('#ai-doctor-modal > div');
+            modalInner.innerHTML = `
+                <button onclick="resetAIDoctorModal()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">✖</button>
+                <h2 style="margin-top:0; color:var(--p); font-size:1.5rem; border-bottom:2px solid #eee; padding-bottom:10px; text-align:center;">Průvodce příznaky</h2>
+                <p style="text-align:center; color:#555; margin-bottom: 20px;">Co se s rostlinou děje?</p>
+
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    <button onclick="showChecklist('skvrny')" style="padding:15px; border-radius:10px; border:1px solid #ccc; background:#f9f9f9; font-size:1.1rem; cursor:pointer; text-align:left;">🍂 Fleky nebo skvrny na listech</button>
+                    <button onclick="showChecklist('hmyz')" style="padding:15px; border-radius:10px; border:1px solid #ccc; background:#f9f9f9; font-size:1.1rem; cursor:pointer; text-align:left;">🐛 Viditelný hmyz nebo pavučinky</button>
+                    <button onclick="showChecklist('vadnuti')" style="padding:15px; border-radius:10px; border:1px solid #ccc; background:#f9f9f9; font-size:1.1rem; cursor:pointer; text-align:left;">🥀 Vadnutí, schnutí, hniloba</button>
+                </div>
+            `;
+        }
+
+        function showChecklist(type) {
+            let checklistHTML = '';
+            if (type === 'skvrny') {
+                checklistHTML = `
+                    <p style="font-weight:bold;">Pro přesnou diagnózu vyfoťte:</p>
+                    <ul style="text-align:left; color:#555; line-height:1.6; margin-bottom:20px; font-size:0.95rem;">
+                        <li>Detail nejvíce poškozeného listu shora</li>
+                        <li>Detail stejného listu zespodu</li>
+                    </ul>`;
+            } else if (type === 'hmyz') {
+                checklistHTML = `
+                    <p style="font-weight:bold;">Pro přesnou diagnózu vyfoťte:</p>
+                    <ul style="text-align:left; color:#555; line-height:1.6; margin-bottom:20px; font-size:0.95rem;">
+                        <li>Makro detail samotného škůdce (co nejblíže)</li>
+                        <li>Místo, kde se vyskytuje nejvíce (spodní strana listů, stonky)</li>
+                    </ul>`;
+            } else if (type === 'vadnuti') {
+                checklistHTML = `
+                    <p style="font-weight:bold;">Pro přesnou diagnózu vyfoťte:</p>
+                    <ul style="text-align:left; color:#555; line-height:1.6; margin-bottom:20px; font-size:0.95rem;">
+                        <li>Celkový pohled na chřadnoucí rostlinu</li>
+                        <li>Detail stonku těsně nad substrátem</li>
+                    </ul>`;
+            }
+
+            const modalInner = document.querySelector('#ai-doctor-modal > div');
+            modalInner.innerHTML = `
+                <button onclick="resetAIDoctorModal()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">✖</button>
+                <h2 style="margin-top:0; color:var(--doc); font-size:1.5rem; border-bottom:2px solid #eee; padding-bottom:10px; text-align:center;">Připravte si fotky</h2>
+                ${checklistHTML}
+                <button onclick="startQuickScan()" style="width:100%; padding:15px; background:var(--doc); color:white; border:none; border-radius:10px; font-size:1.1rem; font-weight:bold; cursor:pointer;">📸 Otevřít foťák a začít</button>
+                <button onclick="startGuidedDiagnosis()" style="width:100%; padding:10px; background:none; color:#666; border:none; font-size:0.9rem; cursor:pointer; margin-top:10px;">← Zpět na výběr</button>
+            `;
+        }
+
+        function resetAIDoctorModal() {
+            closeAIDoctorModal();
+            setTimeout(() => {
+                const modalInner = document.querySelector('#ai-doctor-modal > div');
+                modalInner.innerHTML = `
+                    <button onclick="closeAIDoctorModal()" style="position:absolute; top:15px; right:15px; background:none; border:none; font-size:1.5rem; cursor:pointer; color:#666;">✖</button>
+                    <h2 style="margin-top:0; color:var(--warn, #d32f2f); font-size:1.5rem; border-bottom:2px solid #eee; padding-bottom:10px; text-align:center;">🩺 AI Doktor</h2>
+                    <p style="text-align:center; color:#555; font-size:0.95rem; margin-bottom: 20px;">Jak chcete postupovat při diagnostice?</p>
+                    <div style="display:flex; flex-direction:column; gap:15px;">
+                        <button onclick="startQuickScan()" style="background:#fff; border:2px solid var(--doc, #1976d2); border-radius:12px; padding:15px; text-align:left; cursor:pointer; display:flex; align-items:center; gap:15px;">
+                            <div style="font-size:2rem;">📸</div>
+                            <div>
+                                <strong style="display:block; font-size:1.1rem; color:var(--doc, #1976d2);">Rychlý sken</strong>
+                                <span style="font-size:0.85rem; color:#666;">Mám fotku a chci okamžitou analýzu.</span>
+                            </div>
+                        </button>
+                        <button onclick="startGuidedDiagnosis()" style="background:#fff; border:2px solid var(--p, #2e7d32); border-radius:12px; padding:15px; text-align:left; cursor:pointer; display:flex; align-items:center; gap:15px;">
+                            <div style="font-size:2rem;">❓</div>
+                            <div>
+                                <strong style="display:block; font-size:1.1rem; color:var(--p, #2e7d32);">Popsat příznaky</strong>
+                                <span style="font-size:0.85rem; color:#666;">Problém neznám. Projít průvodce a nafotit detaily.</span>
+                            </div>
+                        </button>
+                        <button onclick="startManualDiagnosis()" style="background:#fff; border:2px solid #ff9800; border-radius:12px; padding:15px; text-align:left; cursor:pointer; display:flex; align-items:center; gap:15px;">
+                            <div style="font-size:2rem;">🔍</div>
+                            <div>
+                                <strong style="display:block; font-size:1.1rem; color:#f57c00;">Vím, co to je</strong>
+                                <span style="font-size:0.85rem; color:#666;">Rychlá záchrana a Agromanuál bez focení.</span>
+                            </div>
+                        </button>
+                    </div>
+                `;
+            }, 300);
+        }
+
+        // --- 2. MOZEK: GLOBÁLNÍ PLÁNOVAČ ---
+        let globalPlannerMonth = new Date().getMonth();
+        let globalPlannerYear = new Date().getFullYear(); // 🟢 PŘIDÁNO: Paměť na rok
+
+        function openGlobalPlanner() {
+            const dnes = new Date();
+            globalPlannerMonth = dnes.getMonth();
+            globalPlannerYear = dnes.getFullYear(); // 🟢 PŘIDÁNO: Reset roku
+            document.getElementById('global-planner-modal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            renderGlobalPlannerContent();
+        }
+
+        function closeGlobalPlanner() {
+            document.getElementById('global-planner-modal').style.display = 'none';
+            document.body.style.overflow = '';
+        }
+
+        function changeGlobalMonth(offset) {
+            globalPlannerMonth += offset;
+            if (globalPlannerMonth < 0) {
+                globalPlannerMonth = 11;
+                globalPlannerYear--; // 🟢 PŘIDÁNO: Krok o rok zpět
+            } else if (globalPlannerMonth > 11) {
+                globalPlannerMonth = 0;
+                globalPlannerYear++; // 🟢 PŘIDÁNO: Krok o rok vpřed
+            }
+            renderGlobalPlannerContent();
+        }
+
+        function resetGlobalMonth() {
+            const dnes = new Date();
+            globalPlannerMonth = dnes.getMonth();
+            globalPlannerYear = dnes.getFullYear(); // 🟢 PŘIDÁNO: Reset roku
+            renderGlobalPlannerContent();
+        }
+
+        async function renderGlobalPlannerContent() {
+            const monthNames = ["Leden", "Únor", "Březen", "Duben", "Květen", "Červen", "Červenec", "Srpen", "Září", "Říjen", "Listopad", "Prosinec"];
+            document.getElementById('global-month-name').innerText = `${monthNames[globalPlannerMonth]} ${globalPlannerYear}`;
+
+            const dnes = new Date();
+            const currentRealMonth = dnes.getMonth();
+            const currentRealYear = dnes.getFullYear();
+
+            const todayBtn = document.getElementById('global-today-btn');
+
+            // Zobrazení tlačítka Dnešek s přesným datem
+            if (globalPlannerMonth !== currentRealMonth || globalPlannerYear !== currentRealYear) {
+                const day = dnes.getDate();
+                const month = currentRealMonth + 1;
+                todayBtn.innerText = `📅 Zpět na dnešek (${day}. ${month}.)`;
+                todayBtn.style.display = 'block';
+            } else {
+                todayBtn.style.display = 'none';
+            }
+
+            const contentDiv = document.getElementById('global-planner-content');
+            contentDiv.innerHTML = '<p style="text-align:center; color:#666;">Prohledávám zahradu...</p>';
+
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const store = tx.objectStore('plants');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                const allPlants = request.result;
+                let groupedTasks = {};
+                let totalTasksCount = 0;
+
+                // 🟢 1. NAČTENÍ AKTUÁLNÍHO STAVU FILTRŮ Z OBRAZOVKY
+                const filterEl = document.getElementById('filter-category');
+                const searchEl = document.getElementById('search-box');
+                const currentCategory = filterEl ? filterEl.value : 'all';
+                const currentSearch = searchEl ? searchEl.value.toLowerCase().trim() : '';
+
+                // --- SDÍLENÁ CHYTRÁ ČISTIČKA ---
+                function getOfficialTaskName(name) {
+                    const n = name.toLowerCase();
+                    if (n.includes('hnoj') || n.includes('přihnoj') || n.includes('npk')) return 'Hnojení';
+                    if (n.includes('škůdc') || n.includes('chorob') || n.includes('postřik') || n.includes('ošetř') || n.includes('kontrol') || n.includes('nemoc')) return 'Ochrana a postřiky';
+                    if (n.includes('řez') || n.includes('stříh') || n.includes('tvarov') || n.includes('průklest')) return 'Řez a tvarování';
+                    if (n.includes('sadb') || n.includes('sáz') || n.includes('přesaz')) return 'Přesazování / Výsadba';
+                    if (n.includes('skliz') || n.includes('sběr')) return 'Sklizeň';
+                    if (n.includes('záliv') || n.includes('zalév') || n.includes('vod')) return 'Zálivka';
+                    return 'Ostatní péče';
+                }
+
+                allPlants.forEach(plant => {
+                    // 🚨 PŘIDANÁ OCHRANA: Pokud úkoly neexistují, přeskočit!
+                    if (!plant.tasks || !Array.isArray(plant.tasks) || plant.tasks.length === 0) return;
+
+                    // 🟢 2. PŘÍSNÝ VYHAZOVAČ S OPRAVENOU LOGIKOU (poradí si s vícero kategoriemi s čárkou)
+                    // Kontrola kategorie
+                    if (currentCategory !== 'all') {
+                        const plantCat = String(plant.category || "");
+                        if (!plantCat.includes(currentCategory)) return; // Vyhodíme rostlinu z kalendáře
+                    }
+
+                    // Kontrola vyhledávání textu
+                    if (currentSearch !== '') {
+                        if (!plant.name || !plant.name.toLowerCase().includes(currentSearch)) return; // Vyhodíme rostlinu z kalendáře
+                    }
+
+                    // --- ZDE UŽ BĚŽÍ ZPRACOVÁNÍ JEN PRO TY ROSTLINY, KTERÉ PROŠLY FILTREM ---
+                    plant.tasks.forEach(task => {
+                        const isForViewedMonth = Array.isArray(task.months) ? task.months.includes(globalPlannerMonth) : task.month === globalPlannerMonth;
+
+                        if (isForViewedMonth) {
+                            totalTasksCount++;
+                            const isDone = Array.isArray(task.completedMonths) && task.completedMonths.includes(globalPlannerMonth);
+
+                            // Normalizace názvu přes naši novou funkci
+                            const taskName = getOfficialTaskName(task.name);
+
+                            // Pokud tento úkol vidíme poprvé, vytvoříme mu "chlíveček"
+                            if (!groupedTasks[taskName]) {
+                                groupedTasks[taskName] = {
+                                    plants: [],
+                                    icon: "⏳",
+                                    textStyle: "color: #333;" // Budoucnost - neutrální
+                                };
+
+                                const isPast = globalPlannerYear < currentRealYear || (globalPlannerYear === currentRealYear && globalPlannerMonth < currentRealMonth);
+                                const isCurrent = globalPlannerYear === currentRealYear && globalPlannerMonth === currentRealMonth;
+
+                                if (isPast) {
+                                    groupedTasks[taskName].icon = "❗";
+                                    groupedTasks[taskName].textStyle = "color: #d32f2f; font-weight: bold;"; // Červený rest
+                                } else if (isCurrent) {
+                                    groupedTasks[taskName].icon = "👉";
+                                    groupedTasks[taskName].textStyle = "color: #1976d2; font-weight: bold;"; // Modrá - čeká na splnění
+                                }
+                            }
+
+                            // --- OCHRANA PROTI DUPLICITÁM ---
+                            const existingPlant = groupedTasks[taskName].plants.find(p => p.name === plant.name);
+
+                            if (!existingPlant) {
+                                groupedTasks[taskName].plants.push({ name: plant.name, isDone: isDone });
+                            } else {
+                                if (!isDone) {
+                                    existingPlant.isDone = false;
+                                }
+                            }
+                        }
+                    });
+                });
+
+                let finalHTML = '';
+
+                if (totalTasksCount === 0) {
+                    contentDiv.innerHTML = `<div style="text-align:center; padding: 30px 10px; color: #888;">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">🌴</div>
+                        Žádné úkoly pro tento výběr.
+                    </div>`;
+                    return;
+                }
+
+                // Nyní vykreslíme seskupené úkoly
+                for (const [taskName, taskData] of Object.entries(groupedTasks)) {
+                    const allDone = taskData.plants.every(p => p.isDone);
+                    let finalIcon = taskData.icon;
+                    let finalStyle = taskData.textStyle;
+
+                    if (allDone) {
+                        finalIcon = "✓";
+                        finalStyle = "color: #4caf50; text-decoration: line-through;";
+                    }
+
+                    let plantList = taskData.plants.map(p => {
+                        if (p.isDone) {
+                            return `<span style="text-decoration: line-through; color: #4caf50;">${p.name}</span>`;
+                        }
+                        return `<strong>${p.name}</strong>`;
+                    }).join(', ');
+
+                    finalHTML += `
+                    <div style="background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #e0e0e0; margin-bottom: 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.05);">
+                        <strong style="display: block; border-bottom: 1px solid #eee; padding-bottom: 5px; margin-bottom: 8px; font-size: 1.1rem; ${finalStyle}">
+                            ${finalIcon} ${taskName} (${taskData.plants.length} rostlin)
+                        </strong>
+                        <div style="color: #555; font-size: 0.95rem; padding-left: 5px; line-height: 1.4;">
+                            ${plantList}
+                        </div>
+                    </div>`;
+                }
+
+                contentDiv.innerHTML = finalHTML;
+            };
+        }
+        // ==========================================
+        // 🗂️ LOGIKA LÉKAŘSKÉ KARTY (ARCHIV)
+        // ==========================================
+
+        // 1. Přepínání roletky (Otevřít/Zavřít)
+        function toggleMedicalArchive() {
+            const content = document.getElementById('medical-archive-content');
+            const chevron = document.getElementById('archive-chevron');
+
+            if (content.style.display === 'none') {
+                content.style.display = 'block';
+                chevron.style.transform = 'rotate(180deg)';
+                renderMedicalArchive(); // Při otevření hned načteme data
+            } else {
+                content.style.display = 'none';
+                chevron.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        // 2. Vykreslení obsahu archivu (OPRAVENÁ DATABÁZE)
+        async function renderMedicalArchive() {
+            if (!currentPlantId) return;
+            const db = await getDB();
+
+            // Správné, nativní načtení z databáze
+            const plant = await new Promise((resolve, reject) => {
+                const tx = db.transaction('plants', 'readonly');
+                const req = tx.objectStore('plants').get(currentPlantId);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+
+            const container = document.getElementById('medical-archive-content');
+
+            // Pokud rostlina nemá žádnou historii diagnóz
+            if (!plant.medicalHistory || plant.medicalHistory.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#888; font-size: 0.95rem; margin: 10px 0;">Zatím žádné záznamy v historii.</p>';
+                return;
+            }
+
+            // Seřadíme historii od nejnovější po nejstarší
+            const sortedHistory = [...plant.medicalHistory].reverse();
+
+            container.innerHTML = sortedHistory.map((entry, index) => `
+        <div style="border-bottom: 1px solid #eee; padding: 15px 0; display: flex; flex-direction: column; gap: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <strong style="color: #555;">📅 ${new Date(entry.date).toLocaleDateString('cs-CZ')}</strong>
+                <button onclick="startEvolutionCheck(${entry.id})" style="background: var(--doc); color: white; border: none; padding: 5px 10px; border-radius: 5px; font-size: 0.8rem; cursor: pointer;">🤖 Zkontrolovat vývoj</button>
+            </div>
+            
+            <div style="display: flex; gap: 10px; align-items: flex-start;">
+                ${entry.photo ? `<img src="${entry.photo}" style="width: 70px; height: 70px; border-radius: 8px; object-fit: cover; border: 1px solid #ddd;">` : ''}
+                <div style="font-size: 0.9rem; line-height: 1.4; color: #333;">
+                    ${entry.diagnosis}
+                </div>
+            </div>
+
+            <div style="background: #fdf5e6; padding: 10px; border-radius: 8px; border: 1px dashed #d7ccc8;">
+                <label style="display: block; font-size: 0.75rem; color: #8d6e63; font-weight: bold; margin-bottom: 5px;">MOJE POZNÁMKA K LÉČBĚ:</label>
+                <textarea 
+                    id="med-note-${entry.id}" 
+                    style="width: 100%; border: none; background: transparent; font-family: sans-serif; font-size: 0.85rem; resize: none; outline: none;" 
+                    placeholder="Např. 'Dnes postříkáno...'"
+                    onchange="saveMedicalNote(${entry.id}, this.value)">${entry.userNote || ''}</textarea>
+            </div>
+        </div>
+    `).join('');
+        }
+
+        // 3. Ukládání poznámek uživatele (OPRAVENÁ DATABÁZE)
+        async function saveMedicalNote(entryId, noteValue) {
+            const db = await getDB();
+
+            // Správné, nativní načtení z databáze
+            const plant = await new Promise((resolve, reject) => {
+                const tx = db.transaction('plants', 'readonly');
+                const req = tx.objectStore('plants').get(currentPlantId);
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+
+            if (plant && plant.medicalHistory) {
+                const entry = plant.medicalHistory.find(e => e.id === entryId);
+                if (entry) {
+                    entry.userNote = noteValue;
+
+                    // Správné, nativní uložení do databáze
+                    const saveTx = db.transaction('plants', 'readwrite');
+                    saveTx.objectStore('plants').put(plant);
+                    saveTx.oncomplete = () => {
+                        console.log("Poznámka uložena do archivu");
+                    };
+                }
+            }
+        }
+
+        // 4. Příprava na AI porovnání
+        function startEvolutionCheck(oldEntryId) {
+            // Uložíme si ID starého záznamu, abychom věděli, s čím srovnávat
+            window.comparingWithEntryId = oldEntryId;
+            alert("Nyní vyfoťte aktuální stav. AI porovná novou fotku s tou z archivu.");
+            // 🟢 Změněno: Už nekliká na 'camera-input', ale na náš nový 'doctor-camera-input'
+            document.getElementById('doctor-camera-input').click();
+        }
+        // --- 🟢 HROMADNÁ ZÁLIVKA (S POJISTKOU PROTI ZTRÁTĚ DAT) ---
+
+        // 1. Zobrazení a skrytí okénka
+        function showBulkWaterModal() {
+            document.getElementById('bulk-water-modal').style.display = 'flex';
+        }
+
+        function closeBulkWaterModal() {
+            document.getElementById('bulk-water-modal').style.display = 'none';
+        }
+
+        // 2. Samotné provedení zálivky
+        async function confirmBulkWatering() {
+            const category = document.getElementById('bulk-category-select').value;
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.getAll();
+
+            req.onsuccess = () => {
+                let plants = req.result;
+                let updatedCount = 0;
+
+                // Použijeme už jen jeden správný formát s tečkami, který aplikace vyžaduje pro výpočty
+                const dnesZobrazeni = new Date().toLocaleDateString('cs-CZ');
+
+                plants.forEach(p => {
+                    // Pokud je kategorie 'all' (vše), nebo se shoduje s výběrem
+                    if (category === 'all' || p.category === category) {
+
+                        // 🛑 POJISTKA: Uložíme staré datum zálivky (i když byla nová a prázdná)
+                        p.previousWatered = p.lastWatered;
+
+                        // Zapsání nového data (nyní správně s tečkami)
+                        p.lastWatered = dnesZobrazeni;
+
+                        // Zápis do historie s tajnou značkou (isBulk), abychom to uměli smazat
+                        if (!p.careHistory) p.careHistory = [];
+                        p.careHistory.push({
+                            date: dnesZobrazeni,
+                            text: '🌧️ Hromadná zálivka',
+                            isBulk: true
+                        });
+
+                        store.put(p);
+                        updatedCount++;
+                    }
+                });
+
+                tx.oncomplete = () => {
+                    closeBulkWaterModal();
+                    if (updatedCount > 0) {
+                        // Vyměníme zálivku za Vzít zpět
+                        document.getElementById('btn-bulk-water').style.display = 'none';
+                        document.getElementById('btn-undo-bulk').style.display = 'block';
+
+                        // Uložíme si do prohlížeče, co jsme zalili (pro případ, že by uživatel obnovil stránku)
+                        localStorage.setItem('bulkWateringCategory', category);
+
+                        alert(`Úspěšně zalito ${updatedCount} rostlin.`);
+                        renderPlants(); // Překreslení hlavní obrazovky
+                    } else {
+                        alert("V této kategorii aktuálně nemáte žádné rostliny.");
+                    }
+                };
+            };
+        }
+
+        // 3. Záchranná brzda (Vzít zpět)
+        async function undoBulkWatering() {
+            if (!confirm("Opravdu chcete zrušit poslední hromadnou zálivku? Datum zálivky se vrátí na původní hodnoty.")) return;
+
+            const category = localStorage.getItem('bulkWateringCategory');
+            if (!category) return;
+
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.getAll();
+
+            req.onsuccess = () => {
+                let plants = req.result;
+
+                plants.forEach(p => {
+                    if (category === 'all' || p.category === category) {
+                        // 🛑 OBNOVA: Bezpečně vrátíme starý stav a vyčistíme pojistku
+                        if ('previousWatered' in p) {
+                            p.lastWatered = p.previousWatered;
+                            delete p.previousWatered;
+                        }
+
+                        // BEZPEČNÉ SMAZÁNÍ Z HISTORIE: Zkontrolujeme jen ÚPLNĚ POSLEDNÍ záznam
+                        if (p.careHistory && p.careHistory.length > 0) {
+                            const lastRecord = p.careHistory[p.careHistory.length - 1];
+                            // Pokud byl poslední záznam vytvořen hromadnou zálivkou, odstraníme ho
+                            if (lastRecord.isBulk) {
+                                p.careHistory.pop();
+                            }
+                        }
+
+                        store.put(p);
+                    }
+                });
+
+                tx.oncomplete = () => {
+                    // Vrátíme zpět modré tlačítko zálivky a schováme oranžové
+                    document.getElementById('btn-undo-bulk').style.display = 'none';
+                    document.getElementById('btn-bulk-water').style.display = 'block';
+
+                    localStorage.removeItem('bulkWateringCategory');
+
+                    alert("Hromadná zálivka byla úspěšně zrušena a data vrácena zpět.");
+                    renderPlants(); // Překreslení hlavní obrazovky
+                };
+            };
+        }
+        async function deleteTaskProducts(taskName) {
+            if (!confirm("Opravdu chcete smazat doporučené přípravky pro tento úkol?")) return;
+
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readwrite');
+            const store = tx.objectStore('plants');
+            const req = store.get(currentPlantId);
+
+            req.onsuccess = () => {
+                let plant = req.result;
+                if (!plant) return;
+
+                let wasDeleted = false;
+
+                // Najdeme úkol podle jména a smažeme mu přípravky z paměti
+                if (plant.tasks) {
+                    let targetTask = plant.tasks.find(t => t.name === taskName);
+                    if (targetTask && targetTask.taskProducts) {
+                        delete targetTask.taskProducts;
+                        wasDeleted = true;
+                    }
+                }
+
+                // Pojistka, kdyby to byl náhodou vlastní úkol (pokud používáš pole customTasks)
+                if (!wasDeleted && plant.customTasks) {
+                    let targetCustomTask = plant.customTasks.find(t => t.name === taskName);
+                    if (targetCustomTask && targetCustomTask.taskProducts) {
+                        delete targetCustomTask.taskProducts;
+                    }
+                }
+
+                store.put(plant);
+
+                tx.oncomplete = () => {
+                    // Okamžité překreslení okna, aby vizuální smog zmizel hned
+                    openDetail(currentPlantId);
+                };
+            };
+        }
+        // --- FUNKCE PRO MANUÁL ---
+        function openManual() {
+            document.getElementById('manual-modal').style.display = 'block';
+        }
+
+        function closeManual() {
+            document.getElementById('manual-modal').style.display = 'none';
+        }
+
+        function toggleAccordion(btnElement) {
+            // Zavře všechny ostatní otevřené panely (volitelné chování, aby to bylo čisté)
+            let allPanels = document.querySelectorAll('.accordion-panel');
+            let allIcons = document.querySelectorAll('.acc-icon');
+
+            let panel = btnElement.nextElementSibling;
+            let icon = btnElement.querySelector('.acc-icon');
+            let isCurrentlyOpen = panel.style.display === "block";
+
+            // Schováme vše
+            allPanels.forEach(p => p.style.display = "none");
+            allIcons.forEach(i => i.innerText = "▼");
+
+            // Pokud to nebylo už otevřené, tak to rozbalíme
+            if (!isCurrentlyOpen) {
+                panel.style.display = "block";
+                icon.innerText = "▲";
+            }
+        }
+        // --- CHYTRÝ DETEKTOR TOXICITY ---
+        function getToxicityBadge(text) {
+            if (!text) return "";
+            const lowerText = text.toLowerCase();
+
+            // Hledáme klíčová slova
+            if (lowerText.includes("jedovat") || lowerText.includes("toxick") || lowerText.includes("nebezpečn")) {
+                let detailText = "Pozor: Může být jedovatá";
+
+                // Pokus o upřesnění z textu
+                if (lowerText.includes("pro kočky") || lowerText.includes("pro psy") || lowerText.includes("pro zvířata")) {
+                    detailText = "Toxické pro zvířata";
+                } else if (lowerText.includes("pro lidi") || lowerText.includes("pro děti")) {
+                    detailText = "Toxické pro lidi/děti";
+                }
+
+                // Vrátíme hotový HTML štítek
+                return `<span style="display:inline-block; background-color: #ffebee; color: #d32f2f; padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; border: 1px solid #ffcdd2; margin-top: 5px; margin-bottom: 5px;">⚠️ ${detailText}</span>`;
+            }
+            return ""; // Pokud není jedovatá, nevrátí nic
+        }
+        // --- FUNKCE PRO ČASOSBĚR ---
+        // --- 1. FUNKCE: OTEVŘENÍ INTERAKTIVNÍHO ČASOSBĚRU (SLIDER) ---
+        async function openTimelapse(plantId) {
+            const db = await getDB();
+            const tx = db.transaction('plants', 'readonly');
+            const req = tx.objectStore('plants').get(plantId);
+
+            req.onsuccess = () => {
+                const plant = req.result;
+                if (!plant || !plant.images || plant.images.length < 2) return;
+
+                const firstImage = plant.images[0];
+                const lastImage = plant.images[plant.images.length - 1];
+
+                // Vytvoření modálního okna
+                let modal = document.createElement('div');
+                modal.id = 'timelapse-modal';
+                modal.style.cssText = 'position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); backdrop-filter: blur(4px); z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; overflow-y:auto;';
+
+                // Styly speciálně pro náš průhledný slider (aby nebyl vidět ošklivý posuvník, ale jen čára/kolečko)
+                const sliderCss = `
+                    #tl-slider { -webkit-appearance: none; appearance: none; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; outline: none; z-index: 20; margin: 0; }
+                    #tl-slider::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 4px; height: 300px; background: white; cursor: ew-resize; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+                    #tl-slider::-moz-range-thumb { width: 4px; height: 300px; background: white; cursor: ew-resize; box-shadow: 0 0 10px rgba(0,0,0,0.5); border: none; }
+                `;
+
+                modal.innerHTML = `
+                    <style>${sliderCss}</style>
+                    <div style="width: 100%; max-width: 500px; background: #fff; border-radius: 16px; overflow: hidden; position: relative; padding-bottom: 20px;">
+                        <button onclick="document.getElementById('timelapse-modal').remove()" style="position:absolute; top:15px; right:15px; background:#f44336; color:white; border:none; border-radius:50%; width:32px; height:32px; font-weight:bold; cursor:pointer; z-index: 30; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">✖</button>
+                        
+                        <h3 style="text-align:center; margin: 20px 0 5px 0; color:#333; font-size: 1.3rem;">⏳ ${plant.name}</h3>
+                        <p style="text-align:center; margin: 0 0 15px 0; color:#777; font-size: 0.85rem;">Tažením prstu přes obrázek porovnejte rozdíl</p>
+                        
+                        <div style="padding: 0 15px;">
+                            <div style="position: relative; width: 100%; height: 300px; border-radius: 12px; overflow: hidden; background: #eee; box-shadow: inset 0 0 10px rgba(0,0,0,0.1);">
+                                
+                                <img src="${firstImage}" style="position: absolute; top:0; left:0; width: 100%; height: 100%; object-fit: cover;">
+                                
+                                <img id="tl-after-img" src="${lastImage}" style="position: absolute; top:0; left:0; width: 100%; height: 100%; object-fit: cover; clip-path: polygon(50% 0, 100% 0, 100% 100%, 50% 100%);">
+                                
+                                <div style="position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.5); color:white; padding:4px 8px; border-radius:4px; font-size:0.7rem; pointer-events:none; z-index:10;">🌱 Začátek</div>
+                                <div style="position:absolute; bottom:10px; right:10px; background:rgba(76,175,80,0.8); color:white; padding:4px 8px; border-radius:4px; font-size:0.7rem; pointer-events:none; z-index:10;">✨ Nyní</div>
+
+                                <input type="range" min="0" max="100" value="50" id="tl-slider" oninput="document.getElementById('tl-after-img').style.clipPath = 'polygon(' + this.value + '% 0, 100% 0, 100% 100%, ' + this.value + '% 100%)'">
+                            </div>
+
+                            <button onclick="generateTimelapseVideo(${plant.id}, '${plant.name}')" id="btn-gen-video" style="width:100%; margin-top:20px; padding:12px; border-radius:8px; border:none; background:#1976d2; color:white; font-size:1rem; font-weight:bold; cursor:pointer; box-shadow: 0 4px 6px rgba(0,0,0,0.1); transition: 0.3s;">
+                                🎬 Vytvořit a stáhnout video ze všech fotek
+                            </button>
+                            <div id="video-status" style="text-align:center; color:#1976d2; font-size:0.85rem; margin-top:8px; display:none;">🔄 Generuji video, prosím čekejte...</div>
+                        </div>
+                    </div>
+                `;
+
+                document.body.appendChild(modal);
+            };
+        }
+
+        // --- 2. FUNKCE: GENERÁTOR VIDEA (Nativní export) ---
+        async function generateTimelapseVideo(plantId, plantName) {
+            const btn = document.getElementById('btn-gen-video');
+            const status = document.getElementById('video-status');
+
+            // Ochrana proti dvojitému kliknutí
+            btn.style.display = 'none';
+            status.style.display = 'block';
+
+            try {
+                const db = await getDB();
+                const tx = db.transaction('plants', 'readonly');
+                const req = tx.objectStore('plants').get(plantId);
+
+                req.onsuccess = async () => {
+                    const plant = req.result;
+                    if (!plant || !plant.images || plant.images.length === 0) return;
+
+                    // Vytvoříme virtuální plátno (Canvas) v paměti (600x800 - ideální pro mobil)
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 600;
+                    canvas.height = 800;
+                    const ctx = canvas.getContext('2d');
+
+                    // Zkontrolujeme, zda prohlížeč umí nahrávat canvas (Safari na starých iOS může zlobit)
+                    if (!canvas.captureStream || typeof MediaRecorder === 'undefined') {
+                        alert('Váš prohlížeč bohužel nepodporuje přímé generování videa.');
+                        btn.style.display = 'block'; status.style.display = 'none';
+                        return;
+                    }
+
+                    // Zachytíme video stream z plátna (30 snímků za vteřinu)
+                    const stream = canvas.captureStream(30);
+                    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                    const chunks = [];
+
+                    recorder.ondataavailable = e => chunks.push(e.data);
+                    recorder.onstop = () => {
+                        // Spojíme data a vyrobíme stáhnutelný soubor
+                        const blob = new Blob(chunks, { type: 'video/webm' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `Casosber-${plantName.replace(/\s+/g, '_')}.webm`;
+                        a.click(); // Automaticky spustíme stahování
+
+                        // Vrátíme tlačítko do původního stavu
+                        btn.style.display = 'block';
+                        status.style.display = 'none';
+                    };
+
+                    recorder.start();
+
+                    // Projdeme postupně všechny fotky rostliny a nakreslíme je na plátno
+                    for (let imgSrc of plant.images) {
+                        const img = new Image();
+                        img.src = imgSrc;
+                        // Počkáme, až se fotka načte do paměti
+                        await new Promise(resolve => { img.onload = resolve; });
+
+                        // Nakreslíme fotku tak, aby vyplnila celé plátno (object-fit: cover efekt)
+                        const scale = Math.max(canvas.width / img.width, canvas.height / img.height);
+                        const x = (canvas.width / 2) - (img.width / 2) * scale;
+                        const y = (canvas.height / 2) - (img.height / 2) * scale;
+
+                        // Vyčistíme a nakreslíme
+                        ctx.fillStyle = "#000";
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                        ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+
+                        // Počkáme 800 milisekund (0.8 sekundy), aby si uživatel fotku prohlédl
+                        await new Promise(r => setTimeout(r, 800));
+                    }
+
+                    // Zastavíme nahrávání (čímž se spustí recorder.onstop a stáhne se to)
+                    recorder.stop();
+                };
+            } catch (err) {
+                console.error("Chyba při generování videa:", err);
+                alert("Při generování videa nastala chyba.");
+                btn.style.display = 'block'; status.style.display = 'none';
+            }
+        }
+
+
+    </script>
+    <div id="bulk-water-modal" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 9999; align-items: center; justify-content: center;">
+        <div class="modal-content"
+            style="background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 400px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: #2196F3; font-size: 1.4rem;">🌧️ Hromadná zálivka</h3>
+            <p style="font-size: 0.95rem; color: #555; margin-bottom: 20px;">
+                Vyberte kategorii rostlin, kterou chcete hromadně zalít (např. po dešti na zahradě). Všem rostlinám v
+                této kategorii se nastaví zálivka na dnešek.
+            </p>
+
+            <select id="bulk-category-select"
+                style="width: 100%; padding: 12px; margin-bottom: 25px; border-radius: 8px; border: 1px solid #ccc; font-size: 1rem; outline: none; background: #f9f9f9;">
+                <option value="all">Všechny rostliny napříč kategoriemi</option>
+                <option value="Pokojové">Pokojové</option>
+                <option value="Zelenina">Zelenina</option>
+                <option value="Ovoce">Ovoce</option>
+                <option value="Bylinky">Bylinky</option>
+                <option value="Stromy">Stromy</option>
+                <option value="Keře">Keře</option>
+            </select>
+
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="closeBulkWaterModal()"
+                    style="flex: 1; padding: 12px; border-radius: 8px; border: none; background: #e0e0e0; color: #333; font-weight: bold; font-size: 1rem; cursor: pointer;">Zrušit</button>
+                <button onclick="confirmBulkWatering()"
+                    style="flex: 1; padding: 12px; border-radius: 8px; border: none; background: #2196F3; color: white; font-weight: bold; font-size: 1rem; cursor: pointer;">Zalít
+                    vybrané</button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
